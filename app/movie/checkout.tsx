@@ -1,0 +1,195 @@
+/**
+ * Checkout Screen - Final order summary and payment
+ */
+import React, { useState } from 'react';
+import { View, Text, Image, Pressable, ScrollView, Modal } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
+import { ArrowRight, CreditCard, ShieldCheck, Ticket, CheckCircle2 } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { cssInterop } from 'react-native-css-interop';
+
+import { Colors, POSTER_SIZES } from '@/constants/Theme';
+import MarkerHighlight from '@/components/MarkerHighlight';
+import { useBookingStore } from '@/store/useBookingStore';
+import { useAuthStore } from '@/store/useAuthStore';
+
+// Interop external components to support NativeWind className
+cssInterop(LinearGradient, { className: 'style' });
+cssInterop(BlurView, { className: 'style' });
+
+export default function CheckoutScreen() {
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { 
+    selectedMovieTitle, 
+    selectedMoviePoster, 
+    selectedShowtime, 
+    selectedDate, 
+    selectedSeats, 
+    totalPrice,
+    bookCurrentSelection,
+    clearBooking
+  } = useBookingStore();
+  const { authenticateBiometrics } = useAuthStore();
+  
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+
+  const handlePayment = async () => {
+    setIsProcessing(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    // Simulate biometric authentication
+    const auth = await authenticateBiometrics('אשר את התשלום עבור הכרטיסים');
+    
+    if (auth) {
+      await bookCurrentSelection();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setIsSuccess(true);
+    } else {
+      setIsProcessing(false);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    }
+  };
+
+  const handleFinish = () => {
+    clearBooking();
+    router.replace('/(tabs)/tickets');
+  };
+
+  if (!selectedShowtime) return null;
+
+  return (
+    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
+      {/* Header */}
+      <View className="flex-row-reverse items-center px-4 py-2 gap-3">
+        <Pressable onPress={() => router.back()} className="w-10 h-10 rounded-full bg-surface justify-center items-center">
+          <ArrowRight size={22} color={Colors.text} />
+        </Pressable>
+        <Text className="text-h3 text-white font-display">סיכום הזמנה</Text>
+      </View>
+
+      <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
+        {/* Movie Summary Card */}
+        <View className="mt-6 rounded-3xl overflow-hidden border border-white/10 bg-surfaceLight p-4">
+          <View className="flex-row-reverse gap-4">
+            {selectedMoviePoster ? (
+              <Image 
+                source={{ uri: `${POSTER_SIZES.medium}${selectedMoviePoster}` }}
+                className="w-24 h-36 rounded-xl"
+                resizeMode="cover"
+              />
+            ) : (
+              <View className="w-24 h-36 rounded-xl bg-surface justify-center items-center">
+                <Ticket size={32} color={Colors.textMuted} />
+              </View>
+            )}
+            <View className="flex-1 justify-center items-start">
+              <MarkerHighlight text={selectedMovieTitle} className="text-h2 text-white mb-2" />
+              <View className="flex-row-reverse items-center gap-2 mb-1">
+                <Ticket size={14} color={Colors.primary} />
+                <Text className="text-caption text-textSecondary font-body">
+                  {selectedShowtime.hall} • {selectedShowtime.format}
+                </Text>
+              </View>
+              <Text className="text-body text-white font-body">
+                {selectedDate} • {selectedShowtime.time}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Selected Seats */}
+        <View className="mt-8 items-end">
+          <Text className="text-h3 text-white mb-4 font-display">מושבים שנבחרו</Text>
+          <View className="flex-row flex-wrap gap-2 justify-end">
+            {selectedSeats.map((seat) => (
+              <View key={`${seat.row}-${seat.number}`} className="bg-surfaceLight px-4 py-2 rounded-xl border border-white/5 items-center">
+                <Text className="text-body text-white font-semibold">
+                  {seat.row}{seat.number}
+                </Text>
+                <Text className="text-[10px] text-textMuted uppercase font-label">
+                  {seat.type === 'vip' ? 'VIP' : 'רגיל'}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Price Breakdown */}
+        <View className="mt-10 p-6 rounded-3xl bg-surface border border-white/5">
+          <View className="flex-row-reverse justify-between mb-4">
+            <Text className="text-body text-textSecondary font-body">מחיר כרטיסים</Text>
+            <Text className="text-body text-white font-display">₪{totalPrice.toFixed(2)}</Text>
+          </View>
+          <View className="flex-row-reverse justify-between mb-4">
+            <Text className="text-body text-textSecondary font-body">עמלת הזמנה</Text>
+            <Text className="text-body text-white font-display">₪4.00</Text>
+          </View>
+          <View className="h-[1px] bg-white/5 my-2" />
+          <View className="flex-row-reverse justify-between mt-2">
+            <Text className="text-h2 text-white font-display">סה״כ לתשלום</Text>
+            <Text className="text-h2 text-secondary font-display">₪{(totalPrice + 4).toFixed(2)}</Text>
+          </View>
+        </View>
+
+        {/* Security Note */}
+        <View className="mt-6 flex-row-reverse items-center justify-center gap-2 opacity-50 mb-10">
+          <ShieldCheck size={16} color={Colors.textSecondary} />
+          <Text className="text-caption text-textSecondary font-body">תשלום מאובטח באמצעות SSL</Text>
+        </View>
+      </ScrollView>
+
+      {/* Footer Payment Button */}
+      <View className="px-5 pb-8 pt-4">
+        <Pressable 
+          onPress={handlePayment}
+          disabled={isProcessing}
+          className={`h-16 rounded-2xl overflow-hidden ${isProcessing ? 'opacity-70' : ''}`}
+        >
+          <LinearGradient
+            colors={[Colors.primary, Colors.primaryLight]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            className="flex-1 flex-row-reverse items-center justify-center gap-3"
+          >
+            <CreditCard size={20} color={Colors.background} />
+            <Text className="text-background font-bold text-h3 font-display">
+              {isProcessing ? 'מעבד תשלום...' : 'שלם עכשיו'}
+            </Text>
+          </LinearGradient>
+        </Pressable>
+      </View>
+
+      {/* Success Modal */}
+      <Modal visible={isSuccess} transparent animationType="fade">
+        <View className="flex-1 bg-black/80 items-center justify-center px-8">
+          <BlurView intensity={40} tint="dark" className="absolute inset-0" />
+          <Animated.View 
+            entering={FadeInDown.springify()} 
+            className="bg-surface p-8 rounded-[40px] items-center w-full border border-white/10"
+          >
+            <View className="w-20 h-20 rounded-full bg-secondary items-center justify-center mb-6">
+              <CheckCircle2 size={48} color={Colors.background} />
+            </View>
+            <MarkerHighlight text="הזמנה בוצעה בהצלחה!" className="text-h2 text-white mb-2 text-center" />
+            <Text className="text-body text-textSecondary text-center mb-8 font-body">
+              הכרטיסים שלך מחכים לך באזור האישי. תהנו מהסרט!
+            </Text>
+            
+            <Pressable 
+              onPress={handleFinish}
+              className="w-full h-14 bg-white rounded-2xl items-center justify-center"
+            >
+              <Text className="text-background font-bold text-h3 font-display">חזרה לכרטיסים</Text>
+            </Pressable>
+          </Animated.View>
+        </View>
+      </Modal>
+    </View>
+  );
+}

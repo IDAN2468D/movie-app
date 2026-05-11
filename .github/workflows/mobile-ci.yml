@@ -1,0 +1,58 @@
+name: Mobile CI/CD
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+          cache-dependency-path: movie-app/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./movie-app
+        run: npm ci
+
+      - name: Linting
+        working-directory: ./movie-app
+        run: npm run lint
+
+      - name: Type Check
+        working-directory: ./movie-app
+        run: npx tsc
+
+      - name: Run Tests
+        working-directory: ./movie-app
+        run: npm test
+
+  build_check:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        working-directory: ./movie-app
+        run: npm ci
+
+      - name: Build Dry Run (Android)
+        working-directory: ./movie-app
+        run: npx eas build --platform android --profile development --non-interactive --local --no-wait
+        continue-on-error: true # Since this requires a local environment or EAS credentials
