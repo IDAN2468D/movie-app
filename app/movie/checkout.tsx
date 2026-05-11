@@ -144,21 +144,24 @@ export default function CheckoutScreen() {
         </View>
       </ScrollView>
 
-      {/* Footer Payment Button */}
-      <View className="px-5 pb-8 pt-4">
+      {/* Premium Footer Payment Button */}
+      <View 
+        className="px-6 pt-4 border-t border-white/5 bg-background/80 backdrop-blur-xl"
+        style={{ paddingBottom: Math.max(insets.bottom + 20, 40) }}
+      >
         <Pressable 
           onPress={handlePayment}
           disabled={isProcessing}
-          className={`h-16 rounded-2xl overflow-hidden ${isProcessing ? 'opacity-70' : ''}`}
+          className={`h-16 rounded-2xl overflow-hidden shadow-2xl shadow-primary/30 ${isProcessing ? 'opacity-70' : ''}`}
         >
           <LinearGradient
-            colors={[Colors.primary, Colors.primaryLight]}
+            colors={[Colors.primary, '#9B1B30']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             className="flex-1 flex-row-reverse items-center justify-center gap-3"
           >
-            <CreditCard size={20} color={Colors.background} />
-            <Text className="text-background font-bold text-h3 font-display">
+            <CreditCard size={20} color="white" />
+            <Text className="text-white font-bold text-h3 font-display uppercase tracking-wider">
               {isProcessing ? 'מעבד תשלום...' : 'שלם עכשיו'}
             </Text>
           </LinearGradient>

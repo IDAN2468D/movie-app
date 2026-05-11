@@ -50,11 +50,11 @@ export default function TicketCard({ ticket }: TicketCardProps) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         Alert.alert('נשלח!', 'הכרטיס נשלח לכתובת המייל שלך בהצלחה.');
       } else {
-        throw new Error(result.message);
+        throw new Error(result.message || 'שגיאת שרת');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending email:', error);
-      Alert.alert('שגיאה', 'לא ניתן היה לשלוח את המייל. נסה שוב מאוחר יותר.');
+      Alert.alert('שגיאה בשליחה', error.message || 'לא ניתן היה לשלוח את המייל. נסה שוב מאוחר יותר.');
     } finally {
       setSendingEmail(false);
     }
