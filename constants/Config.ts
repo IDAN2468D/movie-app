@@ -3,9 +3,10 @@ export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1
 
 // Google Auth IDs
 export const GOOGLE_CONFIG = {
-  ios: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS,
-  android: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID_ANDROID,
-  web: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID_WEB,
+  ios: 'your_ios_client_id_here',
+  // Note: For Android, we primarily use the webClientId in the configure() call.
+  // The Android client is identified via the google-services.json file.
+  web: '814484714037-i2dt2kfij62esbutul7i4htv2u7maeol.apps.googleusercontent.com',
 };
 
 export default {

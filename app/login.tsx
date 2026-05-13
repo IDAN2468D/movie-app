@@ -28,6 +28,7 @@ export default function LoginScreen() {
     handleLogin,
     navigateToRegister,
     navigateToForgotPassword,
+    handleGoogleLogin,
   } = useLogin();
 
   return (
@@ -48,14 +49,14 @@ export default function LoginScreen() {
         className="flex-1"
       >
         <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
-          <View className="flex-1 justify-end px-6 pb-12">
+          <View className="flex-1 justify-end px-6 pb-20">
             
-            <Animated.View entering={FadeInUp.duration(1000).springify()} className="items-end">
-              <Text style={[Typography.hero, { fontFamily: 'Rubik-Bold', textAlign: 'left' }]} className="text-white text-5xl leading-tight w-full">
+            <Animated.View entering={FadeInUp.duration(1000).springify()} className="items-start">
+              <Text style={[Typography.hero, { fontFamily: 'Rubik-Bold', textAlign: 'right' }]} className="text-white text-5xl leading-tight w-full">
                 לצפות{'\n'}
                 <Text className="text-[#E50914]">בכל מקום.</Text>
               </Text>
-              <Text style={[Typography.body, { fontFamily: 'Rubik-Regular', textAlign: 'left' }]} className="text-white/60 mt-4 mb-10 text-lg w-full">
+              <Text style={[Typography.body, { fontFamily: 'Rubik-Regular', textAlign: 'right' }]} className="text-white/60 mt-4 mb-10 text-lg w-full">
                 התחברו כדי לצפות בכרטיסים שלכם, ברשימת הצפייה ובהמלצות אישיות.
               </Text>
             </Animated.View>
@@ -109,6 +110,19 @@ export default function LoginScreen() {
                       <Text style={[Typography.h3, { fontFamily: 'Rubik-Bold' }]} className="text-white me-2">כניסה</Text>
                       <ChevronLeft size={20} color="white" />
                     </TouchableOpacity>
+
+                    <View className="flex-row items-center my-6 w-full">
+                      <View className="flex-1 h-[1px] bg-white/10" />
+                      <Text className="text-white/30 mx-4 font-[Rubik-Regular]">או</Text>
+                      <View className="flex-1 h-[1px] bg-white/10" />
+                    </View>
+
+                    <TouchableOpacity 
+                      onPress={handleGoogleLogin}
+                      className="w-full bg-white rounded-2xl py-4 items-center flex-row justify-center"
+                    >
+                      <Text style={{ fontFamily: 'Rubik-Bold', color: '#000' }} className="text-base">התחברות עם Google</Text>
+                    </TouchableOpacity>
                   </View>
                 )}
               </View>
@@ -116,7 +130,7 @@ export default function LoginScreen() {
 
             <Animated.View 
               entering={FadeInDown.delay(400).duration(1000)}
-              className="flex-row justify-center items-center mt-10"
+              className="flex-row justify-center items-center mt-6"
             >
               <Text style={[Typography.body, { fontFamily: 'Rubik-Regular' }]} className="text-white/60">חברים חדשים? </Text>
               <TouchableOpacity onPress={navigateToRegister}>
@@ -126,6 +140,7 @@ export default function LoginScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
     </View>
   );
 }

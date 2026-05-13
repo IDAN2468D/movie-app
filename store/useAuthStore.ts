@@ -86,26 +86,44 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
   loginWithGoogleToken: async (idToken: string) => {
+    console.log('--- AuthStore: loginWithGoogleToken Started ---');
+    console.log('Target URL:', `${API_URL}/auth/google`);
     set({ isLoading: true, error: null });
     try {
+      console.log('Executing safeFetch to backend...');
       const result = await safeFetch(`${API_URL}/auth/google`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken }),
       });
       
+      console.log('safeFetch raw result:', JSON.stringify(result, null, 2));
+      
       if (result.success) {
+        console.log('AuthStore: Google Login API SUCCESS');
         const { token, user } = result.data;
+        console.log('Saving token to SecureStore and updating state...');
         await SecureStore.setItemAsync(TOKEN_KEY, token);
         set({ user, token, isAuthenticated: true, isLoading: false });
         return { success: true };
       } else {
+        console.error('AuthStore: Google Login API FAILED with message:', result.message);
+        if (result.error) console.error('AuthStore: Backend Error Detail:', result.error);
+        
         set({ error: result.message, isLoading: false });
-        return { success: false, message: result.message };
+        return { 
+          success: false, 
+          message: result.message,
+          error: result.error,
+          debug: result.debug // Pass through debug info
+        };
       }
-    } catch {
+    } catch (error: any) {
+      console.error('AuthStore: CRITICAL ERROR during Google Login API call:', error);
       set({ error: 'Google authentication failed', isLoading: false });
       return { success: false, message: 'Google authentication failed' };
+    } finally {
+      console.log('--- AuthStore: loginWithGoogleToken Process Ended ---');
     }
   },
 

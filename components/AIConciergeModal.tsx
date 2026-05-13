@@ -56,13 +56,13 @@ const TypingDot = ({ index }: { index: number }) => {
 const TypingIndicator = () => (
   <Animated.View 
     entering={FadeInLeft}
-    className="flex-row items-center ml-10 mb-6"
+    className="flex-row items-center ms-10 mb-6"
   >
-    <View className="bg-white/5 px-4 py-3 rounded-2xl rounded-tl-none border border-white/10 flex-row items-center">
+    <View className="bg-white/5 px-4 py-3 rounded-2xl rounded-ts-none border border-white/10 flex-row items-center">
       <TypingDot index={0} />
       <TypingDot index={1} />
       <TypingDot index={2} />
-      <Text className="text-[12px] text-white/40 ml-3 font-body">ה-AI חושב...</Text>
+      <Text className="text-[12px] text-white/40 ms-3 font-body">ה-AI חושב...</Text>
     </View>
   </Animated.View>
 );
@@ -232,7 +232,7 @@ export default function AIConciergeModal({ visible, onClose }: AIConciergeModalP
             <View className="pt-14 pb-4 px-6 border-b border-white/5 bg-black/40">
               <View className="flex-row justify-between items-center">
                 <View className="flex-row items-center">
-                  <View className="mr-4">
+                  <View className="me-4">
                     <LinearGradient
                       colors={[Colors.primary, '#9333ea']}
                       start={{ x: 0, y: 0 }}
@@ -242,14 +242,14 @@ export default function AIConciergeModal({ visible, onClose }: AIConciergeModalP
                       <Sparkles size={22} color="white" />
                     </LinearGradient>
                     <Animated.View 
-                      style={[{ position: 'absolute', bottom: -2, right: -2, width: 12, height: 12, borderRadius: 6, backgroundColor: '#22c55e', borderWidth: 2, borderColor: '#000' }, animatedPulseStyle]}
+                      style={[{ position: 'absolute', bottom: -2, end: -2, width: 12, height: 12, borderRadius: 6, backgroundColor: '#22c55e', borderWidth: 2, borderColor: '#000' }, animatedPulseStyle]}
                     />
                   </View>
                   <View>
-                    <Text className="text-h2 text-white font-display text-left">סייען AI אישי</Text>
+                    <Text className="text-h2 text-white font-display text-start">סייען AI אישי</Text>
                     <View className="flex-row items-center">
-                      <View className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5" />
-                      <Text className="text-caption text-white/50 font-body text-left">פעיל במערכת</Text>
+                      <View className="w-1.5 h-1.5 rounded-full bg-green-500 me-1.5" />
+                      <Text className="text-caption text-white/50 font-body text-start">פעיל במערכת</Text>
                     </View>
                   </View>
                 </View>
@@ -286,7 +286,7 @@ export default function AIConciergeModal({ visible, onClose }: AIConciergeModalP
                   className={`mb-5 flex-row items-end ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   {msg.role === 'model' && (
-                    <View className="w-8 h-8 rounded-full bg-white/5 border border-white/10 items-center justify-center mr-2 mb-1">
+                    <View className="w-8 h-8 rounded-full bg-white/5 border border-white/10 items-center justify-center me-2 mb-1">
                       <Zap size={14} color={Colors.primary} />
                     </View>
                   )}
@@ -310,14 +310,14 @@ export default function AIConciergeModal({ visible, onClose }: AIConciergeModalP
                     }}
                   >
                     <Text 
-                      className={`text-[15px] font-body leading-relaxed text-left ${msg.role === 'user' ? 'text-white' : 'text-white/90'}`}
+                      className={`text-[15px] font-body leading-relaxed text-start ${msg.role === 'user' ? 'text-white' : 'text-white/90'}`}
                     >
                       {msg.content}
                     </Text>
                   </View>
 
                   {msg.role === 'user' && (
-                    <View className="w-8 h-8 rounded-full bg-primary items-center justify-center ml-2 mb-1 border border-white/20">
+                    <View className="w-8 h-8 rounded-full bg-primary items-center justify-center ms-2 mb-1 border border-white/20">
                       <User size={14} color="white" />
                     </View>
                   )}
@@ -346,7 +346,7 @@ export default function AIConciergeModal({ visible, onClose }: AIConciergeModalP
                     <Pressable
                       key={i}
                       onPress={() => handleSend(suggestion.text)}
-                      className="bg-white/5 border border-white/10 px-4 py-2.5 rounded-full mr-2.5 flex-row items-center"
+                      className="bg-white/5 border border-white/10 px-4 py-2.5 rounded-full me-2.5 flex-row items-center"
                     >
                       <Text className="text-[13px] text-white/80 font-body">{suggestion.text}</Text>
                     </Pressable>
@@ -358,7 +358,7 @@ export default function AIConciergeModal({ visible, onClose }: AIConciergeModalP
               <View className="flex-row items-center bg-white/5 border border-white/10 rounded-[28px] p-1.5 px-4">
                 <Pressable 
                   onPress={startListening}
-                  className={`mr-2 w-10 h-10 items-center justify-center rounded-full ${isListening ? 'bg-primary/20' : ''}`}
+                  className={`me-2 w-10 h-10 items-center justify-center rounded-full ${isListening ? 'bg-primary/20' : ''}`}
                 >
                   {isListening ? (
                     <VoiceWave />
@@ -368,7 +368,7 @@ export default function AIConciergeModal({ visible, onClose }: AIConciergeModalP
                 </Pressable>
 
                 <TextInput
-                  className="flex-1 h-11 text-white font-body text-left text-[15px]"
+                  className="flex-1 h-11 text-white font-body text-start text-[15px]"
                   placeholder={isListening ? "מקשיב לך..." : "איזה סרט כדאי לי לראות?"}
                   placeholderTextColor="rgba(255,255,255,0.3)"
                   value={input}
