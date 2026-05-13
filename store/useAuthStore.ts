@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
 import * as LocalAuthentication from 'expo-local-authentication';
-import { z } from 'zod';
 import { safeFetch } from './apiHelper';
 
 import { API_BASE_URL } from '@/constants/Config';
@@ -81,7 +80,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ error: result.message, isLoading: false });
         return { success: false, message: result.message };
       }
-    } catch (err) {
+    } catch {
       set({ error: 'Connection error', isLoading: false });
       return { success: false, message: 'Connection error' };
     }
@@ -104,7 +103,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ error: result.message, isLoading: false });
         return { success: false, message: result.message };
       }
-    } catch (err) {
+    } catch {
       set({ error: 'Google authentication failed', isLoading: false });
       return { success: false, message: 'Google authentication failed' };
     }
@@ -129,7 +128,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ error: result.message, isLoading: false });
         return { success: false, message: result.message };
       }
-    } catch (err) {
+    } catch {
       set({ error: 'Connection error', isLoading: false });
       return { success: false, message: 'Connection error' };
     }
@@ -167,7 +166,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         await SecureStore.deleteItemAsync(TOKEN_KEY);
         set({ token: null, user: null, isAuthenticated: false, isLoading: false });
       }
-    } catch (err) {
+    } catch {
       set({ isLoading: false, isAuthenticated: false });
     }
   },
@@ -201,8 +200,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         // Revert on fail
         set({ user });
       }
-    } catch (err) {
-      console.error('Failed to toggle favorite', err);
+    } catch (_err) {
+      console.error('Failed to toggle favorite', _err);
       // Revert on fail
       set({ user });
     }
@@ -242,8 +241,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await SecureStore.setItemAsync('cinebook_biometrics_enabled', enabled ? 'true' : 'false');
       set({ biometricsEnabled: enabled });
       return true;
-    } catch (err) {
-      console.error('Biometrics error:', err);
+    } catch (_err) {
+      console.error('Biometrics error:', _err);
       return false;
     }
   },
@@ -273,8 +272,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       });
       
       return result.success;
-    } catch (err) {
-      console.error('Biometrics auth error:', err);
+    } catch (_err) {
+      console.error('Biometrics auth error:', _err);
       return false;
     }
   },
@@ -290,8 +289,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (result.success) {
         set({ user: { ...user, paymentMethods: result.data } });
       }
-    } catch (err) {
-      console.error('Failed to fetch payment methods', err);
+    } catch (_err) {
+      console.error('Failed to fetch payment methods', _err);
     }
   },
 
@@ -315,7 +314,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         return { success: true, data: newMethod };
       }
       return { success: false, message: result.message };
-    } catch (err) {
+    } catch {
       return { success: false, message: 'Connection error' };
     }
   },
@@ -335,7 +334,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         return { success: true };
       }
       return { success: false, message: result.message };
-    } catch (err) {
+    } catch {
       return { success: false, message: 'Connection error' };
     }
   },

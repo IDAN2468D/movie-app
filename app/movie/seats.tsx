@@ -1,29 +1,22 @@
-import { useEffect } from 'react';
+import React from 'react';
 import { View, Text, ScrollView, Pressable, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import * as Haptics from 'expo-haptics';
 import { ChevronRight, Ticket, Info } from 'lucide-react-native';
 import { Colors } from '@/constants/Theme';
 import SeatMap from '@/components/ZoomableSeatMap';
-import { useBookingStore } from '@/store/useBookingStore';
 import Animated, { 
   FadeIn, 
   FadeInDown, 
   FadeInRight,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  withSequence
 } from 'react-native-reanimated';
+import { useSeats } from '@/hooks/useSeats';
 
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w1280';
 
 export default function SeatsScreen() {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
   const {
     selectedMovieTitle,
     selectedMoviePoster,
@@ -31,29 +24,10 @@ export default function SeatsScreen() {
     selectedDate,
     selectedSeats,
     totalPrice,
-    generateSeats,
-  } = useBookingStore();
-
-  useEffect(() => {
-    // Generate seats if not already present
-    generateSeats(8, 12);
-  }, []);
-
-  const handleConfirm = async () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    router.push('/movie/checkout' as any);
-  };
-
-  const pulseStyle = useAnimatedStyle(() => ({
-    opacity: withRepeat(
-      withSequence(
-        withTiming(0.8, { duration: 1000 }),
-        withTiming(1, { duration: 1000 })
-      ),
-      -1,
-      true
-    )
-  }));
+    handleConfirm,
+    pulseStyle,
+    goBack,
+  } = useSeats();
 
   return (
     <View className="flex-1 bg-background">
@@ -77,7 +51,7 @@ export default function SeatsScreen() {
         style={{ marginTop: insets.top }}
       >
         <Pressable 
-          onPress={() => router.back()} 
+          onPress={goBack} 
           className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 justify-center items-center"
         >
           <ChevronRight size={24} color="white" />
@@ -113,9 +87,9 @@ export default function SeatsScreen() {
             entering={FadeInDown} 
             className="px-6 mb-6"
           >
-            <View className="flex-row items-center justify-between mb-3 px-1">
+            <View className="flex-row-reverse items-center justify-between mb-3 px-1">
               <Text className="text-label text-white/70 font-display">מושבים שנבחרו</Text>
-              <View className="flex-row items-center gap-1">
+              <View className="flex-row-reverse items-center gap-1">
                 <Info size={12} color="rgba(255,255,255,0.4)" />
                 <Text className="text-[10px] text-white/40">לחץ לביטול</Text>
               </View>
@@ -135,40 +109,48 @@ export default function SeatsScreen() {
           </Animated.View>
         )}
         
-        {/* Glossy Checkout Footer */}
+        {/* Premium Checkout Footer */}
         <Animated.View entering={FadeInDown.delay(200)}>
           <BlurView 
-            intensity={95} 
+            intensity={90} 
             tint="dark" 
-            className="px-6 pt-8 border-t border-white/10 rounded-t-[44px] overflow-hidden shadow-2xl"
-            style={{ paddingBottom: Math.max(insets.bottom + 20, 40) }}
+            className="px-6 pt-6 border-t border-white/10 rounded-t-[40px] overflow-hidden"
+            style={{ paddingBottom: Math.max(insets.bottom + 16, 32) }}
           >
-            <View className="flex-row items-center justify-between">
-              {/* Total Price (Right side in Hebrew) */}
+            <View className="flex-row-reverse items-center justify-between">
+              {/* Total Price Section */}
               <View className="items-end">
-                <Text className="text-caption text-white/40 font-bold uppercase tracking-[1px] mb-1">סה"כ לתשלום</Text>
-                <View className="flex-row items-center gap-1">
+                <Text className="text-[10px] text-white/40 font-bold uppercase tracking-widest mb-0.5">סה"כ לתשלום</Text>
+                <Text style={{ textAlign: 'right' }}>
                   <Text className="text-h1 text-white font-display">₪{totalPrice.toFixed(0)}</Text>
-                </View>
+                  <Text className="text-caption text-primary font-bold">.00</Text>
+                </Text>
+                <Text className="text-[10px] text-white/30 font-medium">עבור {selectedSeats.length} מושבים</Text>
               </View>
 
-              {/* Checkout Button (Left side in Hebrew) */}
+              {/* Enhanced Action Button */}
               <Pressable 
                 onPress={handleConfirm}
                 disabled={selectedSeats.length === 0}
-                className="overflow-hidden rounded-[24px] shadow-lg shadow-primary/20"
+                className="overflow-hidden rounded-3xl"
+                style={({ pressed }) => [
+                  { 
+                    opacity: selectedSeats.length > 0 ? (pressed ? 0.9 : 1) : 0.4,
+                    transform: [{ scale: pressed ? 0.98 : 1 }]
+                  }
+                ]}
               >
                 <Animated.View style={selectedSeats.length > 0 ? pulseStyle : {}}>
                   <LinearGradient
-                    colors={selectedSeats.length > 0 ? [Colors.primary, '#9B1B30'] : ['#27272A', '#18181B']}
+                    colors={selectedSeats.length > 0 ? [Colors.primary, '#D40054'] : ['#27272A', '#18181B']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
-                    className="flex-row items-center gap-3 px-10 py-4"
+                    className="flex-row-reverse items-center gap-3 px-8 py-4 min-w-[160px] justify-center"
                   >
-                    <Ticket size={20} color={selectedSeats.length > 0 ? Colors.white : '#52525B'} />
                     <Text className={`font-bold text-h3 font-display ${selectedSeats.length > 0 ? 'text-white' : 'text-white/20'}`}>
                       הזמן עכשיו
                     </Text>
+                    <Ticket size={20} color={selectedSeats.length > 0 ? Colors.white : '#52525B'} />
                   </LinearGradient>
                 </Animated.View>
               </Pressable>
@@ -179,5 +161,3 @@ export default function SeatsScreen() {
     </View>
   );
 }
-
-// NativeWind migration complete - styles object removed

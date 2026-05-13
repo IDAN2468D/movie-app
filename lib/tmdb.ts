@@ -131,6 +131,11 @@ export interface TMDBVideo {
 
 export async function getMovieVideos(id: number): Promise<TMDBVideo[]> {
   const data = await fetchTMDB<{ results: TMDBVideo[] }>(`/movie/${id}/videos`);
+  if (data.results.length === 0) {
+    // Fallback to English if no Hebrew results
+    const engData = await fetchTMDB<{ results: TMDBVideo[] }>(`/movie/${id}/videos`, { language: 'en-US' });
+    return engData.results;
+  }
   return data.results;
 }
 
@@ -138,3 +143,9 @@ export async function getMoviesByGenre(genreId: number): Promise<TMDBMovie[]> {
   const data = await fetchTMDB<TMDBResponse<TMDBMovie>>('/discover/movie', { with_genres: genreId.toString() });
   return data.results;
 }
+
+export async function discoverMovies(params: Record<string, string>): Promise<TMDBMovie[]> {
+  const data = await fetchTMDB<TMDBResponse<TMDBMovie>>('/discover/movie', params);
+  return data.results;
+}
+

@@ -7,7 +7,7 @@ import { Colors, Typography } from '@/constants/Theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useAuthStore } from '@/store/useAuthStore';
-import Animated, { FadeIn, FadeInDown, SlideInBottom } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, SlideInDown } from 'react-native-reanimated';
 
 export default function PaymentScreen() {
   const router = useRouter();
@@ -175,7 +175,7 @@ export default function PaymentScreen() {
           <Pressable className="absolute inset-0" onPress={() => setModalVisible(false)} />
           
           <Animated.View 
-            entering={SlideInBottom}
+            entering={SlideInDown}
             className="bg-[#1A1A1A] rounded-t-[40px] border-t border-white/10 p-6 pb-12"
           >
             <View className="flex-row justify-between items-center mb-8">

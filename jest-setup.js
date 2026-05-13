@@ -29,7 +29,47 @@ jest.mock('expo-haptics', () => ({
 
 // Mock Reanimated
 jest.mock('react-native-reanimated', () => {
-  const Reanimated = require('react-native-reanimated/mock');
-  Reanimated.default.call = () => {};
-  return Reanimated;
+  const React = require('react');
+  const { View } = require('react-native');
+  
+  return {
+    __esModule: true,
+    default: {
+      View: View,
+      Text: View,
+      Image: View,
+      ScrollView: View,
+      createAnimatedComponent: (cb) => cb,
+    },
+    useSharedValue: (val) => ({ value: val }),
+    useAnimatedStyle: (cb) => cb(),
+    useAnimatedProps: (cb) => cb(),
+    withTiming: (toValue) => toValue,
+    withSpring: (toValue) => toValue,
+    withRepeat: (toValue) => toValue,
+    withSequence: (...args) => args[0],
+    withDelay: (delay, toValue) => toValue,
+    interpolate: (val, input, output) => output[0],
+    Extrapolate: { CLAMP: 'clamp', BEZIER: 'bezier' },
+    FadeIn: { duration: () => ({ delay: () => ({ springify: () => ({}) }) }) },
+    FadeOut: { duration: () => ({ delay: () => ({ springify: () => ({}) }) }) },
+    FadeInUp: { duration: () => ({ delay: () => ({ springify: () => ({}) }) }) },
+    FadeInDown: { duration: () => ({ delay: () => ({ springify: () => ({}) }) }) },
+    SlideInRight: { duration: () => ({ delay: () => ({ springify: () => ({}) }) }) },
+    Layout: { springify: () => ({}) },
+    runOnJS: (fn) => fn,
+    runOnUI: (fn) => fn,
+  };
 });
+
+// Mock Worklets (needed for Reanimated 4)
+jest.mock('react-native-worklets', () => ({
+  Worklets: {
+    createRunInJsFn: (fn) => fn,
+    createRunInContextFn: (fn) => fn,
+  },
+}));
+
+jest.mock('expo-blur', () => ({
+  BlurView: ({ children }) => children,
+}));

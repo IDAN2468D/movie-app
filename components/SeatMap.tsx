@@ -47,7 +47,7 @@ export default function SeatMap() {
         />
         <View 
           className="absolute -top-4 w-[85%] h-[40px] bg-secondary/10 rounded-full" 
-          style={{ blurRadius: 20 }}
+          style={{ opacity: 0.5 }}
         />
         <Text className="text-caption text-textMuted mt-5 tracking-[4px] font-bold text-center uppercase opacity-60">
           מסך הקרנה

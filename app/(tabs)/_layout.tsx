@@ -3,7 +3,7 @@
  */
 import { Tabs, useRouter } from 'expo-router';
 import { StyleSheet, Platform, ActivityIndicator, View } from 'react-native';
-import { Home, Search, Ticket, User } from 'lucide-react-native';
+import { Home, Search, Ticket, User, Bookmark } from 'lucide-react-native';
 import { Colors, Typography } from '@/constants/Theme';
 import { useEffect } from 'react';
 
@@ -26,8 +26,8 @@ export default function TabLayout() {
           paddingTop: 8,
           position: 'absolute',
           elevation: 0,
-          height: 62 + (insets.bottom > 0 ? insets.bottom - 5 : 15),
-          paddingBottom: insets.bottom > 0 ? insets.bottom - 5 : 15,
+          height: 68 + (insets.bottom > 0 ? insets.bottom : 20),
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 20,
         },
         tabBarLabelStyle: {
           fontSize: 13,
@@ -48,6 +48,13 @@ export default function TabLayout() {
         options={{
           title: 'חיפוש',
           tabBarIcon: ({ color, size }) => <Search size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="watchlist"
+        options={{
+          title: 'רשימה',
+          tabBarIcon: ({ color, size }) => <Bookmark size={size} color={color} />,
         }}
       />
       <Tabs.Screen

@@ -1,21 +1,18 @@
 /**
  * Checkout Screen - Final order summary and payment
  */
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, Image, Pressable, ScrollView, Modal } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ArrowRight, CreditCard, ShieldCheck, Ticket, CheckCircle2 } from 'lucide-react-native';
-import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { cssInterop } from 'react-native-css-interop';
 
 import { Colors, POSTER_SIZES } from '@/constants/Theme';
 import MarkerHighlight from '@/components/MarkerHighlight';
-import { useBookingStore } from '@/store/useBookingStore';
-import { useAuthStore } from '@/store/useAuthStore';
+import { useCheckout } from '@/hooks/useCheckout';
 
 // Interop external components to support NativeWind className
 cssInterop(LinearGradient, { className: 'style' });
@@ -23,43 +20,22 @@ cssInterop(BlurView, { className: 'style' });
 
 export default function CheckoutScreen() {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
-  const { 
-    selectedMovieTitle, 
-    selectedMoviePoster, 
-    selectedShowtime, 
-    selectedDate, 
-    selectedSeats, 
+  const {
+    selectedMovieTitle,
+    selectedMoviePoster,
+    selectedShowtime,
+    selectedDate,
+    selectedSeats,
     totalPrice,
-    bookCurrentSelection,
-    clearBooking
-  } = useBookingStore();
-  const { authenticateBiometrics } = useAuthStore();
-  
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-
-  const handlePayment = async () => {
-    setIsProcessing(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-    // Simulate biometric authentication
-    const auth = await authenticateBiometrics('אשר את התשלום עבור הכרטיסים');
-    
-    if (auth) {
-      await bookCurrentSelection();
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      setIsSuccess(true);
-    } else {
-      setIsProcessing(false);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    }
-  };
-
-  const handleFinish = () => {
-    clearBooking();
-    router.replace('/(tabs)/tickets');
-  };
+    snacksTotal,
+    snacksInCart,
+    finalTotal,
+    isProcessing,
+    isSuccess,
+    handlePayment,
+    handleFinish,
+    goBack,
+  } = useCheckout();
 
   if (!selectedShowtime) return null;
 
@@ -67,7 +43,7 @@ export default function CheckoutScreen() {
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       {/* Header */}
       <View className="flex-row-reverse items-center px-4 py-2 gap-3">
-        <Pressable onPress={() => router.back()} className="w-10 h-10 rounded-full bg-surface justify-center items-center">
+        <Pressable onPress={goBack} className="w-10 h-10 rounded-full bg-surface justify-center items-center">
           <ArrowRight size={22} color={Colors.text} />
         </Pressable>
         <Text className="text-h3 text-white font-display">סיכום הזמנה</Text>
@@ -126,6 +102,12 @@ export default function CheckoutScreen() {
             <Text className="text-body text-textSecondary font-body">מחיר כרטיסים</Text>
             <Text className="text-body text-white font-display">₪{totalPrice.toFixed(2)}</Text>
           </View>
+          {snacksTotal > 0 && (
+            <View className="flex-row-reverse justify-between mb-4">
+              <Text className="text-body text-textSecondary font-body">נשנושים ({snacksInCart.length})</Text>
+              <Text className="text-body text-white font-display">₪{snacksTotal.toFixed(2)}</Text>
+            </View>
+          )}
           <View className="flex-row-reverse justify-between mb-4">
             <Text className="text-body text-textSecondary font-body">עמלת הזמנה</Text>
             <Text className="text-body text-white font-display">₪4.00</Text>
@@ -133,7 +115,7 @@ export default function CheckoutScreen() {
           <View className="h-[1px] bg-white/5 my-2" />
           <View className="flex-row-reverse justify-between mt-2">
             <Text className="text-h2 text-white font-display">סה״כ לתשלום</Text>
-            <Text className="text-h2 text-secondary font-display">₪{(totalPrice + 4).toFixed(2)}</Text>
+            <Text className="text-h2 text-secondary font-display">₪{finalTotal.toFixed(2)}</Text>
           </View>
         </View>
 
@@ -181,7 +163,8 @@ export default function CheckoutScreen() {
             </View>
             <MarkerHighlight text="הזמנה בוצעה בהצלחה!" className="text-h2 text-white mb-2 text-center" />
             <Text className="text-body text-textSecondary text-center mb-8 font-body">
-              הכרטיסים שלך מחכים לך באזור האישי. תהנו מהסרט!
+              הכרטיסים שלך מחכים לך באזור האישי.{'\n'}
+              שלחנו לך גם אימייל עם קוד ה-QR לסריקה מהירה בכניסה.
             </Text>
             
             <Pressable 

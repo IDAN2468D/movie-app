@@ -19,6 +19,7 @@ import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } f
 import { Rubik_400Regular, Rubik_500Medium, Rubik_700Bold, Rubik_900Black } from '@expo-google-fonts/rubik';
 import { Assistant_400Regular, Assistant_500Medium, Assistant_600SemiBold, Assistant_700Bold } from '@expo-google-fonts/assistant';
 import { useAuthStore } from '@/store/useAuthStore';
+import { NotificationService } from '../services/NotificationService';
 
 cssInterop(LinearGradient, { className: 'style' });
 
@@ -80,6 +81,8 @@ export default function RootLayout() {
 
   useEffect(() => {
     checkAuth();
+    // Initialize notifications
+    NotificationService.initHandler();
   }, [checkAuth]);
 
   // Auth and Onboarding routing logic

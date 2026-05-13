@@ -10,7 +10,7 @@ module.exports = [
   },
   ...compat.extends("expo"),
   {
-    files: ["**/*.test.ts", "**/*.test.tsx", "**/__tests__/**"],
+    files: ["**/*.test.ts", "**/*.test.tsx", "**/__tests__/**", "jest-setup.js"],
     languageOptions: {
       globals: {
         jest: "readonly",

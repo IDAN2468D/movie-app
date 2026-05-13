@@ -1,33 +1,26 @@
-/**
- * Search Screen - Premium movie discovery and search
- */
-import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   TextInput,
-  StyleSheet,
   FlatList,
   Pressable,
   Image,
   ActivityIndicator,
   Dimensions,
   Animated,
-  Keyboard,
 } from 'react-native';
 import AnimatedRN, { 
   useAnimatedStyle, 
-  useSharedValue, 
-  withTiming,
   interpolateColor
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Search as SearchIcon, X, Star, TrendingUp, Clock, Filter } from 'lucide-react-native';
+import { Search as SearchIcon, X, Star, TrendingUp, Clock, Filter, Sparkles } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Typography, Radius, POSTER_SIZES, BACKDROP_SIZES, Spacing } from '@/constants/Theme';
+import { Colors, POSTER_SIZES, BACKDROP_SIZES } from '@/constants/Theme';
 import MarkerHighlight from '@/components/MarkerHighlight';
-import { searchMovies, getPopular, type TMDBMovie, getGenreName, getMoviesByGenre } from '@/lib/tmdb';
+import { type TMDBMovie, getGenreName } from '@/lib/tmdb';
+import { useSearch } from '@/hooks/useSearch';
 
 const { width } = Dimensions.get('window');
 
@@ -36,118 +29,41 @@ const GENRE_FILTERS = [28, 12, 16, 35, 80, 18, 27, 878]; // Action, Adventure, A
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState<TMDBMovie[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false);
-  const [popular, setPopular] = useState<TMDBMovie[]>([]);
-  const [activeGenre, setActiveGenre] = useState<number | null>(null);
-
-  const scrollY = useRef(new Animated.Value(0)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-
-  // Reanimated focus states
-  const [isFocused, setIsFocused] = useState(false);
-  const focusAnim = useSharedValue(0);
-
-  useEffect(() => {
-    focusAnim.value = withTiming(isFocused ? 1 : 0, { duration: 300 });
-  }, [isFocused]);
+  
+  const {
+    query,
+    results,
+    loading,
+    searched,
+    popular,
+    activeGenre,
+    isAISearch,
+    scrollY,
+    fadeAnim,
+    isFocused,
+    focusAnim,
+    setIsFocused,
+    handleSearch,
+    executeAISearch,
+    toggleAIMode,
+    handleGenrePress,
+    clearSearch,
+  } = useSearch();
 
   const inputAnimatedStyle = useAnimatedStyle(() => {
     return {
       borderColor: interpolateColor(
         focusAnim.value,
         [0, 1],
-        ['rgba(255, 255, 255, 0.1)', Colors.primary]
+        ['rgba(255, 255, 255, 0.1)', isAISearch ? Colors.secondary : Colors.primary]
       ),
       backgroundColor: interpolateColor(
         focusAnim.value,
         [0, 1],
         [Colors.surfaceLight, '#27272A']
       ),
-      transform: [{ scale: withTiming(isFocused ? 1.02 : 1, { duration: 300 }) }],
-      shadowOpacity: withTiming(isFocused ? 0.3 : 0, { duration: 300 }),
     };
   });
-
-  useEffect(() => {
-    loadDiscovery();
-  }, []);
-
-  useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 500,
-      useNativeDriver: true,
-    }).start();
-  }, [results, popular]);
-
-  const loadDiscovery = async () => {
-    try {
-      const movies = await getPopular();
-      setPopular(movies.slice(0, 6));
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handleSearch = useCallback(async (text: string) => {
-    setQuery(text);
-    if (text.length < 2) {
-      setResults([]);
-      setSearched(false);
-      return;
-    }
-    setLoading(true);
-    setSearched(true);
-    setActiveGenre(null); // Clear genre filter when typing
-    try {
-      const movies = await searchMovies(text);
-      setResults(movies);
-    } catch {
-      setResults([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const handleGenrePress = async (genreId: number | null) => {
-    if (genreId === activeGenre) {
-      setActiveGenre(null);
-      setResults([]);
-      setSearched(false);
-      return;
-    }
-
-    setLoading(true);
-    setSearched(true);
-    setActiveGenre(genreId);
-    setQuery(''); // Clear text query when using genre
-
-    try {
-      let movies;
-      if (genreId === null) {
-        movies = await getPopular();
-      } else {
-        movies = await getMoviesByGenre(genreId);
-      }
-      setResults(movies);
-    } catch (e) {
-      console.error(e);
-      setResults([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const clearSearch = () => {
-    setQuery('');
-    setResults([]);
-    setSearched(false);
-    setActiveGenre(null);
-    Keyboard.dismiss();
-  };
 
   const renderDiscovery = () => (
     <Animated.View style={{ opacity: fadeAnim }}>
@@ -303,7 +219,8 @@ export default function SearchScreen() {
         }
         ListEmptyComponent={loading ? (
           <View className="mt-[100px] items-center justify-center">
-            <ActivityIndicator size="large" color={Colors.primary} />
+            <ActivityIndicator size="large" color={isAISearch ? Colors.secondary : Colors.primary} />
+            {isAISearch && <Text className="text-caption text-secondary mt-4 font-body">ה-AI מחפש עבורך...</Text>}
           </View>
         ) : searched ? (
           <View className="mt-[100px] items-center justify-center gap-4">
@@ -322,18 +239,22 @@ export default function SearchScreen() {
             style={[
               inputAnimatedStyle,
               {
-                shadowColor: Colors.primary,
+                shadowColor: isAISearch ? Colors.secondary : Colors.primary,
                 shadowOffset: { width: 0, height: 0 },
                 shadowRadius: 15,
                 elevation: 10,
+                transform: [{ scale: isFocused ? 1.02 : 1 }],
+                shadowOpacity: isFocused ? 0.3 : 0,
               }
             ]}
             className="flex-row items-center rounded-2xl px-4 h-[60px] border overflow-hidden"
           >
-            <SearchIcon size={22} color={isFocused ? Colors.primary : Colors.textMuted} />
+            <Pressable onPress={toggleAIMode} className="p-1">
+              <Sparkles size={22} color={isAISearch ? Colors.secondary : Colors.textMuted} />
+            </Pressable>
             <TextInput
               className="flex-1 text-body text-text h-12 mx-3 font-body bg-transparent"
-              placeholder="חפש סרטים, ז'אנרים או שחקנים..."
+              placeholder={isAISearch ? "חיפוש חכם (למשל: 'סרט חלל עצוב')" : "חפש סרטים, ז'אנרים או שחקנים..."}
               placeholderTextColor={Colors.textMuted}
               value={query}
               onChangeText={handleSearch}
@@ -341,17 +262,20 @@ export default function SearchScreen() {
               onBlur={() => setIsFocused(false)}
               autoCorrect={false}
               underlineColorAndroid="transparent"
-              returnKeyType="search"
+              returnKeyType={isAISearch ? "search" : "search"}
+              onSubmitEditing={isAISearch ? executeAISearch : undefined}
               textAlign="right"
-              selectionColor={Colors.primary}
+              selectionColor={isAISearch ? Colors.secondary : Colors.primary}
             />
-            {query.length > 0 && (
+            {query.length > 0 ? (
               <Pressable 
                 onPress={clearSearch} 
                 className="w-8 h-8 rounded-full bg-white/10 justify-center items-center"
               >
                 <X size={16} color={Colors.text} />
               </Pressable>
+            ) : (
+              <SearchIcon size={22} color={isFocused && !isAISearch ? Colors.primary : Colors.textMuted} />
             )}
           </AnimatedRN.View>
         </View>
@@ -359,5 +283,3 @@ export default function SearchScreen() {
     </View>
   );
 }
-
-// NativeWind migration complete - styles object removed

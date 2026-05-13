@@ -1,35 +1,28 @@
 /**
  * Profile Screen - Premium Liquid Glass Redesign
  */
-import { useEffect } from 'react';
-import { View, Text, Pressable, ScrollView, TouchableOpacity, ImageBackground, StyleSheet, Dimensions, Alert, Image } from 'react-native';
-import { API_BASE_URL } from '@/constants/Config';
+import React from 'react';
+import { View, Text, Pressable, ScrollView, TouchableOpacity, ImageBackground, StyleSheet, Dimensions, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { User, Settings, Bell, CreditCard, Shield, ChevronLeft, LogOut, Ticket, Heart, History } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
+import { User, Bell, CreditCard, Shield, ChevronLeft, LogOut, Ticket, Heart, History } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { Colors, Typography } from '@/constants/Theme';
-import { useAuthStore } from '@/store/useAuthStore';
-import { useBookingStore } from '@/store/useBookingStore';
+import { useProfile } from '@/hooks/useProfile';
 
 const { width } = Dimensions.get('window');
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
-  const { user, isAuthenticated, logout } = useAuthStore();
-  const { myTickets, fetchMyTickets } = useBookingStore();
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchMyTickets();
-    }
-  }, [isAuthenticated]);
-
-  const handleLogout = async () => {
-    await logout();
-  };
+  const {
+    user,
+    isAuthenticated,
+    myTickets,
+    handleLogout,
+    sendTestEmail,
+    handleResetOnboarding,
+    navigateToSettings,
+  } = useProfile();
 
   return (
     <View className="flex-1 bg-black">
@@ -55,7 +48,7 @@ export default function ProfileScreen() {
 
         {/* Profile Card */}
         <Animated.View entering={FadeInDown.duration(800).springify()} className="px-5 mb-8">
-        <View className="rounded-[32px] overflow-hidden p-6 border border-white/10 shadow-lg bg-surfaceLight">
+          <View className="rounded-[32px] overflow-hidden p-6 border border-white/10 shadow-lg bg-surfaceLight">
             {isAuthenticated && user ? (
               <View className="items-center">
                 <View className="w-24 h-24 rounded-full bg-primary/20 justify-center items-center border-4 border-primary/50 shadow-xl mb-4 relative overflow-hidden">
@@ -73,11 +66,11 @@ export default function ProfileScreen() {
                 
                 {/* Stats Row */}
                 <View className="flex-row justify-between w-full mt-6 border-t border-white/10 pt-6">
-                  <StatItem title="כרטיסים" value={myTickets.length.toString()} icon={Ticket} color={Colors.secondary} onPress={() => router.push('/tickets' as any)} />
+                  <StatItem title="כרטיסים" value={myTickets.length.toString()} icon={Ticket} color={Colors.secondary} onPress={() => navigateToSettings('/tickets')} />
                   <View className="w-[1px] h-full bg-white/10 mx-2" />
-                  <StatItem title="מועדפים" value={user.watchlist?.length.toString() || '0'} icon={Heart} color={Colors.primary} onPress={() => router.push('/settings/favorites' as any)} />
+                  <StatItem title="מועדפים" value={user.watchlist?.length.toString() || '0'} icon={Heart} color={Colors.primary} onPress={() => navigateToSettings('/settings/favorites')} />
                   <View className="w-[1px] h-full bg-white/10 mx-2" />
-                  <StatItem title="היסטוריה" value={myTickets.length.toString()} icon={History} color="#3B82F6" onPress={() => router.push('/settings/history' as any)} />
+                  <StatItem title="היסטוריה" value={myTickets.length.toString()} icon={History} color="#3B82F6" onPress={() => navigateToSettings('/settings/history')} />
                 </View>
               </View>
             ) : (
@@ -92,9 +85,9 @@ export default function ProfileScreen() {
         <Animated.View entering={FadeInUp.duration(1000).delay(200).springify()} className="px-5 gap-4">
           <Text style={{ fontFamily: 'Rubik-Bold', fontSize: 18, color: 'white', marginBottom: 4 }}>הגדרות חשבון</Text>
           
-          <MenuItem icon={Bell} title="התראות" color={Colors.secondary} onPress={() => router.push('/settings/notifications' as any)} />
-          <MenuItem icon={CreditCard} title="אמצעי תשלום" color={Colors.primary} onPress={() => router.push('/settings/payment' as any)} />
-          <MenuItem icon={Shield} title="אבטחה ופרטיות" color="#3B82F6" onPress={() => router.push('/settings/security' as any)} />
+          <MenuItem icon={Bell} title="התראות" color={Colors.secondary} onPress={() => navigateToSettings('/settings/notifications')} />
+          <MenuItem icon={CreditCard} title="אמצעי תשלום" color={Colors.primary} onPress={() => navigateToSettings('/settings/payment')} />
+          <MenuItem icon={Shield} title="אבטחה ופרטיות" color="#3B82F6" onPress={() => navigateToSettings('/settings/security')} />
           
           {isAuthenticated && (
             <TouchableOpacity 
@@ -114,33 +107,14 @@ export default function ProfileScreen() {
             <Text className="text-white/30 text-xs font-body mb-2 text-center">כלי פיתוח (לצורך בדיקות בלבד)</Text>
             
             <TouchableOpacity 
-              onPress={async () => {
-                try {
-                  const token = useAuthStore.getState().token;
-                  const response = await fetch(`${API_BASE_URL}/auth/test-email`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                  });
-                  const result = await response.json();
-                  if (result.success) {
-                    Alert.alert('הצלחה', 'מייל בדיקה נשלח בהצלחה! בדוק את תיבת הדואר שלך.');
-                  } else {
-                    Alert.alert('שגיאה', result.message || 'שגיאה בשליחת מייל בדיקה');
-                  }
-                } catch (e) {
-                  Alert.alert('שגיאה', 'לא ניתן להתחבר לשרת');
-                }
-              }}
+              onPress={sendTestEmail}
               className="flex-row items-center justify-center p-3 bg-white/5 rounded-xl border border-white/5 mb-2"
             >
               <Text className="text-white/40 font-body text-xs">שלח מייל בדיקה (Test Email)</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
-              onPress={async () => {
-                await useAuthStore.getState().resetOnboarding();
-                Alert.alert('בוצע', 'מצב ה-Onboarding הופס. בפעם הבאה שתפעיל את האפליקציה תראה את המדריך.');
-              }}
+              onPress={handleResetOnboarding}
               className="flex-row items-center justify-center p-3 bg-white/5 rounded-xl border border-white/5"
             >
               <Text className="text-white/40 font-body text-xs">אפס מצב הדרכה (Reset Onboarding)</Text>

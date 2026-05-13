@@ -1,57 +1,46 @@
 /**
  * Movie Details Screen - Full cinematic details with booking flow
  */
-import { useEffect, useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import {
   View,
   Text,
   Image,
   Pressable,
-  ActivityIndicator,
   Dimensions,
   ScrollView,
-  Modal,
 } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { BlurView } from 'expo-blur';
+import LiquidBackground from '@/components/LiquidBackground';
+import { useLocalSearchParams } from 'expo-router';
 import { cssInterop } from 'react-native-css-interop';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
-  useAnimatedScrollHandler,
   useAnimatedStyle,
-  useSharedValue,
   interpolate,
   Extrapolation,
   FadeIn,
-  FadeInDown
+  FadeInDown,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
 import { 
   ArrowRight, 
   Star, 
   Clock, 
-  Calendar, 
   ChevronRight, 
   Ticket, 
-  Heart 
+  Heart,
+  Sparkles,
+  ThumbsUp,
+  ThumbsDown
 } from 'lucide-react-native';
-import * as WebBrowser from 'expo-web-browser';
 
 import { Colors, Typography, BACKDROP_SIZES, POSTER_SIZES } from '@/constants/Theme';
 import MarkerHighlight from '@/components/MarkerHighlight';
 import { Skeleton } from '@/components/Skeleton';
-import {
-  getMovieDetails,
-  getMovieCredits,
-  getGenreName,
-  getMovieVideos,
-  type TMDBMovieDetails,
-  type TMDBCast,
-  type TMDBVideo,
-} from '@/lib/tmdb';
-import { useBookingStore, type Showtime } from '@/store/useBookingStore';
-import { useAuthStore } from '@/store/useAuthStore';
+import { type Showtime } from '@/store/useBookingStore';
+import { useMovieDetails } from '@/hooks/useMovieDetails';
 
 // Interop external components to support NativeWind className
 cssInterop(LinearGradient, { className: 'style' });
@@ -66,50 +55,34 @@ const MOCK_SHOWTIMES: Showtime[] = [
   { id: '4', time: '22:30', format: 'VIP', price: 85, hall: 'אולם VIP' },
 ];
 
-function getNext7Days(): { label: string; date: string; dayName: string }[] {
-  const days = ['א\'', 'ב\'', 'ג\'', 'ד\'', 'ה\'', 'ו\'', 'ש\''];
-  const result = [];
-  for (let i = 0; i < 7; i++) {
-    const d = new Date();
-    d.setDate(d.getDate() + i);
-    result.push({
-      label: d.getDate().toString(),
-      date: d.toISOString().split('T')[0],
-      dayName: i === 0 ? 'היום' : i === 1 ? 'מחר' : days[d.getDay()],
-    });
-  }
-  return result;
-}
-
 export default function MovieDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
   const insets = useSafeAreaInsets();
+  
+  const {
+    movie,
+    cast,
+    videos,
+    loading,
+    insights,
+    scrollY,
+    scrollHandler,
+    dates,
+    selectedDate,
+    selectedShowtime,
+    user,
+    selectDate,
+    handleSelectShowtime,
+    handleBookSeats,
+    handleTrailerPress,
+    handleToggleFavorite,
+    handleBack,
+  } = useMovieDetails(id);
 
-  // 1. Optimized Selectors
-  const selectMovie = useBookingStore(state => state.selectMovie);
-  const selectDate = useBookingStore(state => state.selectDate);
-  const selectShowtime = useBookingStore(state => state.selectShowtime);
-  const selectedDate = useBookingStore(state => state.selectedDate);
-  const selectedShowtime = useBookingStore(state => state.selectedShowtime);
-
-  const { user, toggleFavorite } = useAuthStore();
-
-  const [movie, setMovie] = useState<TMDBMovieDetails | null>(null);
-  const [cast, setCast] = useState<TMDBCast[]>([]);
-  const [videos, setVideos] = useState<TMDBVideo[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showTrailer, setShowTrailer] = useState(false);
-
-  const player = useVideoPlayer('https://assets.mixkit.co/videos/preview/mixkit-stars-in-the-night-sky-out-of-focus-31640-large.mp4', player => {
+  const player = useVideoPlayer('https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', player => {
     player.loop = true;
     player.muted = true;
     player.play();
-  });
-  // 2. Parallax Animation Values
-  const scrollY = useSharedValue(0);
-  const scrollHandler = useAnimatedScrollHandler((event) => {
-    scrollY.value = event.contentOffset.y;
   });
 
   const headerAnimatedStyle = useAnimatedStyle(() => {
@@ -134,54 +107,6 @@ export default function MovieDetailsScreen() {
       ],
     };
   });
-
-  // 3. Memoized dates
-  const dates = useMemo(() => getNext7Days(), []);
-
-  useEffect(() => {
-    if (!id) return;
-    const movieId = parseInt(id, 10);
-
-    let isMounted = true;
-
-    Promise.all([
-      getMovieDetails(movieId), 
-      getMovieCredits(movieId),
-      getMovieVideos(movieId)
-    ])
-      .then(([details, credits, videoData]) => {
-        if (!isMounted) return;
-        setMovie(details);
-        setCast(credits);
-        setVideos(videoData.filter(v => v.site === 'YouTube' && v.type === 'Trailer'));
-
-        selectMovie(movieId, details.title, details.poster_path || '');
-        if (!selectedDate) {
-          selectDate(dates[0].date);
-        }
-      })
-      .catch(err => {
-        console.error('Failed to load movie details:', err);
-      })
-      .finally(() => {
-        if (isMounted) {
-          setTimeout(() => setLoading(false), 300);
-        }
-      });
-
-    return () => { isMounted = false; };
-  }, [id, selectMovie, selectDate, dates]);
-
-  const handleSelectShowtime = (showtime: Showtime) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    selectShowtime(showtime);
-  };
-
-  const handleBookSeats = () => {
-    if (!selectedShowtime) return;
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    router.push('/movie/seats');
-  };
 
   if (loading || !movie) {
     return (
@@ -214,44 +139,64 @@ export default function MovieDetailsScreen() {
         scrollEventThrottle={16}
       >
         {/* Header with Parallax */}
-        <Animated.View className="h-80 w-full overflow-hidden" style={headerAnimatedStyle}>
-          {movie.backdrop_path && (
-            <Image
-              source={{ uri: `${BACKDROP_SIZES.large}${movie.backdrop_path}` }}
-              className="w-full h-full"
-              resizeMode="cover"
-            />
-          )}
-          
-          {/* Cinematic Background Video (Liquid Glass) */}
+        <Animated.View className="h-[450px] w-full overflow-hidden" style={headerAnimatedStyle}>
+          {/* Dynamic Liquid Glass Background */}
+          <View className="absolute inset-0 bg-background">
+            <LiquidBackground movieColor={Colors.primary} />
+            
+            {movie.backdrop_path && (
+              <Animated.View className="absolute inset-0 opacity-60">
+                <Image
+                  source={{ uri: `${BACKDROP_SIZES.large}${movie.backdrop_path}` }}
+                  className="w-full h-full"
+                  resizeMode="cover"
+                />
+              </Animated.View>
+            )}
+            <BlurView intensity={100} tint="dark" className="absolute inset-0" />
+          </View>
+
+          {/* Cinematic Background Video Layer */}
           <VideoView
             player={player}
             nativeControls={false}
             contentFit="cover"
-            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.3 }}
+            style={{ 
+              position: 'absolute', 
+              top: 0, 
+              left: 0, 
+              right: 0, 
+              bottom: 0, 
+              opacity: 0.5,
+              backgroundColor: 'transparent'
+            }}
+            pointerEvents="none"
           />
 
-          {videos.length > 0 && (
+          <LinearGradient
+            colors={['transparent', 'rgba(10,10,12,0.5)', Colors.background]}
+            locations={[0, 0.7, 1]}
+            className="absolute bottom-0 start-0 end-0 h-full"
+            pointerEvents="none"
+          />
+
+          {videos.length > 0 && videos[0]?.key && (
             <Pressable 
-              className="absolute inset-0 items-center justify-center bg-black/20"
-              onPress={async () => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-                await WebBrowser.openBrowserAsync(`https://www.youtube.com/watch?v=${videos[0].key}`);
-              }}
+              className="absolute inset-0 items-center justify-center bg-black/10"
+              style={{ zIndex: 30 }}
+              onPress={handleTrailerPress}
             >
-              <View className="w-16 h-16 rounded-full bg-primary/80 items-center justify-center border-4 border-white/20">
+              <Animated.View 
+                entering={FadeIn.delay(800)}
+                className="w-20 h-20 rounded-full bg-primary/20 items-center justify-center border border-white/20"
+              >
                 <View className="ms-1">
                   <ArrowRight size={32} color="white" style={{ transform: [{ rotate: '180deg' }] }} />
                 </View>
-              </View>
-              <Text className="text-white font-display mt-3 text-h3 shadow-lg">צפה בטריילר</Text>
+              </Animated.View>
+              <Text className="text-white font-display mt-4 text-h3 shadow-lg uppercase tracking-widest">צפה בטריילר המלא</Text>
             </Pressable>
           )}
-          <LinearGradient
-            colors={['transparent', Colors.background]}
-            locations={[0.4, 1]}
-            className="absolute bottom-0 start-0 end-0 h-[60%]"
-          />
         </Animated.View>
 
         {/* Floating buttons */}
@@ -259,100 +204,156 @@ export default function MovieDetailsScreen() {
           <Pressable
             className="absolute start-4"
             style={{ top: insets.top + 10 }}
-            onPress={() => router.back()}
+            onPress={handleBack}
           >
-            <View className="w-10 h-10 rounded-full justify-center items-center overflow-hidden border border-white/10 bg-surfaceLight">
-              <ChevronRight size={24} color={Colors.text} />
-            </View>
+            <BlurView intensity={30} tint="light" className="w-12 h-12 rounded-full overflow-hidden border border-white/20 items-center justify-center">
+              <ChevronRight size={28} color="white" />
+            </BlurView>
           </Pressable>
 
           <Pressable
             className="absolute end-4"
             style={{ top: insets.top + 10 }}
-            onPress={() => {
-              if (movie) {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                toggleFavorite(movie.id);
-              }
-            }}
+            onPress={handleToggleFavorite}
           >
-            <View className="w-10 h-10 rounded-full justify-center items-center overflow-hidden border border-white/10 bg-surfaceLight">
+            <BlurView intensity={30} tint="light" className="w-12 h-12 rounded-full overflow-hidden border border-white/20 items-center justify-center">
               <Heart
-                size={22}
-                color={user?.watchlist.includes(movie?.id || 0) ? Colors.primary : Colors.text}
+                size={24}
+                color={user?.watchlist.includes(movie?.id || 0) ? Colors.primary : "white"}
                 fill={user?.watchlist.includes(movie?.id || 0) ? Colors.primary : 'transparent'}
               />
-            </View>
+            </BlurView>
           </Pressable>
         </View>
 
         {/* Movie Info */}
-        <Animated.View entering={FadeIn.delay(200)} className="-mt-10 px-5">
-          <View className="flex-row-reverse gap-4">
+        <Animated.View entering={FadeIn.delay(200)} className="-mt-32 px-5">
+          <View className="flex-row-reverse gap-6">
             {movie.poster_path && (
-              <Image
-                source={{ uri: `${POSTER_SIZES.medium}${movie.poster_path}` }}
-                className="w-[120px] h-[180px] rounded-2xl border-2 border-white/10 shadow-2xl"
-                resizeMode="cover"
-              />
+              <Animated.View 
+                entering={FadeInDown.delay(300).springify()}
+                className="shadow-2xl"
+              >
+                <Image
+                  source={{ uri: `${POSTER_SIZES.medium}${movie.poster_path}` }}
+                  className="w-[140px] h-[210px] rounded-[24px] border-2 border-white/20"
+                  resizeMode="cover"
+                />
+              </Animated.View>
             )}
-            <View className="flex-1 justify-center items-start">
-              <MarkerHighlight
-                text={movie.title}
-                className="text-h1 text-white mb-2 text-left"
-                color={Colors.primary}
-              />
+            <View className="flex-1 justify-end items-start pb-2">
+              <Text 
+                className="text-h1 text-white mb-2 text-left font-display"
+                style={{ writingDirection: 'ltr', lineHeight: 42 }}
+              >
+                {movie.title}
+              </Text>
+              
               {movie.tagline ? (
                 <Text
-                  className="text-primary italic mt-1 leading-relaxed text-left font-body"
-                  style={[Typography.body, { textAlign: 'left' }]}
+                  className="text-primary italic mt-1 leading-relaxed text-left font-body opacity-90"
+                  style={{ textAlign: 'left', writingDirection: 'ltr' }}
                 >
                   {movie.tagline}
                 </Text>
               ) : null}
-              <View className="flex-row-reverse justify-between items-center py-4 border-y border-white/5 mt-6 w-full">
-                <View className="items-center">
-                  <Text className="text-textMuted text-xs mb-1 font-label">דירוג</Text>
-                  <View className="flex-row items-center">
-                    <Star size={16} color={Colors.secondary} />
-                    <Text className="text-white font-bold ml-1">{movie.vote_average.toFixed(1)}</Text>
-                  </View>
+
+              <View className="flex-row-reverse gap-3 mt-4">
+                <View className="bg-white/10 px-3 py-1.5 rounded-xl border border-white/10">
+                  <Text className="text-white text-xs font-bold">{movie.release_date.split('-')[0]}</Text>
                 </View>
-                <View className="w-[1px] h-8 bg-white/10" />
-                <View className="items-center">
-                  <Text className="text-textMuted text-xs mb-1 font-label">אורך</Text>
-                  <Text className="text-white font-bold">{movie.runtime} דק׳</Text>
-                </View>
-                <View className="w-[1px] h-8 bg-white/10" />
-                <View className="items-center">
-                  <Text className="text-textMuted text-xs mb-1 font-label">ז׳אנר</Text>
-                  <Text className="text-white font-bold" numberOfLines={1}>{movie.genres[0]?.name || 'כללי'}</Text>
+                <View className="bg-primary/20 px-3 py-1.5 rounded-xl border border-primary/20">
+                  <Text className="text-primary text-xs font-bold">{movie.genres[0]?.name || 'כללי'}</Text>
                 </View>
               </View>
             </View>
           </View>
 
+          {/* Quick Stats Bar */}
+          <View className="flex-row-reverse justify-between items-center py-6 border-y border-white/5 mt-8 w-full">
+            <View className="items-center flex-1">
+              <Text className="text-textMuted text-[10px] mb-2 font-label uppercase tracking-widest">דירוג</Text>
+              <View className="flex-row items-center">
+                <Star size={18} color={Colors.secondary} fill={Colors.secondary} />
+                <Text className="text-white font-display text-h3 ml-1.5">{movie.vote_average.toFixed(1)}</Text>
+              </View>
+            </View>
+            <View className="w-[1px] h-10 bg-white/10" />
+            <View className="items-center flex-1">
+              <Text className="text-textMuted text-[10px] mb-2 font-label uppercase tracking-widest">אורך</Text>
+              <View className="flex-row items-center">
+                <Clock size={18} color={Colors.primary} />
+                <Text className="text-white font-display text-h3 ml-1.5">{movie.runtime}m</Text>
+              </View>
+            </View>
+            <View className="w-[1px] h-10 bg-white/10" />
+            <View className="items-center flex-1">
+              <Text className="text-textMuted text-[10px] mb-2 font-label uppercase tracking-widest">שפה</Text>
+              <Text className="text-white font-display text-h3 uppercase">{movie.original_language}</Text>
+            </View>
+          </View>
+
           {/* Overview */}
           {movie.overview ? (
-            <View className="mt-7">
-              <MarkerHighlight text="תקציר" className="text-h2 text-white mb-3 text-right" />
+            <View className="mt-8">
+              <View className="flex-row items-center mb-4">
+                <View className="w-1.5 h-6 bg-primary rounded-full mr-3" />
+                <Text className="text-h2 text-white font-display">סיפור הסרט</Text>
+              </View>
               <Text
                 style={{
                   ...Typography.body,
                   color: Colors.textSecondary,
-                  marginBottom: 24,
+                  lineHeight: 28,
                   textAlign: 'left',
-                  writingDirection: 'rtl',
-                  alignSelf: 'stretch',
-                  width: '100%'
+                  writingDirection: 'ltr',
                 }}
-                className="w-full"
-                numberOfLines={6}
-                ellipsizeMode="tail"
+                className="leading-loose"
               >
                 {movie.overview}
               </Text>
             </View>
+          ) : null}
+
+
+          {/* AI Insights */}
+          {insights ? (
+            <Animated.View entering={FadeInDown.delay(400)} className="mt-8 bg-primary/5 p-6 rounded-[32px] border border-primary/10">
+              <View className="flex-row items-center mb-6">
+                <View className="bg-primary/20 p-2 rounded-xl mr-3">
+                  <Sparkles size={20} color={Colors.primary} />
+                </View>
+                <Text className="text-h2 text-white font-display text-left">תובנות AI</Text>
+              </View>
+
+              <View className="space-y-4">
+                <View className="items-start">
+                  <View className="flex-row items-center mb-2">
+                    <ThumbsUp size={16} color="#22c55e" className="mr-2" />
+                    <Text className="text-white font-bold font-body">מה אנחנו אוהבים:</Text>
+                  </View>
+                  {insights.pros.map((pro, index) => (
+                    <Text key={index} className="text-textSecondary text-left font-body mb-1">• {pro}</Text>
+                  ))}
+                </View>
+
+                <View className="items-start mt-4">
+                  <View className="flex-row items-center mb-2">
+                    <ThumbsDown size={16} color="#ef4444" className="mr-2" />
+                    <Text className="text-white font-bold font-body">פחות אהבנו:</Text>
+                  </View>
+                  {insights.cons.map((con, index) => (
+                    <Text key={index} className="text-textSecondary text-left font-body mb-1">• {con}</Text>
+                  ))}
+                </View>
+
+                <View className="mt-6 pt-6 border-t border-white/5">
+                  <Text className="text-primary font-bold italic text-left font-body leading-relaxed">
+                    "{insights.verdict}"
+                  </Text>
+                </View>
+              </View>
+            </Animated.View>
           ) : null}
 
           {/* Cast */}

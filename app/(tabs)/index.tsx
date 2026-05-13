@@ -1,57 +1,35 @@
 /**
  * Home Screen - Cinematic movie discovery feed
  */
-import { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   FlatList,
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, Typography } from '@/constants/Theme';
+import { Colors } from '@/constants/Theme';
 import HeroSlider from '@/components/HeroSlider';
 import MovieCard from '@/components/MovieCard';
 import SectionHeader from '@/components/SectionHeader';
-import { getNowPlaying, getPopular, getTopRated, type TMDBMovie } from '@/lib/tmdb';
+import AIConciergeModal from '@/components/AIConciergeModal';
+import { AIButton } from '@/components/AIButton';
+import { useHome } from '@/hooks/useHome';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const [nowPlaying, setNowPlaying] = useState<TMDBMovie[]>([]);
-  const [popular, setPopular] = useState<TMDBMovie[]>([]);
-  const [topRated, setTopRated] = useState<TMDBMovie[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const fetchMovies = async () => {
-    try {
-      const [np, pop, tr] = await Promise.all([
-        getNowPlaying(),
-        getPopular(),
-        getTopRated(),
-      ]);
-      setNowPlaying(np);
-      setPopular(pop);
-      setTopRated(tr);
-    } catch (error) {
-      console.error('Failed to fetch movies:', error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchMovies();
-  }, []);
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchMovies();
-  };
+  const {
+    nowPlaying,
+    popular,
+    topRated,
+    loading,
+    refreshing,
+    aiModalVisible,
+    onRefresh,
+    toggleAiModal,
+  } = useHome();
 
   if (loading) {
     return (
@@ -63,60 +41,77 @@ export default function HomeScreen() {
   }
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      style={{ paddingTop: insets.top }}
-      contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor={Colors.primary}
-          colors={[Colors.primary]}
+    <View className="flex-1 bg-background">
+      <ScrollView
+        className="flex-1"
+        style={{ paddingTop: insets.top }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={Colors.primary}
+            colors={[Colors.primary]}
+          />
+        }
+      >
+        {/* Hero */}
+        {nowPlaying.length > 0 && <HeroSlider movies={nowPlaying} />}
+
+        {/* Now Playing */}
+        <SectionHeader title="🎬 עכשיו בקולנוע" />
+        <FlatList
+          data={nowPlaying}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          renderItem={({ item }) => <MovieCard movie={item} />}
+          keyExtractor={(item) => `np-${item.id}`}
+          contentContainerStyle={{ paddingHorizontal: 16 }}
+          scrollEnabled
         />
-      }
-    >
-      {/* Hero */}
-      {nowPlaying.length > 0 && <HeroSlider movies={nowPlaying} />}
 
-      {/* Now Playing */}
-      <SectionHeader title="🎬 עכשיו בקולנוע" />
-      <FlatList
-        data={nowPlaying}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        renderItem={({ item }) => <MovieCard movie={item} />}
-        keyExtractor={(item) => `np-${item.id}`}
-        contentContainerStyle={{ paddingHorizontal: 16 }}
-        scrollEnabled
-      />
+        {/* Popular */}
+        <SectionHeader title="🔥 פופולרי" />
+        <FlatList
+          data={popular}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          renderItem={({ item }) => <MovieCard movie={item} />}
+          keyExtractor={(item) => `pop-${item.id}`}
+          contentContainerStyle={{ paddingHorizontal: 16 }}
+          scrollEnabled
+        />
 
-      {/* Popular */}
-      <SectionHeader title="🔥 פופולרי" />
-      <FlatList
-        data={popular}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        renderItem={({ item }) => <MovieCard movie={item} />}
-        keyExtractor={(item) => `pop-${item.id}`}
-        contentContainerStyle={{ paddingHorizontal: 16 }}
-        scrollEnabled
-      />
+        {/* Top Rated */}
+        <SectionHeader title="⭐ המדורגים ביותר" />
+        <FlatList
+          data={topRated}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          renderItem={({ item }) => <MovieCard movie={item} />}
+          keyExtractor={(item) => `tr-${item.id}`}
+          contentContainerStyle={{ paddingHorizontal: 16 }}
+          scrollEnabled
+        />
+      </ScrollView>
 
-      {/* Top Rated */}
-      <SectionHeader title="⭐ המדורגים ביותר" />
-      <FlatList
-        data={topRated}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        renderItem={({ item }) => <MovieCard movie={item} />}
-        keyExtractor={(item) => `tr-${item.id}`}
-        contentContainerStyle={{ paddingHorizontal: 16 }}
-        scrollEnabled
+      {/* Floating AI Concierge Button */}
+      <View 
+        style={{ 
+          position: 'absolute', 
+          bottom: insets.bottom + 130, 
+          right: 20,
+          zIndex: 99
+        }}
+      >
+        <AIButton onPress={() => toggleAiModal(true)} />
+      </View>
+
+      <AIConciergeModal 
+        visible={aiModalVisible} 
+        onClose={() => toggleAiModal(false)} 
       />
-    </ScrollView>
+    </View>
   );
 }
-
-// NativeWind migration complete - styles object removed

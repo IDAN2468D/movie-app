@@ -1,0 +1,42 @@
+name: CineBook Verification
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: movie-app/package-lock.json
+
+      - name: 📦 Install Dependencies
+        run: |
+          cd movie-app
+          npm ci
+
+      - name: 🔍 Lint Check
+        run: |
+          cd movie-app
+          npm run lint
+
+      - name: 🏗️ Type Check (TSC)
+        run: |
+          cd movie-app
+          npx tsc --noEmit
+
+      - name: 🧪 Unit Tests (Jest)
+        run: |
+          cd movie-app
+          npm test

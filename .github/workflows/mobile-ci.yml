@@ -55,4 +55,26 @@ jobs:
       - name: Build Dry Run (Android)
         working-directory: ./movie-app
         run: npx eas build --platform android --profile development --non-interactive --local --no-wait
-        continue-on-error: true # Since this requires a local environment or EAS credentials
+        continue-on-error: true
+
+  deploy_preview:
+    needs: validate
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        working-directory: ./movie-app
+        run: npm ci
+
+      - name: Publish Update (CD)
+        working-directory: ./movie-app
+        run: npx eas update --auto --non-interactive

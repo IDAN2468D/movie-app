@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "movie-app",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
@@ -36,8 +36,16 @@
       "expo-secure-store",
       "expo-web-browser",
       "@react-native-google-signin/google-signin",
-      "expo-video"
+      "expo-video",
+      "expo-notifications",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "אפשר לסינבוק גישה למצלמה כדי לסרוק כרטיסים."
+        }
+      ]
     ],
+
     "experiments": {
       "typedRoutes": true
     },

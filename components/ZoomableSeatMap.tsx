@@ -247,8 +247,8 @@ export default function ZoomableSeatMap() {
         </Animated.View>
       </GestureDetector>
 
-      {/* Premium Legend - Moved to top to avoid clash with floating UI */}
-      <View className="absolute top-28 flex-row gap-5 px-6 py-2.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-xl">
+      {/* Premium Legend - Moved lower as requested */}
+      <View className="absolute top-40 flex-row gap-5 px-6 py-2.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-xl">
         <LegendItem color="rgba(255,255,255,0.12)" label="פנוי" />
         <LegendItem color={Colors.primary} label="נבחר" />
         <LegendItem color="rgba(255,255,255,0.05)" label="תפוס" />

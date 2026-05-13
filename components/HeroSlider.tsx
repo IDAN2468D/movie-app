@@ -19,9 +19,6 @@ import MarkerHighlight from './MarkerHighlight';
 import { Colors, BACKDROP_SIZES } from '@/constants/Theme';
 import type { TMDBMovie } from '@/lib/tmdb';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const HERO_HEIGHT = 380;
-
 interface HeroSliderProps {
   movies: TMDBMovie[];
 }
@@ -79,7 +76,7 @@ export default function HeroSlider({ movies }: HeroSliderProps) {
           delay={500}
           numberOfLines={1}
         />
-        <View className="flex-row gap-4 mt-2 justify-start">
+        <View className="flex-row-reverse gap-4 mt-2 justify-end">
           <View className="flex-row items-center gap-1">
             <Star size={14} color={Colors.primary} fill={Colors.primary} />
             <Text style={{ fontFamily: 'Rubik-Medium' }} className="text-caption text-textSecondary">{item.vote_average.toFixed(1)}</Text>
@@ -89,7 +86,7 @@ export default function HeroSlider({ movies }: HeroSliderProps) {
             <Text style={{ fontFamily: 'Rubik-Regular' }} className="text-caption text-textSecondary">{item.release_date?.split('-')[0]}</Text>
           </View>
         </View>
-        <Text style={{ fontFamily: 'Rubik-Regular' }} className="text-body text-textSecondary mb-5 opacity-80" numberOfLines={1}>
+        <Text style={{ fontFamily: 'Rubik-Regular', textAlign: 'right' }} className="text-body text-textSecondary mb-5 opacity-80" numberOfLines={1}>
           {item.overview}
         </Text>
       </View>
@@ -110,7 +107,7 @@ export default function HeroSlider({ movies }: HeroSliderProps) {
         viewabilityConfig={viewabilityConfig}
       />
       {/* Dot indicators */}
-      <View className="flex-row justify-center gap-1.5 absolute bottom-3 start-0 end-0">
+      <View className="flex-row-reverse justify-center gap-1.5 absolute bottom-3 start-0 end-0">
         {heroMovies.map((_, i) => (
           <View
             key={i}

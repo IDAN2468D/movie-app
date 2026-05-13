@@ -5,6 +5,7 @@
 import { create } from 'zustand';
 import { API_BASE_URL } from '@/constants/Config';
 import { safeFetch } from './apiHelper';
+import { useAuthStore } from './useAuthStore';
 
 export interface Showtime {
   id: string;
@@ -148,7 +149,6 @@ export const useBookingStore = create<BookingState>((set, get) => ({
     if (!selectedMovieId || !selectedShowtime || selectedSeats.length === 0) return;
 
     try {
-      const { useAuthStore } = require('./useAuthStore');
       const token = useAuthStore.getState().token;
       
       if (!token) {
@@ -186,7 +186,6 @@ export const useBookingStore = create<BookingState>((set, get) => ({
 
   fetchMyTickets: async () => {
     try {
-      const { useAuthStore } = require('./useAuthStore');
       const token = useAuthStore.getState().token;
       
       if (!token) return;
