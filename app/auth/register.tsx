@@ -32,7 +32,7 @@ export default function RegisterScreen() {
   return (
     <View className="flex-1 bg-black">
       <ImageBackground 
-        source={require('../../assets/images/auth_bg.png')}
+        source={require('../../assets/images/cinema_background.jpg')}
         style={StyleSheet.absoluteFill}
         resizeMode="cover"
       >
