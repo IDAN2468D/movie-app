@@ -13,7 +13,7 @@ describe('useForgotPassword', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (useRouter as jest.fn).mockReturnValue({
+    (useRouter as jest.Mock).mockReturnValue({
       back: mockBack,
     });
     jest.useFakeTimers();
