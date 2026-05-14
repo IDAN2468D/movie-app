@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { ChevronRight, Bell, Calendar, Tag } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Typography } from '@/constants/Theme';
+import { NotificationService } from '@/services/NotificationService';
 
 export default function NotificationsScreen() {
   const router = useRouter();
@@ -49,11 +50,20 @@ export default function NotificationsScreen() {
                 <Tag size={20} color={Colors.secondary} />
               </View>
               <View className="ms-4 flex-1">
-                <Text style={{ fontFamily: 'Rubik-Bold', fontSize: 16, color: 'white' }}>מבצעים והטבות</Text>
-                <Text style={{ fontFamily: 'Rubik-Regular', fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>קופונים ומבצעים מיוחדים לחברים</Text>
+                <Text style={{ fontFamily: 'Rubik-Bold', fontSize: 16, color: 'white' }}>מבצעים והנחות</Text>
+                <Text style={{ fontFamily: 'Rubik-Regular', fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>קופונים ומבצעים מיוחדים עבורך</Text>
               </View>
             </View>
-            <Switch value={promos} onValueChange={setPromos} trackColor={{ false: '#3f3f46', true: Colors.secondary }} />
+            <Switch 
+              value={promos} 
+              onValueChange={(value) => {
+                setPromos(value);
+                if (value) {
+                  NotificationService.notifyPromoDeals();
+                }
+              }} 
+              trackColor={{ false: '#3f3f46', true: Colors.secondary }} 
+            />
           </View>
 
           <View className="flex-row items-center justify-between p-5">

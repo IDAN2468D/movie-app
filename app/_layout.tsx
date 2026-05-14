@@ -25,12 +25,11 @@ cssInterop(LinearGradient, { className: 'style' });
 
 
 // 1. RTL initialization - Force Right-to-Left for Hebrew
-// This must happen outside the component to take effect as early as possible
 if (!I18nManager.isRTL) {
   try {
     I18nManager.allowRTL(true);
     I18nManager.forceRTL(true);
-    // On some platforms, we need to reload to apply native-side RTL
+    // On some platforms, we need to reload to apply native-side changes
     if (typeof DevSettings !== 'undefined' && DevSettings?.reload) {
       DevSettings.reload();
     }

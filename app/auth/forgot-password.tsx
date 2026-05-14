@@ -1,7 +1,7 @@
 /**
  * Forgot Password Screen - Premium Cinematic Experience
  */
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   View, 
   Text, 
@@ -28,6 +28,7 @@ export default function ForgotPasswordScreen() {
     handleResetPassword,
     navigateBack,
   } = useForgotPassword();
+  const [focusedField, setFocusedField] = useState<string | null>(null);
 
   return (
     <View className="flex-1 bg-black">
@@ -47,18 +48,19 @@ export default function ForgotPasswordScreen() {
           onPress={navigateBack}
           className="w-12 h-12 bg-white/10 rounded-full items-center justify-center border border-white/20 backdrop-blur-md"
         >
-          <ArrowRight size={24} color="white" />
+          <ChevronLeft size={24} color="white" />
         </TouchableOpacity>
       </View>
 
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
+        style={{ direction: 'ltr' }}
       >
         <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
           <View className="flex-1 justify-end px-6 pb-12">
             
-            <Animated.View entering={FadeInUp.duration(1000).springify()} className="items-end">
+            <Animated.View entering={FadeInUp.duration(1000).springify()} style={{ alignItems: 'flex-start' }}>
               <Text style={[Typography.hero, { fontFamily: 'Rubik-Bold', textAlign: 'left' }]} className="text-white text-5xl leading-tight w-full">
                 שכחתם{'\n'}
                 <Text className="text-[#E50914]">סיסמה?</Text>
@@ -76,19 +78,29 @@ export default function ForgotPasswordScreen() {
                     <Text className="text-white/60 mt-4 font-[Rubik-Regular]">שולח קישור...</Text>
                   </View>
                 ) : (
-                  <View className="items-start">
+                  <View style={{ alignItems: 'flex-start' }}>
                     {/* Email */}
-                    <View className="flex-row items-center bg-white/5 border border-white/10 rounded-2xl px-4 py-4 mb-8 w-full">
-                      <Mail size={20} color="rgba(255,255,255,0.5)" />
+                    <View 
+                      className={`flex-row items-center rounded-2xl px-4 py-4 mb-8 w-full border-2 transition-all duration-300 ${
+                        focusedField === 'email' ? 'border-[#E50914] bg-[#E50914]/5' : 'border-white/10 bg-white/5'
+                      }`}
+                      style={{ flexDirection: 'row' }}
+                    >
+                      <Mail 
+                        size={20} 
+                        color={focusedField === 'email' ? '#E50914' : 'rgba(255,255,255,0.5)'} 
+                      />
                       <TextInput
                         placeholder="כתובת אימייל"
                         placeholderTextColor="rgba(255,255,255,0.4)"
                         keyboardType="email-address"
                         autoCapitalize="none"
-                        style={{ fontFamily: 'Rubik-Regular' }}
-                        className="flex-1 ms-3 text-white text-base text-right"
+                        style={{ fontFamily: 'Rubik-Regular', marginLeft: 12, textAlign: 'left' }}
+                        className="flex-1 text-white text-base"
                         value={email}
                         onChangeText={setEmail}
+                        onFocus={() => setFocusedField('email')}
+                        onBlur={() => setFocusedField(null)}
                       />
                     </View>
 
@@ -96,8 +108,8 @@ export default function ForgotPasswordScreen() {
                       onPress={handleResetPassword}
                       className="w-full bg-[#E50914] rounded-2xl py-4 items-center flex-row justify-center shadow-lg shadow-red-600/30"
                     >
-                      <Text style={[Typography.h3, { fontFamily: 'Rubik-Bold' }]} className="text-white me-2">שליחת קישור</Text>
-                      <ChevronLeft size={20} color="white" />
+                      <Text style={[Typography.h3, { fontFamily: 'Rubik-Bold', marginRight: 8 }]} className="text-white">שליחת קישור</Text>
+                      <ChevronLeft size={20} color="white" style={{ transform: [{ rotate: '180deg' }] }} />
                     </TouchableOpacity>
                   </View>
                 )}

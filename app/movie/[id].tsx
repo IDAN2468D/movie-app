@@ -25,10 +25,10 @@ import Animated, {
   FadeInDown,
 } from 'react-native-reanimated';
 import { 
-  ArrowRight, 
-  Star, 
-  Clock, 
   ChevronRight, 
+  ChevronLeft,
+  Star,
+  Clock,
   Ticket, 
   Heart,
   Sparkles,
@@ -190,8 +190,8 @@ export default function MovieDetailsScreen() {
                 entering={FadeIn.delay(800)}
                 className="w-20 h-20 rounded-full bg-primary/20 items-center justify-center border border-white/20"
               >
-                <View className="ms-1">
-                  <ArrowRight size={32} color="white" style={{ transform: [{ rotate: '180deg' }] }} />
+                <View className="me-1">
+                  <ChevronLeft size={32} color="white" />
                 </View>
               </Animated.View>
               <Text className="text-white font-display mt-4 text-h3 shadow-lg uppercase tracking-widest">צפה בטריילר המלא</Text>
@@ -228,7 +228,7 @@ export default function MovieDetailsScreen() {
 
         {/* Movie Info */}
         <Animated.View entering={FadeIn.delay(200)} className="-mt-32 px-5">
-          <View className="flex-row-reverse gap-6">
+          <View className="flex-row gap-6">
             {movie.poster_path && (
               <Animated.View 
                 entering={FadeInDown.delay(300).springify()}
@@ -243,22 +243,22 @@ export default function MovieDetailsScreen() {
             )}
             <View className="flex-1 justify-end items-start pb-2">
               <Text 
-                className="text-h1 text-white mb-2 text-left font-display"
-                style={{ writingDirection: 'ltr', lineHeight: 42 }}
+                className="text-h1 text-white mb-2 text-right font-display"
+                style={{ writingDirection: 'rtl', lineHeight: 42 }}
               >
                 {movie.title}
               </Text>
               
               {movie.tagline ? (
                 <Text
-                  className="text-primary italic mt-1 leading-relaxed text-left font-body opacity-90"
-                  style={{ textAlign: 'left', writingDirection: 'ltr' }}
+                  className="text-primary italic mt-1 leading-relaxed text-right font-body opacity-90"
+                  style={{ textAlign: 'right', writingDirection: 'rtl' }}
                 >
                   {movie.tagline}
                 </Text>
               ) : null}
 
-              <View className="flex-row-reverse gap-3 mt-4">
+              <View className="flex-row gap-3 mt-4">
                 <View className="bg-white/10 px-3 py-1.5 rounded-xl border border-white/10">
                   <Text className="text-white text-xs font-bold">{movie.release_date.split('-')[0]}</Text>
                 </View>
@@ -270,7 +270,7 @@ export default function MovieDetailsScreen() {
           </View>
 
           {/* Quick Stats Bar */}
-          <View className="flex-row-reverse justify-between items-center py-6 border-y border-white/5 mt-8 w-full">
+          <View className="flex-row justify-between items-center py-6 border-y border-white/5 mt-8 w-full">
             <View className="items-center flex-1">
               <Text className="text-textMuted text-[10px] mb-2 font-label uppercase tracking-widest">דירוג</Text>
               <View className="flex-row items-center">
@@ -358,8 +358,8 @@ export default function MovieDetailsScreen() {
 
           {/* Cast */}
           {cast.length > 0 ? (
-            <View className="mt-2 items-end">
-              <MarkerHighlight text="שחקנים" className="text-h2 text-white mb-4 text-right" />
+            <View className="mt-2 items-start">
+              <MarkerHighlight text="שחקנים" className="text-h2 text-white mb-4 text-left" />
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -384,7 +384,7 @@ export default function MovieDetailsScreen() {
 
           {/* Date Selection */}
           <View className="mt-8 items-start">
-            <MarkerHighlight text="בחירת תאריך" className="text-h2 text-white mb-4 text-right" />
+            <MarkerHighlight text="בחירת תאריך" className="text-h2 text-white mb-4 text-left" />
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -422,9 +422,9 @@ export default function MovieDetailsScreen() {
           </View>
 
           {/* Showtimes */}
-          <View className="mt-7 items-end">
-            <View className="px-0 w-full items-end">
-              <MarkerHighlight text="שעות הקרנה" className="text-h2 text-white mb-3 text-right" />
+          <View className="mt-7 items-start">
+            <View className="px-0 w-full items-start">
+              <MarkerHighlight text="שעות הקרנה" className="text-h2 text-white mb-3 text-left" />
             </View>
             <ScrollView
               horizontal
@@ -487,15 +487,8 @@ export default function MovieDetailsScreen() {
           }}
         >
           <View
-            className="flex-row-reverse items-center justify-between px-6 py-4 bg-surface"
+            className="flex-row items-center justify-between px-6 py-4 bg-surface"
           >
-            <View className="gap-0 items-end">
-              <Text className="text-h1 text-white font-display">₪{selectedShowtime.price}</Text>
-              <Text className="text-caption text-textSecondary -mt-1 font-body">
-                {selectedShowtime.time} • {selectedShowtime.format}
-              </Text>
-            </View>
-            
             <Pressable
               onPress={handleBookSeats}
               className="rounded-2xl overflow-hidden"
@@ -507,12 +500,19 @@ export default function MovieDetailsScreen() {
                 colors={[Colors.primary, Colors.secondary]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
-                className="flex-row-reverse items-center gap-2 px-8 py-3.5"
+                className="flex-row items-center gap-2 px-8 py-3.5"
               >
                 <Ticket size={20} color={Colors.background} />
                 <Text className="text-background font-bold text-h3 font-display">הזמן מושבים</Text>
               </LinearGradient>
             </Pressable>
+
+            <View className="gap-0 items-end">
+              <Text className="text-h1 text-white font-display">₪{selectedShowtime.price}</Text>
+              <Text className="text-caption text-textSecondary -mt-1 font-body">
+                {selectedShowtime.time} • {selectedShowtime.format}
+              </Text>
+            </View>
           </View>
         </Animated.View>
       )}

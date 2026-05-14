@@ -6,8 +6,21 @@ import { View, Text, Image, Pressable, ScrollView, Modal } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ArrowRight, CreditCard, ShieldCheck, Ticket, CheckCircle2 } from 'lucide-react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import { ArrowLeft, CreditCard, ShieldCheck, Ticket, CheckCircle2, Sparkles } from 'lucide-react-native';
+import Animated, { 
+  FadeInDown, 
+  FadeIn, 
+  ZoomIn, 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withSpring, 
+  withRepeat, 
+  withTiming,
+  withSequence,
+  withDelay,
+  FadeOut
+} from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import { cssInterop } from 'react-native-css-interop';
 
 import { Colors, POSTER_SIZES } from '@/constants/Theme';
@@ -20,6 +33,15 @@ cssInterop(BlurView, { className: 'style' });
 
 export default function CheckoutScreen() {
   const insets = useSafeAreaInsets();
+  
+  // Success animation styles - must be at top level, before any returns
+  const ticketAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: withRepeat(withTiming(15, { duration: 2000 }), -1, true) },
+      { rotateZ: withRepeat(withTiming('1deg', { duration: 2500 }), -1, true) }
+    ]
+  }));
+
   const {
     selectedMovieTitle,
     selectedMoviePoster,
@@ -37,14 +59,32 @@ export default function CheckoutScreen() {
     goBack,
   } = useCheckout();
 
+  const [showAnimation, setShowAnimation] = React.useState(false);
+  const [showModal, setShowModal] = React.useState(false);
+
+  React.useEffect(() => {
+    if (isSuccess) {
+      setShowAnimation(true);
+      // Extra haptics for the reveal
+      setTimeout(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success), 500);
+      
+      const timer = setTimeout(() => {
+        setShowAnimation(false);
+        setShowModal(true);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [isSuccess]);
+
+
   if (!selectedShowtime) return null;
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       {/* Header */}
-      <View className="flex-row-reverse items-center px-4 py-2 gap-3">
+      <View className="flex-row items-center px-4 py-2 gap-3">
         <Pressable onPress={goBack} className="w-10 h-10 rounded-full bg-surface justify-center items-center">
-          <ArrowRight size={22} color={Colors.text} />
+          <ArrowLeft size={22} color={Colors.text} />
         </Pressable>
         <Text className="text-h3 text-white font-display">סיכום הזמנה</Text>
       </View>
@@ -52,7 +92,7 @@ export default function CheckoutScreen() {
       <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
         {/* Movie Summary Card */}
         <View className="mt-6 rounded-3xl overflow-hidden border border-white/10 bg-surfaceLight p-4">
-          <View className="flex-row-reverse gap-4">
+          <View className="flex-row gap-4">
             {selectedMoviePoster ? (
               <Image 
                 source={{ uri: `${POSTER_SIZES.medium}${selectedMoviePoster}` }}
@@ -66,7 +106,7 @@ export default function CheckoutScreen() {
             )}
             <View className="flex-1 justify-center items-start">
               <MarkerHighlight text={selectedMovieTitle} className="text-h2 text-white mb-2" />
-              <View className="flex-row-reverse items-center gap-2 mb-1">
+              <View className="flex-row items-center gap-2 mb-1">
                 <Ticket size={14} color={Colors.primary} />
                 <Text className="text-caption text-textSecondary font-body">
                   {selectedShowtime.hall} • {selectedShowtime.format}
@@ -80,9 +120,9 @@ export default function CheckoutScreen() {
         </View>
 
         {/* Selected Seats */}
-        <View className="mt-8 items-end">
+        <View className="mt-8 items-start">
           <Text className="text-h3 text-white mb-4 font-display">מושבים שנבחרו</Text>
-          <View className="flex-row flex-wrap gap-2 justify-end">
+          <View className="flex-row flex-wrap gap-2 justify-start">
             {selectedSeats.map((seat) => (
               <View key={`${seat.row}-${seat.number}`} className="bg-surfaceLight px-4 py-2 rounded-xl border border-white/5 items-center">
                 <Text className="text-body text-white font-semibold">
@@ -103,24 +143,24 @@ export default function CheckoutScreen() {
             <Text className="text-body text-white font-display">₪{totalPrice.toFixed(2)}</Text>
           </View>
           {snacksTotal > 0 && (
-            <View className="flex-row justify-between mb-4">
+            <View className="flex-row-reverse justify-between mb-4">
               <Text className="text-body text-textSecondary font-body">נשנושים ({snacksInCart.length})</Text>
               <Text className="text-body text-white font-display">₪{snacksTotal.toFixed(2)}</Text>
             </View>
           )}
-          <View className="flex-row justify-between mb-4">
+          <View className="flex-row-reverse justify-between mb-4">
             <Text className="text-body text-textSecondary font-body">עמלת הזמנה</Text>
             <Text className="text-body text-white font-display">₪4.00</Text>
           </View>
           <View className="h-[1px] bg-white/5 my-2" />
-          <View className="flex-row justify-between mt-2">
+          <View className="flex-row-reverse justify-between mt-2">
             <Text className="text-h2 text-white font-display">סה״כ לתשלום</Text>
             <Text className="text-h2 text-secondary font-display">₪{finalTotal.toFixed(2)}</Text>
           </View>
         </View>
 
         {/* Security Note */}
-        <View className="mt-6 flex-row-reverse items-center justify-center gap-2 opacity-50 mb-10">
+        <View className="mt-6 flex-row items-center justify-center gap-2 opacity-50 mb-10">
           <ShieldCheck size={16} color={Colors.textSecondary} />
           <Text className="text-caption text-textSecondary font-body">תשלום מאובטח באמצעות SSL</Text>
         </View>
@@ -140,7 +180,7 @@ export default function CheckoutScreen() {
             colors={[Colors.primary, '#9B1B30']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
-            className="flex-1 flex-row-reverse items-center justify-center gap-3"
+            className="flex-1 flex-row items-center justify-center gap-3"
           >
             <CreditCard size={20} color="white" />
             <Text className="text-white font-bold text-h3 font-display uppercase tracking-wider">
@@ -150,8 +190,107 @@ export default function CheckoutScreen() {
         </Pressable>
       </View>
 
+      {/* Cinematic Success Animation Overlay */}
+      {showAnimation && (
+        <Animated.View 
+          entering={FadeIn.duration(800)}
+          exiting={FadeOut.duration(500)}
+          className="absolute inset-0 z-50 items-center justify-center bg-black/95"
+        >
+          <BlurView intensity={30} tint="dark" className="absolute inset-0" />
+          
+          
+          {/* Animated Background Glows */}
+          <Animated.View 
+            entering={FadeIn.delay(200)}
+            className="absolute w-[500px] h-[500px] rounded-full bg-primary/20 blur-[100px]"
+            style={{ top: '10%', left: '-20%' }}
+          />
+          <Animated.View 
+            entering={FadeIn.delay(400)}
+            className="absolute w-[400px] h-[400px] rounded-full bg-secondary/15 blur-[80px]"
+            style={{ bottom: '10%', right: '-10%' }}
+          />
+
+          <Animated.View 
+            entering={ZoomIn.delay(400).duration(1000).springify().damping(15)}
+            className="items-center z-10 overflow-visible"
+          >
+            {/* The Golden Ticket with Floating Animation */}
+            <Animated.View 
+              className="shadow-2xl shadow-secondary/60 relative"
+              entering={FadeInDown.delay(600).duration(800)}
+              style={ticketAnimatedStyle}
+            >
+              {/* Corner Success Badge on Ticket */}
+              <Animated.View 
+                entering={ZoomIn.delay(1200)}
+                className="absolute -top-4 -right-4 w-12 h-12 bg-secondary rounded-full items-center justify-center z-30 shadow-lg border-4 border-black"
+              >
+                <CheckCircle2 size={24} color={Colors.background} />
+              </Animated.View>
+
+              {/* Sparkles on Ticket Corners */}
+              <Animated.View 
+                entering={FadeIn.delay(1400)}
+                className="absolute -top-8 -left-8 z-20"
+              >
+                <Sparkles size={40} color={Colors.secondary} />
+              </Animated.View>
+              <Animated.View 
+                entering={FadeIn.delay(1600)}
+                className="absolute -bottom-6 -right-6 z-20"
+              >
+                <Sparkles size={30} color={Colors.white} />
+              </Animated.View>
+
+              <Image 
+                source={require('../../assets/images/golden_ticket.png')}
+                style={{ width: 310, height: 175, borderRadius: 24 }}
+                resizeMode="contain"
+              />
+              
+              {/* Shine effect overlay */}
+              <Animated.View 
+                className="absolute inset-0 bg-white/20 rounded-3xl overflow-hidden"
+                entering={FadeIn.delay(1000).duration(2000)}
+              >
+                <LinearGradient
+                  colors={['transparent', 'rgba(255,255,255,0.4)', 'transparent']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  className="absolute inset-0"
+                  style={{ transform: [{ translateX: -100 }] }}
+                />
+              </Animated.View>
+            </Animated.View>
+
+            <Animated.View 
+              entering={FadeInDown.delay(1200).springify().damping(12)}
+              className="mt-16 items-center bg-white/5 p-8 rounded-[40px] border border-white/10 backdrop-blur-md"
+            >
+              <Text className="text-secondary text-3xl font-bold tracking-[4px] uppercase mb-3 text-center" style={{ fontFamily: 'Outfit-Bold' }}>
+                הזמנה אושרה!
+              </Text>
+              <View className="h-1 w-20 bg-secondary/30 rounded-full mb-4" />
+              <Text className="text-white/80 text-xl text-center px-6 leading-relaxed" style={{ fontFamily: 'Inter-Regular' }}>
+                הסרט <Text className="text-white font-bold">{selectedMovieTitle}</Text> מחכה לך.{'\n'}תהנה מחוויה קולנועית מושלמת.
+              </Text>
+            </Animated.View>
+          </Animated.View>
+
+          {/* Bottom hint */}
+          <Animated.View 
+            entering={FadeIn.delay(3000)}
+            className="absolute bottom-12 items-center"
+          >
+            <Text className="text-white/30 text-xs font-label uppercase tracking-widest">טוען כרטיסים דיגיטליים...</Text>
+          </Animated.View>
+        </Animated.View>
+      )}
+
       {/* Success Modal */}
-      <Modal visible={isSuccess} transparent animationType="fade">
+      <Modal visible={showModal} transparent animationType="fade">
         <View className="flex-1 bg-black/80 items-center justify-center px-8">
           <BlurView intensity={40} tint="dark" className="absolute inset-0" />
           <Animated.View 
@@ -161,8 +300,8 @@ export default function CheckoutScreen() {
             <View className="w-20 h-20 rounded-full bg-secondary items-center justify-center mb-6">
               <CheckCircle2 size={48} color={Colors.background} />
             </View>
-            <MarkerHighlight text="הזמנה בוצעה בהצלחה!" className="text-h2 text-white mb-2 text-center" />
-            <Text className="text-body text-textSecondary text-right mb-8 font-body">
+            <MarkerHighlight text="הזמנה בוצעה בהצלחה!" className="text-h2 text-white mb-2 text-left" />
+            <Text className="text-body text-textSecondary text-left mb-8 font-body">
               הכרטיסים שלך מחכים לך באזור האישי.{'\n'}
               שלחנו לך גם אימייל עם קוד ה-QR לסריקה מהירה בכניסה.
             </Text>

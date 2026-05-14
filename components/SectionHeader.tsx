@@ -2,7 +2,7 @@
  * SectionHeader - Reusable RTL section title with optional "See All"
  */
 import { View, Text, TouchableOpacity, StyleSheet, I18nManager } from 'react-native';
-import { ChevronLeft } from 'lucide-react-native';
+import { ChevronRight } from 'lucide-react-native';
 import MarkerHighlight from './MarkerHighlight';
 import { Colors, Typography } from '@/constants/Theme';
 
@@ -22,7 +22,7 @@ export default function SectionHeader({ title, onSeeAll }: SectionHeaderProps) {
       {onSeeAll && (
         <TouchableOpacity onPress={onSeeAll} className="flex-row items-center gap-1">
           <Text style={[Typography.caption, { color: Colors.primary, fontFamily: 'Rubik-Bold' }]}>הכל</Text>
-          <ChevronLeft size={16} color={Colors.primary} />
+          <ChevronRight size={16} color={Colors.primary} />
         </TouchableOpacity>
       )}
     </View>

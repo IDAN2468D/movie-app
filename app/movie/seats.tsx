@@ -47,7 +47,7 @@ export default function SeatsScreen() {
 
       {/* Header with better hierarchy */}
       <View 
-        className="flex-row-reverse items-center px-6 pb-4 pt-2 gap-4 z-20"
+        className="flex-row items-center px-6 pb-4 pt-2 gap-4 z-20"
         style={{ marginTop: insets.top }}
       >
         <Pressable 
@@ -57,11 +57,11 @@ export default function SeatsScreen() {
           <ChevronRight size={24} color="white" />
         </Pressable>
         
-        <View className="flex-1 items-end">
-          <Animated.Text entering={FadeInRight.delay(200)} className="text-h2 text-white font-display text-right leading-tight">
+        <View className="flex-1 items-start">
+          <Animated.Text entering={FadeInRight.delay(200)} className="text-h2 text-white font-display text-left leading-tight">
             {selectedMovieTitle}
           </Animated.Text>
-          <View className="flex-row-reverse items-center gap-2 mt-1">
+          <View className="flex-row items-center gap-2 mt-1">
             <View className="px-2 py-0.5 rounded-md bg-primary/20 border border-primary/30">
               <Text className="text-[10px] text-primary font-bold">{selectedShowtime?.hall}</Text>
             </View>
@@ -87,19 +87,19 @@ export default function SeatsScreen() {
             entering={FadeInDown} 
             className="px-6 mb-6"
           >
-            <View className="flex-row-reverse items-center justify-between mb-3 px-1">
+            <View className="flex-row items-center justify-between mb-3 px-1">
               <Text className="text-label text-white/70 font-display">מושבים שנבחרו</Text>
-              <View className="flex-row-reverse items-center gap-1">
+              <View className="flex-row items-center gap-1">
                 <Info size={12} color="rgba(255,255,255,0.4)" />
                 <Text className="text-[10px] text-white/40">לחץ לביטול</Text>
               </View>
             </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row-reverse', paddingLeft: 20 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', paddingRight: 20 }}>
               {selectedSeats.map((seat, index) => (
                 <Animated.View 
                   key={`${seat.row}-${seat.number}`}
                   entering={FadeInRight.delay(index * 100)}
-                  className="bg-white/10 border border-white/20 px-5 py-3 rounded-2xl ml-3 items-center backdrop-blur-md shadow-lg"
+                  className="bg-white/10 border border-white/20 px-5 py-3 rounded-2xl mr-3 items-center backdrop-blur-md shadow-lg"
                 >
                   <Text className="text-h3 text-white font-display">{seat.row}{seat.number}</Text>
                   <View className="w-4 h-0.5 bg-primary/40 rounded-full mt-1" />
@@ -117,17 +117,7 @@ export default function SeatsScreen() {
             className="px-6 pt-6 border-t border-white/10 rounded-t-[40px] overflow-hidden"
             style={{ paddingBottom: Math.max(insets.bottom + 16, 32) }}
           >
-            <View className="flex-row-reverse items-center justify-between">
-              {/* Total Price Section */}
-              <View className="items-end">
-                <Text className="text-[10px] text-white/40 font-bold uppercase tracking-widest mb-0.5">סה"כ לתשלום</Text>
-                <Text style={{ textAlign: 'right' }}>
-                  <Text className="text-h1 text-white font-display">₪{totalPrice.toFixed(0)}</Text>
-                  <Text className="text-caption text-primary font-bold">.00</Text>
-                </Text>
-                <Text className="text-[10px] text-white/30 font-medium">עבור {selectedSeats.length} מושבים</Text>
-              </View>
-
+            <View className="flex-row items-center justify-between">
               {/* Enhanced Action Button */}
               <Pressable 
                 onPress={handleConfirm}
@@ -145,7 +135,7 @@ export default function SeatsScreen() {
                     colors={selectedSeats.length > 0 ? [Colors.primary, '#D40054'] : ['#27272A', '#18181B']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
-                    className="flex-row-reverse items-center gap-3 px-8 py-4 min-w-[160px] justify-center"
+                    className="flex-row items-center gap-3 px-8 py-4 min-w-[160px] justify-center"
                   >
                     <Text className={`font-bold text-h3 font-display ${selectedSeats.length > 0 ? 'text-white' : 'text-white/20'}`}>
                       הזמן עכשיו
@@ -154,6 +144,16 @@ export default function SeatsScreen() {
                   </LinearGradient>
                 </Animated.View>
               </Pressable>
+
+              {/* Total Price Section */}
+              <View className="items-end">
+                <Text className="text-[10px] text-white/40 font-bold uppercase tracking-widest mb-0.5">סה"כ לתשלום</Text>
+                <Text style={{ textAlign: 'right' }}>
+                  <Text className="text-h1 text-white font-display">₪{totalPrice.toFixed(0)}</Text>
+                  <Text className="text-caption text-primary font-bold">.00</Text>
+                </Text>
+                <Text className="text-[10px] text-white/30 font-medium text-right">עבור {selectedSeats.length} מושבים</Text>
+              </View>
             </View>
           </BlurView>
         </Animated.View>

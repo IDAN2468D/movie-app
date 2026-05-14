@@ -26,6 +26,7 @@ import {
   Filter, 
   Sparkles, 
   Calendar,
+  ChevronRight,
   ChevronLeft
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
@@ -216,7 +217,7 @@ export default function SearchScreen() {
               <View className="bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-xl">
                  <Text className="text-primary text-[11px] font-bold" style={{ fontFamily: 'Rubik-Bold' }}>פרטים נוספים</Text>
               </View>
-              <ChevronLeft size={18} color={Colors.textMuted} style={{ transform: [{ rotate: '180deg' }] }} />
+              <ChevronLeft size={18} color={Colors.textMuted} />
             </View>
           </View>
         </View>
@@ -244,7 +245,7 @@ export default function SearchScreen() {
             {!searched && renderDiscovery()}
             {searched && results.length > 0 && (
               <View className="px-10 mt-6 mb-2">
-                <Text className="text-textMuted text-[14px] text-right" style={{ fontFamily: 'Rubik-Medium' }}>מצאנו {results.length} תוצאות</Text>
+                <Text className="text-textMuted text-[14px] text-left" style={{ fontFamily: 'Rubik-Medium' }}>מצאנו {results.length} תוצאות</Text>
               </View>
             )}
           </View>
@@ -299,7 +300,7 @@ export default function SearchScreen() {
               underlineColorAndroid="transparent"
               returnKeyType={isAISearch ? "search" : "search"}
               onSubmitEditing={isAISearch ? executeAISearch : undefined}
-              textAlign="right"
+              textAlign="left"
               selectionColor={isAISearch ? Colors.secondary : Colors.primary}
               style={{ fontFamily: 'Rubik-Regular' }}
             />

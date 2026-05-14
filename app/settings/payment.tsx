@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Typography } from '@/constants/Theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuthStore } from '@/store/useAuthStore';
-import Animated, { FadeIn, FadeInDown, SlideInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 // ── Validation Helpers ──
 const luhnCheck = (num: string): boolean => {
@@ -25,7 +25,7 @@ const luhnCheck = (num: string): boolean => {
   return sum % 10 === 0;
 };
 
-const getCardBrand = (num: string): { brand: string; color: string[]; maxLen: number } => {
+const getCardBrand = (num: string): { brand: string; color: [string, string]; maxLen: number } => {
   const d = num.replace(/\D/g, '');
   if (/^4/.test(d)) return { brand: 'VISA', color: ['#1A1F71', '#1434CB'], maxLen: 16 };
   if (/^5[1-5]/.test(d)) return { brand: 'MASTERCARD', color: ['#EB001B', '#F79E1B'], maxLen: 16 };
@@ -178,8 +178,8 @@ export default function PaymentScreen() {
     props?: any,
     ref?: any,
   ) => (
-    <Animated.View entering={FadeInUp.delay(props?.delay || 0).duration(300)} style={{ marginBottom: 18 }}>
-      <Text style={{ fontFamily: 'Rubik-Medium', color: error ? '#FF6B6B' : 'rgba(255,255,255,0.55)', marginBottom: 8, fontSize: 13, textAlign: 'right' }}>
+    <View style={{ marginBottom: 18 }}>
+      <Text style={{ fontFamily: 'Rubik-Medium', color: error ? '#FF6B6B' : 'rgba(255,255,255,0.55)', marginBottom: 8, fontSize: 13, textAlign: 'left' }}>
         {label}
       </Text>
       <View style={{ borderWidth: 1.5, borderColor: error ? '#FF6B6B' : 'rgba(255,255,255,0.08)', borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.04)', overflow: 'hidden' }}>
@@ -193,12 +193,12 @@ export default function PaymentScreen() {
         />
       </View>
       {error && (
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6, justifyContent: 'flex-end' }}>
-          <Text style={{ fontFamily: 'Rubik-Regular', color: '#FF6B6B', fontSize: 12, marginEnd: 4 }}>{error}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6, justifyContent: 'flex-start' }}>
           <AlertCircle size={12} color="#FF6B6B" />
+          <Text style={{ fontFamily: 'Rubik-Regular', color: '#FF6B6B', fontSize: 12, marginStart: 4 }}>{error}</Text>
         </View>
       )}
-    </Animated.View>
+    </View>
   );
 
   return (
@@ -214,7 +214,7 @@ export default function PaymentScreen() {
       </View>
 
       <ScrollView className="flex-1 px-5 py-6" showsVerticalScrollIndicator={false}>
-        <Text style={{ fontFamily: 'Rubik-Bold', fontSize: 18, color: 'white', marginBottom: 16, textAlign: 'right' }}>כרטיסים שמורים</Text>
+        <Text style={{ fontFamily: 'Rubik-Bold', fontSize: 18, color: 'white', marginBottom: 16, textAlign: 'left' }}>כרטיסים שמורים</Text>
 
         {user?.paymentMethods && user.paymentMethods.length > 0 ? (
           user.paymentMethods.map((method, index) => {
@@ -264,40 +264,39 @@ export default function PaymentScreen() {
         )}
 
         {/* Add Card Button */}
-        <Pressable onPress={openModal} style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', padding: 18, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 20, borderWidth: 1.5, borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.1)', opacity: pressed ? 0.7 : 1 }]}>
-          <View style={{ width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-            <Plus size={22} color={Colors.primary} />
+        <Pressable onPress={openModal} style={({ pressed }) => [{ alignItems: 'center', padding: 24, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 24, borderWidth: 1.5, borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.1)', opacity: pressed ? 0.7 : 1 }]}>
+          <Text style={{ fontFamily: 'Rubik-Medium', fontSize: 17, color: 'white', marginBottom: 16 }}>הוסף כרטיס חדש</Text>
+          <View style={{ width: 56, height: 56, borderRadius: 18, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+            <Plus size={26} color={Colors.primary} />
           </View>
-          <Text style={{ fontFamily: 'Rubik-Medium', fontSize: 16, color: 'white', flex: 1, marginStart: 14 }}>הוסף כרטיס חדש</Text>
         </Pressable>
 
         {/* Security Note */}
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 32, padding: 16, backgroundColor: 'rgba(79,209,130,0.08)', borderRadius: 20, borderWidth: 1, borderColor: 'rgba(79,209,130,0.15)' }}>
-          <Shield size={22} color="#4FD182" />
-          <Text style={{ fontFamily: 'Rubik-Medium', fontSize: 13, color: 'rgba(255,255,255,0.8)', marginStart: 12, flex: 1, lineHeight: 20, textAlign: 'right' }}>
+          <Text style={{ fontFamily: 'Rubik-Medium', fontSize: 13, color: 'rgba(255,255,255,0.8)', marginEnd: 12, flex: 1, lineHeight: 20, textAlign: 'left' }}>
             אמצעי התשלום שלך מוגנים בהצפנה מקצה לקצה. אנחנו לא שומרים את מספר הכרטיס המלא.
           </Text>
+          <Shield size={22} color="#4FD182" />
         </View>
 
         <View style={{ height: 40 }} />
       </ScrollView>
 
       {/* ── Add Card Modal ── */}
-      <Modal visible={isModalVisible} transparent animationType="fade" onRequestClose={() => setModalVisible(false)}>
+      <Modal visible={isModalVisible} transparent animationType="none" onRequestClose={() => setModalVisible(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-          <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.7)' }}>
-            <Pressable style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} onPress={() => setModalVisible(false)} />
+          <Pressable style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.7)' }} onPress={() => setModalVisible(false)}>
 
-            <Animated.View entering={SlideInDown.springify().damping(18)} style={{ backgroundColor: '#141414', borderTopLeftRadius: 36, borderTopRightRadius: 36, borderTopWidth: 1, borderColor: 'rgba(255,255,255,0.08)', paddingHorizontal: 24, paddingTop: 24, paddingBottom: insets.bottom + 20 }}>
+            <Pressable onPress={(e) => e.stopPropagation()} style={{ backgroundColor: '#141414', borderTopLeftRadius: 36, borderTopRightRadius: 36, borderTopWidth: 1, borderColor: 'rgba(255,255,255,0.08)', paddingHorizontal: 24, paddingTop: 24, paddingBottom: insets.bottom + 20 }}>
 
               {/* Handle bar */}
               <View style={{ width: 40, height: 4, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 2, alignSelf: 'center', marginBottom: 20 }} />
 
               {/* Header */}
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                <Text style={{ fontFamily: 'Rubik-Bold', fontSize: 22, color: 'white' }}>הוספת כרטיס חדש</Text>
-                <Pressable onPress={() => setModalVisible(false)} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.06)', justifyContent: 'center', alignItems: 'center' }}>
-                  <X size={20} color="rgba(255,255,255,0.6)" />
+                <Text style={{ fontFamily: 'Rubik-Bold', fontSize: 22, color: 'white', textAlign: 'left' }}>הוספת כרטיס חדש</Text>
+                <Pressable onPress={() => setModalVisible(false)} hitSlop={12} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.08)', justifyContent: 'center', alignItems: 'center' }}>
+                  <X size={22} color="white" />
                 </Pressable>
               </View>
 
@@ -328,17 +327,17 @@ export default function PaymentScreen() {
               {renderInput('שם בעל הכרטיס', newCard.holderName, (t) => {
                 setNewCard(prev => ({ ...prev, holderName: t }));
                 if (errors.holderName) setErrors(prev => ({ ...prev, holderName: undefined }));
-              }, errors.holderName, { placeholder: 'ישראל ישראלי', returnKeyType: 'next', onSubmitEditing: () => cardNumberRef.current?.focus(), delay: 50 })}
+              }, errors.holderName, { placeholder: 'ישראל ישראלי', returnKeyType: 'next', onSubmitEditing: () => cardNumberRef.current?.focus() })}
 
-              {renderInput('מספר כרטיס', formatCardDisplay(newCard.cardNumber), handleCardNumberChange, errors.cardNumber, { placeholder: '0000 0000 0000 0000', keyboardType: 'numeric', maxLength: cardInfo.maxLen + 3, textAlign: 'left', returnKeyType: 'next', onSubmitEditing: () => expiryRef.current?.focus(), delay: 100 }, cardNumberRef)}
+              {renderInput('מספר כרטיס', formatCardDisplay(newCard.cardNumber), handleCardNumberChange, errors.cardNumber, { placeholder: '0000 0000 0000 0000', keyboardType: 'numeric', maxLength: cardInfo.maxLen + 3, returnKeyType: 'next', onSubmitEditing: () => expiryRef.current?.focus() }, cardNumberRef)}
 
               {/* Expiry + CVV Row */}
               <View style={{ flexDirection: 'row', gap: 12 }}>
                 <View style={{ flex: 1 }}>
-                  {renderInput('תוקף', newCard.expiryDate, handleExpiryChange, errors.expiryDate, { placeholder: 'MM/YY', keyboardType: 'numeric', maxLength: 5, textAlign: 'center', returnKeyType: 'next', onSubmitEditing: () => cvvRef.current?.focus(), delay: 150 }, expiryRef)}
+                  {renderInput('תוקף', newCard.expiryDate, handleExpiryChange, errors.expiryDate, { placeholder: 'MM/YY', keyboardType: 'numeric', maxLength: 5, textAlign: 'center', returnKeyType: 'next', onSubmitEditing: () => cvvRef.current?.focus() }, expiryRef)}
                 </View>
                 <View style={{ flex: 1 }}>
-                  {renderInput('CVV', newCard.cvv, handleCvvChange, errors.cvv, { placeholder: cardInfo.brand === 'AMEX' ? '0000' : '000', keyboardType: 'numeric', maxLength: cardInfo.brand === 'AMEX' ? 4 : 3, secureTextEntry: true, textAlign: 'center', returnKeyType: 'done', onSubmitEditing: handleAddCard, delay: 200 }, cvvRef)}
+                  {renderInput('CVV', newCard.cvv, handleCvvChange, errors.cvv, { placeholder: cardInfo.brand === 'AMEX' ? '0000' : '000', keyboardType: 'numeric', maxLength: cardInfo.brand === 'AMEX' ? 4 : 3, secureTextEntry: true, textAlign: 'center', returnKeyType: 'done', onSubmitEditing: handleAddCard }, cvvRef)}
                 </View>
               </View>
 
@@ -355,8 +354,8 @@ export default function PaymentScreen() {
                   )}
                 </LinearGradient>
               </Pressable>
-            </Animated.View>
-          </View>
+            </Pressable>
+          </Pressable>
         </KeyboardAvoidingView>
       </Modal>
     </View>

@@ -99,9 +99,6 @@ export class NotificationService {
   }
 
   /**
-   * Send a local notification after ticket purchase
-   */
-  /**
    * Send a local notification after ticket purchase simulating email
    */
   static async notifyTicketPurchase(movieTitle: string, seatCount: number) {
@@ -165,6 +162,25 @@ export class NotificationService {
       console.log('NotificationService: Showtime reminder scheduled');
     } catch (error) {
       console.error('NotificationService: scheduleShowtimeReminder error', error);
+    }
+  }
+
+  /**
+   * Send a local notification for special sales and discounts
+   */
+  static async notifyPromoDeals() {
+    try {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "מבצעים והנחות ב-CineBook! 🎟️",
+          body: "יש לנו כמה הטבות בלעדיות עבורך. בדוק את רשימת המבצעים עכשיו!",
+          data: { type: 'promo' },
+          sound: 'default',
+        },
+        trigger: null,
+      });
+    } catch (error) {
+      console.error('NotificationService: notifyPromoDeals error', error);
     }
   }
 }

@@ -109,14 +109,12 @@ export default function WatchlistScreen() {
       
       {/* Header */}
       <View className="flex-row justify-between items-center px-6 py-6">
-        <View className="flex-row items-center">
-          <View className="bg-primary/20 p-3.5 rounded-[20px] ms-4 border border-primary/20">
-            <Bookmark size={28} color={Colors.primary} fill={Colors.primary} />
-          </View>
-          <View>
-            <Text className="text-[32px] text-white text-right font-bold tracking-tight" style={{ fontFamily: 'Rubik-Bold' }}>רשימת צפייה</Text>
-            <Text className="text-[15px] text-textSecondary text-right opacity-80" style={{ fontFamily: 'Rubik-Regular' }}>{movies.length} סרטים שאהבת</Text>
-          </View>
+        <View className="items-start">
+          <Text className="text-[32px] text-white text-left font-bold tracking-tight" style={{ fontFamily: 'Rubik-Bold' }}>רשימת צפייה</Text>
+          <Text className="text-[15px] text-textSecondary text-left opacity-80" style={{ fontFamily: 'Rubik-Regular' }}>{movies.length} סרטים שאהבת</Text>
+        </View>
+        <View className="bg-primary/20 p-3.5 rounded-[20px] border border-primary/20">
+          <Bookmark size={28} color={Colors.primary} fill={Colors.primary} />
         </View>
       </View>
 
