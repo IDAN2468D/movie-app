@@ -266,7 +266,7 @@ ${watchlistInfo}
    * Analyzes the user's watchlist and provides insights
    */
   static async analyzeWatchlist(
-    movies: Array<{ title: string; vote_average: number; genre_ids: number[] }>
+    movies: { title: string; vote_average: number; genre_ids: number[] }[]
   ): Promise<WatchlistAnalysis> {
     if (movies.length === 0) {
       return {
@@ -310,7 +310,7 @@ ${watchlistInfo}
         כתוב משפט המלצה אחד בעברית (עד 25 מילים) שמציע סרט או ז'אנר שאולי ירחיב את הטעם שלו.`;
         const result = await model.generateContent(prompt);
         recommendation = result.response.text().trim();
-      } catch (e) {
+      } catch {
         console.warn("AIService: Watchlist analysis AI fallback");
       }
     }
@@ -383,7 +383,81 @@ ${watchlistInfo}
     }
   }
 
+  // ─── FEATURE 8: 2026 Proactive Intelligence ────────────────────────────────
+  
+  /**
+   * Generates a proactive suggestion based on current time and user context
+   * Part of the 2026 "Proactive Agent" strategy.
+   */
+  static async getProactiveMoodSuggestion(watchlistContext?: { titles: string[] }): Promise<{ greeting: string; suggestion: string; action: string }> {
+    const hour = new Date().getHours();
+    let timeContext = "בוקר";
+    if (hour >= 12 && hour < 17) timeContext = "צהריים";
+    else if (hour >= 17 && hour < 21) timeContext = "ערב";
+    else if (hour >= 21 || hour < 5) timeContext = "לילה";
+
+    const watchlistCount = watchlistContext?.titles.length || 0;
+    
+    const model = this.getModel();
+    if (!model) {
+      return {
+        greeting: `שלום! ${timeContext} טוב.`,
+        suggestion: watchlistCount > 0 ? `יש לך ${watchlistCount} סרטים שמחכים לך ברשימה. אולי תראה אחד מהם?` : "רוצה לגלות סרטים חדשים להיום?",
+        action: "לגלות"
+      };
+    }
+
+    try {
+      return await this.withRetry(async () => {
+        const prompt = `אתה ה-Concierge של סינבוק בשנת 2026. השעה עכשיו ${hour}:00 (${timeContext}). למשתמש יש ${watchlistCount} סרטים ברשימת הצפייה.
+        צור הצעה פרואקטיבית בפורמט JSON בלבד:
+        - greeting: ברכת שלום חמה ומותאמת לזמן (עברית)
+        - suggestion: הצעה קצרה ומפתה לצפייה או גילוי (עברית, עד 15 מילים)
+        - action: מילת פעולה קצרה לכפתור (עברית, עד 2 מילים)
+        דוגמה: {"greeting": "ערב קולנועי מרהיב!", "suggestion": "יום ארוך עבר עליך, מה דעתך על קומדיה קלילה להירגע?", "action": "בוא נבחר"}`;
+
+        const result = await model.generateContent(prompt);
+        const text = result.response.text();
+        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        return JSON.parse(jsonStr);
+      });
+    } catch (_error) {
+      console.error("AIService Error (Proactive):", _error);
+      return {
+        greeting: `היי! ${timeContext} טוב.`,
+        suggestion: "מוכן למסע קולנועי חדש?",
+        action: "יאללה"
+      };
+    }
+  }
+
+  /**
+   * Performs deep "Search Intelligence" — simulating agentic research
+   */
+  static async performCineIntelligence(query: string): Promise<string> {
+    const model = this.getModel(`אתה סוכן AI מחקרי של סינבוק. המשימה שלך היא לבצע "CineIntelligence" — ניתוח מעמיק ומקצועי של מגמות, סרטים או יוצרים.`);
+    if (!model) return "מבצע מחקר... נראה שסרטי אקשן הם הטרנד החם כרגע!";
+
+    try {
+      return await this.withRetry(async () => {
+        const prompt = `בצע מחקר מעמיק על השאילתה: "${query}". 
+        ספק דוח קצר (עד 80 מילים) הכולל:
+        1. ניתוח טרנדים נוכחיים.
+        2. המלצה מבוססת איכות אמנותית.
+        3. עובדה אחת "מבפנים" (Insider information) שמשתמשים לא יודעים.
+        הכל בעברית רהוטה וקולנועית.`;
+
+        const result = await model.generateContent(prompt);
+        return result.response.text();
+      });
+    } catch (_error) {
+      console.error("AIService Error (Intelligence):", _error);
+      return "המחקר נתקל במכשול, אך נראה שהקולנוע ממשיך להפתיע!";
+    }
+  }
+
   // ─── PRIVATE FALLBACKS ──────────────────────────────────────────────────────
+
 
   private static translateQueryToFiltersLegacy(query: string): Record<string, string> {
     const lower = query.toLowerCase();

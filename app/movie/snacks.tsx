@@ -46,7 +46,7 @@ export default function SnacksScreen() {
 
       {/* Header */}
       <View 
-        className="flex-row-reverse items-center px-6 pb-4 pt-2 gap-4 z-20"
+        className="flex-row items-center px-6 pb-4 pt-2 gap-4 z-20"
         style={{ marginTop: insets.top }}
       >
         <Pressable 
@@ -56,8 +56,8 @@ export default function SnacksScreen() {
           <ChevronRight size={24} color="white" />
         </Pressable>
         
-        <View className="flex-1 items-end">
-          <Text className="text-h2 text-white font-display text-right leading-tight">נשנושים לסרט</Text>
+        <View className="flex-1 items-start">
+          <Text className="text-h2 text-white font-display leading-tight">נשנושים לסרט</Text>
           <Text className="text-caption text-white/50 font-medium">השלם את החוויה הקולנועית שלך</Text>
         </View>
       </View>
@@ -167,7 +167,7 @@ function SnackCard({ item, index, quantity, onAdd, onRemove }: {
       style={{ height: 240 }}
     >
       <Image 
-        source={{ uri: item.image }}
+        source={item.image}
         className="w-full h-32"
         resizeMode="cover"
       />

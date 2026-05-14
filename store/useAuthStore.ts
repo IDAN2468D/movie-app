@@ -328,7 +328,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       
       if (result.success) {
         const newMethod = result.data;
+        // Optimistic update first
         set({ user: { ...user, paymentMethods: [...(user.paymentMethods || []), newMethod] } });
+        
+        // Then re-fetch from server to guarantee sync
+        try {
+          const freshData = await safeFetch(`${API_URL}/users/payment-methods`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+          });
+          if (freshData.success) {
+            const currentUser = get().user;
+            if (currentUser) {
+              set({ user: { ...currentUser, paymentMethods: freshData.data } });
+            }
+          }
+        } catch (_syncErr) {
+          console.warn('Post-add sync failed, using optimistic data');
+        }
+        
         return { success: true, data: newMethod };
       }
       return { success: false, message: result.message };

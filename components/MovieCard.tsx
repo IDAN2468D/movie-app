@@ -65,9 +65,11 @@ export default function MovieCard({ movie }: MovieCardProps) {
             resizeMode="cover"
           />
         ) : (
-          <View className="w-full h-full justify-center items-center bg-surfaceLight">
-            <Text className="text-[40px]">🎬</Text>
-          </View>
+          <Image
+            source={require('../assets/images/poster-placeholder.png')}
+            className="w-full h-full"
+            resizeMode="cover"
+          />
         )}
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.7)']}
@@ -101,7 +103,7 @@ export default function MovieCard({ movie }: MovieCardProps) {
           />
         </Pressable>
       </View>
-      <Text style={{ fontFamily: 'Rubik-Bold' }} className="text-[14px] text-white mt-2.5 text-right px-1" numberOfLines={1}>
+      <Text style={{ fontFamily: 'Rubik-Bold' }} className="text-[14px] text-white mt-2.5 text-left px-1" numberOfLines={1}>
         {movie.title}
       </Text>
     </Pressable>

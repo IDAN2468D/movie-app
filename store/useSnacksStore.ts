@@ -5,7 +5,7 @@ export interface SnackItem {
   name: string;
   description: string;
   price: number;
-  image: string;
+  image: any;
   category: 'Popcorn' | 'Drinks' | 'Combos' | 'Candy';
 }
 
@@ -24,7 +24,7 @@ const SNACK_MENU: SnackItem[] = [
     name: 'XL Movie Popcorn',
     description: 'Freshly popped with premium butter',
     price: 35,
-    image: 'https://images.unsplash.com/photo-1572177191856-3cde618dee1f?q=80&w=400',
+    image: require('../assets/images/snacks/xl-popcorn.png'),
     category: 'Popcorn',
   },
   {
@@ -32,7 +32,7 @@ const SNACK_MENU: SnackItem[] = [
     name: 'Caramel Popcorn',
     description: 'Sweet and crunchy delight',
     price: 38,
-    image: 'https://images.unsplash.com/photo-1599508704512-2f19fe9191d8?q=80&w=400',
+    image: require('../assets/images/snacks/caramel-popcorn.png'),
     category: 'Popcorn',
   },
   {
@@ -40,7 +40,7 @@ const SNACK_MENU: SnackItem[] = [
     name: 'Classic Cola',
     description: 'Ice cold refreshing soda',
     price: 18,
-    image: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?q=80&w=400',
+    image: require('../assets/images/snacks/classic-cola.png'),
     category: 'Drinks',
   },
   {
@@ -48,7 +48,7 @@ const SNACK_MENU: SnackItem[] = [
     name: 'Craft Orange Soda',
     description: 'Zesty and bubbly',
     price: 20,
-    image: 'https://images.unsplash.com/photo-1554867017-67ad62649a21?q=80&w=400',
+    image: require('../assets/images/snacks/orange-soda.png'),
     category: 'Drinks',
   },
   {
@@ -56,7 +56,7 @@ const SNACK_MENU: SnackItem[] = [
     name: 'Mega Combo',
     description: 'XL Popcorn + 2 Large Drinks + Candy',
     price: 65,
-    image: 'https://images.unsplash.com/photo-1513106580091-1d82408b8cd6?q=80&w=400',
+    image: require('../assets/images/snacks/mega-combo.png'),
     category: 'Combos',
   },
   {
@@ -64,7 +64,7 @@ const SNACK_MENU: SnackItem[] = [
     name: 'Date Night Combo',
     description: 'Large Popcorn + 2 Drinks',
     price: 55,
-    image: 'https://images.unsplash.com/photo-1491466424936-e304919aada7?q=80&w=400',
+    image: require('../assets/images/snacks/date-night.png'),
     category: 'Combos',
   },
   {
@@ -72,7 +72,7 @@ const SNACK_MENU: SnackItem[] = [
     name: 'Gummy Bears',
     description: 'Sweet and chewy snacks',
     price: 15,
-    image: 'https://images.unsplash.com/photo-1581798459219-318e76aecc7b?q=80&w=400',
+    image: require('../assets/images/snacks/gummy-bears.png'),
     category: 'Candy',
   },
 ];

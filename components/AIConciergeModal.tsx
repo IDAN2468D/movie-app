@@ -3,7 +3,7 @@ import { View, Text, Modal, Pressable, TextInput, ScrollView, KeyboardAvoidingVi
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInRight, FadeInLeft, FadeInDown, withRepeat, withSequence, withTiming, withDelay, useAnimatedStyle, useSharedValue, interpolate } from 'react-native-reanimated';
-import { Send, X, User, Sparkles, Zap, Volume2, VolumeX, Mic, BookmarkCheck, TrendingUp, Heart, Film } from 'lucide-react-native';
+import { Send, X, User, Sparkles, Zap, Volume2, VolumeX, Mic, BookmarkCheck } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AIService } from '@/services/AIService';

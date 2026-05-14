@@ -104,7 +104,7 @@ export default function SearchScreen() {
               onPress={() => router.push(`/movie/${item.id}`)}
             >
               <Image 
-                source={{ uri: `${POSTER_SIZES.small}${item.poster_path}` }} 
+                source={item.poster_path ? { uri: `${POSTER_SIZES.small}${item.poster_path}` } : require('../../assets/images/poster-placeholder.png')} 
                 className="w-full h-full"
               />
               <LinearGradient
@@ -168,7 +168,7 @@ export default function SearchScreen() {
           {/* Poster - Left side */}
           <View className="w-28 h-full shadow-2xl">
             <Image
-              source={{ uri: `${POSTER_SIZES.small}${item.poster_path}` }}
+              source={item.poster_path ? { uri: `${POSTER_SIZES.small}${item.poster_path}` } : require('../../assets/images/poster-placeholder.png')}
               className="w-full h-full"
               resizeMode="cover"
             />

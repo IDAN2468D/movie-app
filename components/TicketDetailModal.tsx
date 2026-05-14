@@ -142,7 +142,7 @@ export default function TicketDetailModal({ ticket, isVisible, onClose }: Ticket
 
 function DetailItem({ label, value, color = '#1A1A1A' }: { label: string; value: string; color?: string }) {
   return (
-    <View className="w-[45%] items-end">
+    <View className="w-[45%] items-start">
       <Text className="text-[10px] text-black/40 mb-1 font-body uppercase tracking-wider">{label}</Text>
       <Text className="text-label font-bold font-body text-right" style={{ color }}>{value}</Text>
     </View>

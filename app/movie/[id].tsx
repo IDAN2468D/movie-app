@@ -369,7 +369,7 @@ export default function MovieDetailsScreen() {
                 {cast.slice(0, 10).map((c) => (
                   <View key={c.id} className="items-center w-20">
                     <Image
-                      source={{ uri: c.profile_path ? `${POSTER_SIZES.small}${c.profile_path}` : 'https://via.placeholder.com/150' }}
+                      source={c.profile_path ? { uri: `${POSTER_SIZES.small}${c.profile_path}` } : require('../../assets/images/default-avatar.png')}
                       className="w-20 h-20 rounded-full border border-border"
                       resizeMode="cover"
                     />

@@ -103,17 +103,17 @@ export default function CheckoutScreen() {
             <Text className="text-body text-white font-display">₪{totalPrice.toFixed(2)}</Text>
           </View>
           {snacksTotal > 0 && (
-            <View className="flex-row-reverse justify-between mb-4">
+            <View className="flex-row justify-between mb-4">
               <Text className="text-body text-textSecondary font-body">נשנושים ({snacksInCart.length})</Text>
               <Text className="text-body text-white font-display">₪{snacksTotal.toFixed(2)}</Text>
             </View>
           )}
-          <View className="flex-row-reverse justify-between mb-4">
+          <View className="flex-row justify-between mb-4">
             <Text className="text-body text-textSecondary font-body">עמלת הזמנה</Text>
             <Text className="text-body text-white font-display">₪4.00</Text>
           </View>
           <View className="h-[1px] bg-white/5 my-2" />
-          <View className="flex-row-reverse justify-between mt-2">
+          <View className="flex-row justify-between mt-2">
             <Text className="text-h2 text-white font-display">סה״כ לתשלום</Text>
             <Text className="text-h2 text-secondary font-display">₪{finalTotal.toFixed(2)}</Text>
           </View>
@@ -162,7 +162,7 @@ export default function CheckoutScreen() {
               <CheckCircle2 size={48} color={Colors.background} />
             </View>
             <MarkerHighlight text="הזמנה בוצעה בהצלחה!" className="text-h2 text-white mb-2 text-center" />
-            <Text className="text-body text-textSecondary text-center mb-8 font-body">
+            <Text className="text-body text-textSecondary text-right mb-8 font-body">
               הכרטיסים שלך מחכים לך באזור האישי.{'\n'}
               שלחנו לך גם אימייל עם קוד ה-QR לסריקה מהירה בכניסה.
             </Text>
