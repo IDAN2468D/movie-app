@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Platform } from 'react-native';
 import * as Speech from 'expo-speech';
 
+// ─── Types ────────────────────────────────────────────────────────────────────
 interface AIInsight {
   pros: string[];
   cons: string[];
@@ -13,6 +14,29 @@ interface ChatMessage {
   content: string;
 }
 
+interface MoodRecommendation {
+  mood: string;
+  genres: string;
+  description: string;
+}
+
+interface MovieTrivia {
+  facts: string[];
+  behindTheScenes: string;
+  funFact: string;
+}
+
+interface WatchlistAnalysis {
+  favoriteGenres: string[];
+  recommendation: string;
+  stats: {
+    totalMovies: number;
+    avgRating: number;
+    topGenre: string;
+  };
+}
+
+// ─── Service ──────────────────────────────────────────────────────────────────
 export class AIService {
   private static API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
   private static MODEL_NAME = "gemini-3.1-flash-lite";
@@ -44,6 +68,8 @@ export class AIService {
       throw error;
     }
   }
+
+  // ─── FEATURE 1: Movie Insights ──────────────────────────────────────────────
 
   /**
    * Generates smart insights for a movie (Pros, Cons, Verdict)
@@ -77,11 +103,32 @@ export class AIService {
     }
   }
 
+  // ─── FEATURE 2: Contextual Concierge Chat ──────────────────────────────────
+
   /**
-   * Smart AI Concierge Chat
+   * Smart AI Concierge Chat — now watchlist-aware
    */
-  static async chatWithConcierge(history: ChatMessage[]): Promise<string> {
-    const systemInstruction = "אתה הקונסיירז' של CineBook, אפליקציה להזמנת כרטיסי קולנוע. אתה עוזר למשתמשים למצוא סרטים, עונה על שאלות בנושאי קולנוע, ותמיד אדיב, מקצועי ומשתמש בשפה עברית רהוטה.";
+  static async chatWithConcierge(
+    history: ChatMessage[],
+    watchlistContext?: { titles: string[]; genres: string[]; avgRating: number }
+  ): Promise<string> {
+    const watchlistInfo = watchlistContext && watchlistContext.titles.length > 0
+      ? `\nהמשתמש שמר ברשימת הצפייה שלו ${watchlistContext.titles.length} סרטים: ${watchlistContext.titles.slice(0, 8).join(', ')}. הז'אנרים האהובים עליו: ${watchlistContext.genres.join(', ')}. ציון ממוצע ברשימה: ${watchlistContext.avgRating.toFixed(1)}.`
+      : '\nלמשתמש אין סרטים ברשימת הצפייה עדיין.';
+
+    const systemInstruction = `אתה הקונסיירז' האישי של CineBook — אפליקציה ישראלית מובילה להזמנת כרטיסי קולנוע ל-2026.
+תפקידך:
+1. לעזור למשתמשים למצוא סרטים מושלמים על פי מצב רוח, העדפות וטעם אישי.
+2. לתת ביקורות קצרות, טריוויה מעניינת, ומידע על סרטים.
+3. לעזור בהזמנת כרטיסים, חטיפים ובחירת מקומות.
+4. להתייחס לרשימת הצפייה של המשתמש כדי לתת המלצות מדויקות.
+${watchlistInfo}
+כללים:
+- דבר תמיד בעברית רהוטה ומקצועית.
+- היה אדיב, נלהב מקולנוע, ותמציתי (עד 3 משפטים).
+- השתמש באימוג'ים מתאימים 🎬🍿⭐
+- אם המשתמש מבקש המלצה, שקלל את הרשימה שלו.`;
+
     const model = this.getModel(systemInstruction);
 
     if (!model) {
@@ -130,10 +177,161 @@ export class AIService {
     }
   }
 
+  // ─── FEATURE 3: Mood-Based Recommendations ─────────────────────────────────
+
+  /**
+   * Generates movie recommendations based on user's mood
+   */
+  static async getMoodRecommendations(mood: string): Promise<MoodRecommendation> {
+    const model = this.getModel();
+    if (!model) return this.simulateMoodRec(mood);
+
+    try {
+      return await this.withRetry(async () => {
+        const prompt = `המשתמש מרגיש: "${mood}". 
+        החזר JSON בלבד עם:
+        - mood: תיאור קצר של מצב הרוח (עברית)
+        - genres: מספרי ז'אנרים מופרדים בפסיקים מתאימים למצב הרוח (28=אקשן, 35=קומדיה, 18=דרמה, 27=אימה, 10749=רומנטיקה, 878=מד"ב, 16=אנימציה, 53=מתח)
+        - description: הסבר קצר למה הז'אנרים האלה מתאימים (עברית, עד 20 מילים)`;
+
+        const result = await model.generateContent(prompt);
+        const text = result.response.text();
+        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        return JSON.parse(jsonStr);
+      });
+    } catch (error) {
+      console.error("AIService Error (Mood):", error);
+      return this.simulateMoodRec(mood);
+    }
+  }
+
+  // ─── FEATURE 4: Movie Trivia ────────────────────────────────────────────────
+
+  /**
+   * Generates interesting trivia about a movie
+   */
+  static async getMovieTrivia(movieTitle: string, movieYear: string): Promise<MovieTrivia> {
+    const model = this.getModel();
+    if (!model) return this.simulateTrivia(movieTitle);
+
+    try {
+      return await this.withRetry(async () => {
+        const prompt = `צור טריוויה מעניינת על הסרט "${movieTitle}" (${movieYear}) בפורמט JSON בלבד:
+        - facts: מערך של 3 עובדות מעניינות על הסרט (עברית)
+        - behindTheScenes: עובדה אחת מעניינת מאחורי הקלעים (עברית)
+        - funFact: עובדה מפתיעה ומשעשעת (עברית)`;
+
+        const result = await model.generateContent(prompt);
+        const text = result.response.text();
+        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        return JSON.parse(jsonStr);
+      });
+    } catch (error) {
+      console.error("AIService Error (Trivia):", error);
+      return this.simulateTrivia(movieTitle);
+    }
+  }
+
+  // ─── FEATURE 5: Similar Movies ──────────────────────────────────────────────
+
+  /**
+   * Generates TMDB filters to find movies similar to a given movie
+   */
+  static async findSimilarMovieFilters(movieTitle: string, genres: string, overview: string): Promise<Record<string, string>> {
+    const model = this.getModel();
+    if (!model) return { with_genres: genres };
+
+    try {
+      return await this.withRetry(async () => {
+        const prompt = `הסרט "${movieTitle}" שייך לז'אנרים ${genres} ועוסק ב: "${overview}".
+        מצא פרמטרי חיפוש ל-TMDB API שימצאו סרטים דומים. החזר JSON בלבד עם:
+        - with_genres: קודי ז'אנרים מופרדים בפסיקים
+        - sort_by: popularity.desc או vote_average.desc
+        - vote_average.gte: ציון מינימלי (מספר)`;
+
+        const result = await model.generateContent(prompt);
+        const text = result.response.text();
+        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        return JSON.parse(jsonStr);
+      });
+    } catch (error) {
+      console.error("AIService Error (Similar):", error);
+      return { with_genres: genres, sort_by: 'popularity.desc' };
+    }
+  }
+
+  // ─── FEATURE 6: Watchlist Analysis ──────────────────────────────────────────
+
+  /**
+   * Analyzes the user's watchlist and provides insights
+   */
+  static async analyzeWatchlist(
+    movies: Array<{ title: string; vote_average: number; genre_ids: number[] }>
+  ): Promise<WatchlistAnalysis> {
+    if (movies.length === 0) {
+      return {
+        favoriteGenres: [],
+        recommendation: 'הוסף סרטים לרשימת הצפייה שלך ואקבל תובנות מותאמות אישית! 🎬',
+        stats: { totalMovies: 0, avgRating: 0, topGenre: 'אין' },
+      };
+    }
+
+    const GENRE_MAP: Record<number, string> = {
+      28: 'אקשן', 12: 'הרפתקאות', 16: 'אנימציה', 35: 'קומדיה', 80: 'פשע',
+      99: 'דוקומנטרי', 18: 'דרמה', 10751: 'משפחה', 14: 'פנטזיה', 36: 'היסטוריה',
+      27: 'אימה', 10402: 'מוזיקה', 9648: 'מסתורין', 10749: 'רומנטיקה',
+      878: 'מדע בדיוני', 53: 'מתח', 10752: 'מלחמה', 37: 'מערבון',
+    };
+
+    // Count genre occurrences
+    const genreCounts: Record<number, number> = {};
+    let totalRating = 0;
+    for (const movie of movies) {
+      totalRating += movie.vote_average;
+      for (const gid of movie.genre_ids) {
+        genreCounts[gid] = (genreCounts[gid] || 0) + 1;
+      }
+    }
+
+    const sortedGenres = Object.entries(genreCounts)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 3);
+
+    const topGenreId = sortedGenres.length > 0 ? Number(sortedGenres[0][0]) : 0;
+    const favoriteGenres = sortedGenres.map(([gid]) => GENRE_MAP[Number(gid)] || 'כללי');
+    const avgRating = totalRating / movies.length;
+
+    const model = this.getModel();
+    let recommendation = `נראה שאתה אוהב ${favoriteGenres.join(' ו')}! 🎬`;
+
+    if (model) {
+      try {
+        const prompt = `המשתמש שמר ${movies.length} סרטים. הז'אנרים האהובים: ${favoriteGenres.join(', ')}. ציון ממוצע: ${avgRating.toFixed(1)}. 
+        כתוב משפט המלצה אחד בעברית (עד 25 מילים) שמציע סרט או ז'אנר שאולי ירחיב את הטעם שלו.`;
+        const result = await model.generateContent(prompt);
+        recommendation = result.response.text().trim();
+      } catch (e) {
+        console.warn("AIService: Watchlist analysis AI fallback");
+      }
+    }
+
+    return {
+      favoriteGenres,
+      recommendation,
+      stats: {
+        totalMovies: movies.length,
+        avgRating,
+        topGenre: GENRE_MAP[topGenreId] || 'כללי',
+      },
+    };
+  }
+
+  // ─── FEATURE 7: Semantic Search ─────────────────────────────────────────────
+
   /**
    * Translates a natural language query into TMDB filters using AI
    */
-  static async getSemanticFilters(query: string): Promise<any> {
+  static async getSemanticFilters(query: string): Promise<Record<string, string>> {
     const model = this.getModel("אתה עוזר למשתמשים למצוא סרטים. המשימה שלך היא לתרגם שאילתת חיפוש חופשית לאובייקט פילטרים עבור TMDB API.");
     if (!model) return this.translateQueryToFiltersLegacy(query);
 
@@ -142,7 +340,7 @@ export class AIService {
         const prompt = `תרגם את השאילתה הבאה: "${query}" לאובייקט JSON המכיל את הפרמטרים המתאימים ל-TMDB discover API.
         התמקד ב-with_genres (קודים של ז'אנרים: 28=אקשן, 12=הרפתקאות, 16=אנימציה, 35=קומדיה, 80=פשע, 99=דוקו, 18=דרמה, 10751=משפחה, 14=פנטזיה, 36=היסטוריה, 27=אימה, 10402=מוזיקה, 9648=מסתורין, 10749=רומנטיקה, 878=מד"ב, 10770=טלוויזיה, 53=מתח, 10752=מלחמה, 37=מערבון).
         החזר JSON בלבד. דוגמה: {"with_genres": "28,12"}`;
-        
+
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const text = response.text();
@@ -154,6 +352,8 @@ export class AIService {
       return this.translateQueryToFiltersLegacy(query);
     }
   }
+
+  // ─── TTS ────────────────────────────────────────────────────────────────────
 
   /**
    * Text-to-Speech support
@@ -183,18 +383,19 @@ export class AIService {
     }
   }
 
-  /**
-   * Basic fallback mapping for demo purposes
-   */
-  private static translateQueryToFiltersLegacy(query: string) {
+  // ─── PRIVATE FALLBACKS ──────────────────────────────────────────────────────
+
+  private static translateQueryToFiltersLegacy(query: string): Record<string, string> {
     const lower = query.toLowerCase();
     if (lower.includes('חלל') || lower.includes('space')) return { with_genres: '878' };
-    if (lower.includes('מפחיד') || lower.includes('scary')) return { with_genres: '27' };
-    if (lower.includes('מצחיק') || lower.includes('funny')) return { with_genres: '35' };
+    if (lower.includes('מפחיד') || lower.includes('scary') || lower.includes('אימה')) return { with_genres: '27' };
+    if (lower.includes('מצחיק') || lower.includes('funny') || lower.includes('קומדיה')) return { with_genres: '35' };
+    if (lower.includes('רומנטי') || lower.includes('אהבה')) return { with_genres: '10749' };
+    if (lower.includes('אקשן') || lower.includes('פעולה')) return { with_genres: '28' };
+    if (lower.includes('מתח') || lower.includes('ריגוש')) return { with_genres: '53' };
+    if (lower.includes('ילדים') || lower.includes('משפחה') || lower.includes('אנימציה')) return { with_genres: '16,10751' };
     return {};
   }
-
-  // --- PRIVATE SIMULATION LOGIC ---
 
   private static async simulateInsights(movieTitle: string): Promise<AIInsight> {
     await new Promise(resolve => setTimeout(resolve, 1500));
@@ -213,14 +414,45 @@ export class AIService {
   }
 
   private static simulateConciergeResponse(input: string): string {
-    const input_lower = input.toLowerCase();
-    if (input_lower.includes('המלצה') || input_lower.includes('recommend')) {
-      return 'אני ממליץ בחום על "אופנהיימר". זה סרט אפי עם ביצועים מדהימים. אם אתה מחפש משהו קליל יותר, "ברבי" הוא בחירה מצוינת וצבעונית!';
+    const inputLower = input.toLowerCase();
+    if (inputLower.includes('המלצה') || inputLower.includes('recommend') || inputLower.includes('מצב רוח')) {
+      return '🎬 אני ממליץ בחום על "אופנהיימר". זה סרט אפי עם ביצועים מדהימים. אם אתה מחפש משהו קליל יותר, "ברבי" הוא בחירה מצוינת וצבעונית!';
     }
-    if (input_lower.includes('שלום') || input_lower.includes('hi') || input_lower.includes('hello')) {
-      return 'שלום! אני סייען ה-AI של סינבוק. איך אני יכול לעזור לך למצוא את הסרט המושלם להיום?';
+    if (inputLower.includes('שלום') || inputLower.includes('hi') || inputLower.includes('hello')) {
+      return '👋 שלום! אני סייען ה-AI של סינבוק. איך אני יכול לעזור לך למצוא את הסרט המושלם להיום?';
     }
-    return 'שאלה מצוינת! כדאי לבדוק את רשימת שוברי הקופות שלנו. יש שם כמה פנינים אמיתיות החודש. תרצה שאפרט על אחד מהם?';
+    if (inputLower.includes('טריוויה') || inputLower.includes('עובד')) {
+      return '🎭 הידעת? הסרט "אינספשן" צולם ב-6 מדינות שונות, וכריסטופר נולאן כתב את התסריט במשך 10 שנים!';
+    }
+    if (inputLower.includes('רשימ')) {
+      return '📋 אני יכול לנתח את רשימת הצפייה שלך ולהמליץ על סרטים שיתאימו לטעם שלך! פשוט שאל אותי "מה מתאים לי?"';
+    }
+    return '🍿 שאלה מצוינת! כדאי לבדוק את רשימת שוברי הקופות שלנו. יש שם כמה פנינים אמיתיות החודש. תרצה שאפרט?';
+  }
+
+  private static simulateMoodRec(mood: string): MoodRecommendation {
+    const moodLower = mood.toLowerCase();
+    if (moodLower.includes('עצוב') || moodLower.includes('sad')) {
+      return { mood: 'עצוב', genres: '35,10751', description: 'קומדיות ומשפחה ירימו לך את מצב הרוח!' };
+    }
+    if (moodLower.includes('מלחיץ') || moodLower.includes('stress')) {
+      return { mood: 'לחוץ', genres: '16,35', description: 'אנימציה וקומדיות קלילות יעזרו להירגע' };
+    }
+    if (moodLower.includes('הרפתקני') || moodLower.includes('adventur')) {
+      return { mood: 'הרפתקני', genres: '28,12,878', description: 'אקשן, הרפתקאות ומדע בדיוני — עולם חדש מחכה!' };
+    }
+    return { mood: 'כללי', genres: '28,35,878', description: 'מבחר ז\'אנרים פופולריים להנאה מקסימלית' };
+  }
+
+  private static simulateTrivia(movieTitle: string): MovieTrivia {
+    return {
+      facts: [
+        `הסרט "${movieTitle}" עבר תהליך פיתוח ארוך לפני שהגיע למסך הגדול`,
+        'הבמאי ביצע שינויים משמעותיים בתסריט המקורי',
+        'חלק מהסצנות צולמו במיקומים אמיתיים ולא בסטודיו'
+      ],
+      behindTheScenes: 'צוות ההפקה עבד יותר מ-12 שעות ביום כדי ליצור את האפקטים המיוחדים',
+      funFact: 'אחד השחקנים הראשיים כמעט ויתר על התפקיד לפני שקרא את התסריט הסופי! 😲',
+    };
   }
 }
-

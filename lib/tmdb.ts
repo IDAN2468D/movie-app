@@ -149,3 +149,10 @@ export async function discoverMovies(params: Record<string, string>): Promise<TM
   return data.results;
 }
 
+export async function getSimilarMovies(movieId: number): Promise<TMDBMovie[]> {
+  const data = await fetchTMDB<TMDBResponse<TMDBMovie>>(`/movie/${movieId}/similar`);
+  return data.results;
+}
+
+export { GENRE_MAP };
+

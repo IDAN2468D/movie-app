@@ -1,13 +1,15 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { View, Text, Modal, Pressable, TextInput, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { FadeInRight, FadeInLeft, withRepeat, withSequence, withTiming, withDelay, useAnimatedStyle, useSharedValue, interpolate } from 'react-native-reanimated';
-import { Send, X, User, Sparkles, Zap, Volume2, VolumeX, Mic } from 'lucide-react-native';
+import Animated, { FadeInRight, FadeInLeft, FadeInDown, withRepeat, withSequence, withTiming, withDelay, useAnimatedStyle, useSharedValue, interpolate } from 'react-native-reanimated';
+import { Send, X, User, Sparkles, Zap, Volume2, VolumeX, Mic, BookmarkCheck, TrendingUp, Heart, Film } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AIService } from '@/services/AIService';
 import { Colors } from '@/constants/Theme';
+import { useWatchlistStore } from '@/store/useWatchlistStore';
+import { getGenreName } from '@/lib/tmdb';
 
 interface Message {
   id: string;
@@ -20,7 +22,8 @@ interface AIConciergeModalProps {
   onClose: () => void;
 }
 
-// Sub-components for animations to follow hook rules
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
 const TypingDot = ({ index }: { index: number }) => {
   const dot = useSharedValue(0);
   
@@ -108,10 +111,14 @@ const WaveBar = ({ index }: { index: number }) => {
   );
 };
 
+// ─── Main Component ───────────────────────────────────────────────────────────
+
 export default function AIConciergeModal({ visible, onClose }: AIConciergeModalProps) {
   const insets = useSafeAreaInsets();
+  const watchlistMovies = useWatchlistStore(state => state.movies);
+
   const [messages, setMessages] = useState<Message[]>([
-    { id: '1', role: 'model', content: 'שלום! אני סייען ה-AI של סינבוק. איך אני יכול לעזור לך למצוא את הסרט המושלם להיום?' }
+    { id: '1', role: 'model', content: '👋 שלום! אני סייען ה-AI של סינבוק. אני מכיר את רשימת הצפייה שלך ויכול להמליץ על סרטים שיתאימו בדיוק לטעם שלך. איך אפשר לעזור?' }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -122,6 +129,50 @@ export default function AIConciergeModal({ visible, onClose }: AIConciergeModalP
   // Shared values for animations
   const pulseValue = useSharedValue(0.6);
 
+  // ─── Watchlist Context for AI ───────────────────────────────────────────────
+  const watchlistContext = useMemo(() => {
+    if (watchlistMovies.length === 0) return undefined;
+
+    const allGenreIds = watchlistMovies.flatMap(m => m.genre_ids);
+    const genreCounts: Record<number, number> = {};
+    for (const gid of allGenreIds) {
+      genreCounts[gid] = (genreCounts[gid] || 0) + 1;
+    }
+    const topGenres = Object.entries(genreCounts)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 3)
+      .map(([gid]) => getGenreName(Number(gid)));
+
+    const avgRating = watchlistMovies.reduce((sum, m) => sum + m.vote_average, 0) / watchlistMovies.length;
+
+    return {
+      titles: watchlistMovies.map(m => m.title),
+      genres: topGenres,
+      avgRating,
+    };
+  }, [watchlistMovies]);
+
+  // ─── Dynamic Suggestions ────────────────────────────────────────────────────
+  const suggestions = useMemo(() => {
+    const base = [
+      { text: '🎬 סרט מתח', emoji: '🎬' },
+      { text: '🍿 מה חדש?', emoji: '🍿' },
+    ];
+
+    if (watchlistMovies.length > 0) {
+      base.push(
+        { text: '📊 נתח את הרשימה שלי', emoji: '📊' },
+        { text: '🎯 מה מתאים לי?', emoji: '🎯' },
+      );
+    } else {
+      base.push(
+        { text: '🎥 לכל המשפחה', emoji: '🎥' },
+        { text: '🎭 דרמות מומלצות', emoji: '🎭' },
+      );
+    }
+
+    return base;
+  }, [watchlistMovies.length]);
 
   useEffect(() => {
     pulseValue.value = withRepeat(
@@ -145,13 +196,6 @@ export default function AIConciergeModal({ visible, onClose }: AIConciergeModalP
     transform: [{ scale: pulseValue.value }],
   }));
 
-  const suggestions = [
-    { text: '🎬 סרט מתח', emoji: '🎬' },
-    { text: '🍿 מה חדש?', emoji: '🍿' },
-    { text: '🎥 לכל המשפחה', emoji: '🎥' },
-    { text: '🎭 דרמות', emoji: '🎭' }
-  ];
-
   const handleSend = async (customInput?: string) => {
     const textToSend = customInput || input;
     if (!textToSend.trim() || isLoading) return;
@@ -163,9 +207,32 @@ export default function AIConciergeModal({ visible, onClose }: AIConciergeModalP
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
-      const response = await AIService.chatWithConcierge(
-        messages.concat(userMsg).map(m => ({ role: m.role, content: m.content }))
-      );
+      // Check for special watchlist analysis request
+      const lowerText = textToSend.toLowerCase();
+      let response: string;
+
+      if (lowerText.includes('נתח') && lowerText.includes('רשימ')) {
+        // Watchlist analysis mode
+        const analysis = await AIService.analyzeWatchlist(
+          watchlistMovies.map(m => ({
+            title: m.title,
+            vote_average: m.vote_average,
+            genre_ids: m.genre_ids,
+          }))
+        );
+        response = `📊 **ניתוח רשימת הצפייה שלך:**\n\n` +
+          `🎬 סה"כ סרטים: ${analysis.stats.totalMovies}\n` +
+          `⭐ ציון ממוצע: ${analysis.stats.avgRating.toFixed(1)}\n` +
+          `🏆 ז'אנר מוביל: ${analysis.stats.topGenre}\n` +
+          `❤️ ז'אנרים אהובים: ${analysis.favoriteGenres.join(', ')}\n\n` +
+          `💡 ${analysis.recommendation}`;
+      } else {
+        // Regular chat — pass watchlist context
+        response = await AIService.chatWithConcierge(
+          messages.concat(userMsg).map(m => ({ role: m.role, content: m.content })),
+          watchlistContext
+        );
+      }
       
       const aiMsg: Message = { id: (Date.now() + 1).toString(), role: 'model', content: response };
       setMessages(prev => [...prev, aiMsg]);
@@ -177,6 +244,12 @@ export default function AIConciergeModal({ visible, onClose }: AIConciergeModalP
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
       console.error('AI Chat Error:', error);
+      const errorMsg: Message = { 
+        id: (Date.now() + 1).toString(), 
+        role: 'model', 
+        content: '😅 סליחה, נתקלתי בבעיה. נסה שוב בבקשה!' 
+      };
+      setMessages(prev => [...prev, errorMsg]);
     } finally {
       setIsLoading(false);
     }
@@ -195,14 +268,14 @@ export default function AIConciergeModal({ visible, onClose }: AIConciergeModalP
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     setIsListening(true);
     
-    // Simulate Voice Recognition for 2026 Vision
+    // Simulate Voice Recognition
     setTimeout(() => {
       setIsListening(false);
       const sampleQueries = [
         'אני רוצה לראות סרט אקשן הערב',
-        'תזמין לי פופקורן גדול וקולה',
+        'מה מתאים לי על פי הרשימה שלי?',
         'איזה סרטים מומלצים לילדים?',
-        'מתי ההקרנה הבאה של באטמן?'
+        'תמליץ לי על משהו מרגש',
       ];
       const randomQuery = sampleQueries[Math.floor(Math.random() * sampleQueries.length)];
       setInput(randomQuery);
@@ -228,7 +301,7 @@ export default function AIConciergeModal({ visible, onClose }: AIConciergeModalP
             behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
             className="flex-1"
           >
-            {/* Header - Premium Glassmorphism */}
+            {/* Header */}
             <View className="pt-14 pb-4 px-6 border-b border-white/5 bg-black/40">
               <View className="flex-row justify-between items-center">
                 <View className="flex-row items-center">
@@ -270,6 +343,16 @@ export default function AIConciergeModal({ visible, onClose }: AIConciergeModalP
                   </Pressable>
                 </View>
               </View>
+
+              {/* Watchlist Context Indicator */}
+              {watchlistMovies.length > 0 && (
+                <Animated.View entering={FadeInDown.delay(300).duration(500)} className="flex-row items-center mt-3 bg-primary/5 border border-primary/10 rounded-xl px-3 py-2">
+                  <BookmarkCheck size={14} color={Colors.primary} />
+                  <Text className="text-[11px] text-primary/80 ms-2 font-body">
+                    מכיר {watchlistMovies.length} סרטים מהרשימה שלך • ז'אנר מוביל: {watchlistContext?.genres[0] || 'כללי'}
+                  </Text>
+                </Animated.View>
+              )}
             </View>
 
             {/* Chat Messages */}
@@ -279,7 +362,7 @@ export default function AIConciergeModal({ visible, onClose }: AIConciergeModalP
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ paddingBottom: 30 }}
             >
-              {messages.map((msg, index) => (
+              {messages.map((msg) => (
                 <Animated.View 
                   key={msg.id}
                   entering={msg.role === 'user' ? FadeInRight.springify() : FadeInLeft.springify()}
@@ -404,4 +487,3 @@ export default function AIConciergeModal({ visible, onClose }: AIConciergeModalP
     </Modal>
   );
 }
-
