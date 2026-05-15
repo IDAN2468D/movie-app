@@ -1,17 +1,14 @@
-import React, { useMemo } from 'react';
-import { View, Text, Dimensions, Pressable } from 'react-native';
-import Svg, { Rect, G, Path, Circle, Defs, LinearGradient, Stop, Mask } from 'react-native-svg';
+import { View, Text, Dimensions } from 'react-native';
+import Svg, { Rect, G, Path, Defs, LinearGradient, Stop, Mask } from 'react-native-svg';
 import Animated, { 
   useAnimatedStyle, 
   useSharedValue, 
-  withSpring,
-  interpolate,
-  Extrapolate
+  withSpring
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '@/constants/Theme';
-import { useBookingStore, type Seat } from '@/store/useBookingStore';
+import { useBookingStore } from '@/store/useBookingStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const MAP_HEIGHT = 500;
@@ -114,8 +111,7 @@ export default function ZoomableSeatMap() {
   const savedTranslateX = useSharedValue(0);
   const savedTranslateY = useSharedValue(0);
 
-  const SEAT_SIZE = 28;
-  const SEAT_GAP = 12;
+
   const ROW_HEIGHT = 45;
   const COL_WIDTH = 32;
 

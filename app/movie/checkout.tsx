@@ -1,23 +1,19 @@
 /**
  * Checkout Screen - Final order summary and payment
  */
-import React from 'react';
+import * as React from 'react';
 import { View, Text, Image, Pressable, ScrollView, Modal } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ArrowLeft, CreditCard, ShieldCheck, Ticket, CheckCircle2, Sparkles } from 'lucide-react-native';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import Animated, { 
   FadeInDown, 
   FadeIn, 
   ZoomIn, 
-  useSharedValue, 
   useAnimatedStyle, 
-  withSpring, 
   withRepeat, 
   withTiming,
-  withSequence,
-  withDelay,
   FadeOut
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
@@ -29,7 +25,6 @@ import { useCheckout } from '@/hooks/useCheckout';
 
 // Interop external components to support NativeWind className
 cssInterop(LinearGradient, { className: 'style' });
-cssInterop(BlurView, { className: 'style' });
 
 export default function CheckoutScreen() {
   const insets = useSafeAreaInsets();
@@ -41,6 +36,12 @@ export default function CheckoutScreen() {
       { rotateZ: withRepeat(withTiming('1deg', { duration: 2500 }), -1, true) }
     ]
   }));
+
+  // MGM Intro Video Player - must be at top level
+  const [isIntroFinished, setIsIntroFinished] = React.useState(false);
+  const mgmPlayer = useVideoPlayer('https://archive.org/download/mgm-1995/MGM%201995.mp4', (player) => {
+    player.loop = false;
+  });
 
   const {
     selectedMovieTitle,
@@ -65,16 +66,42 @@ export default function CheckoutScreen() {
   React.useEffect(() => {
     if (isSuccess) {
       setShowAnimation(true);
-      // Extra haptics for the reveal
-      setTimeout(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success), 500);
+      setIsIntroFinished(false);
       
+      // Start MGM Intro
+      mgmPlayer.play();
+      
+      // Haptics for the roar
+      const hapticTimer = setTimeout(() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      }, 1500);
+
+      // Transition to ticket after intro
       const timer = setTimeout(() => {
+        setIsIntroFinished(true);
+      }, 4500);
+
+      // Final modal transition
+      const modalTimer = setTimeout(() => {
         setShowAnimation(false);
         setShowModal(true);
-      }, 5000);
-      return () => clearTimeout(timer);
+      }, 9500); // Intro (4.5s) + Ticket animation (5s)
+
+      return () => {
+        clearTimeout(hapticTimer);
+        clearTimeout(timer);
+        clearTimeout(modalTimer);
+        try {
+          // Check if player is still valid before pausing to avoid "already released" error
+          if (mgmPlayer) {
+            mgmPlayer.pause();
+          }
+        } catch (e) {
+          // Silent catch for released objects
+        }
+      };
     }
-  }, [isSuccess]);
+  }, [isSuccess, mgmPlayer, setIsIntroFinished, setShowAnimation, setShowModal]);
 
 
   if (!selectedShowtime) return null;
@@ -197,25 +224,45 @@ export default function CheckoutScreen() {
           exiting={FadeOut.duration(500)}
           className="absolute inset-0 z-50 items-center justify-center bg-black/95"
         >
-          <BlurView intensity={30} tint="dark" className="absolute inset-0" />
+          <View className="absolute inset-0 bg-black/40" />
           
+          {/* MGM Intro Layer */}
+          {!isIntroFinished && (
+            <Animated.View 
+              entering={FadeIn.duration(500)}
+              exiting={FadeOut.duration(500)}
+              className="absolute inset-0 z-50 bg-black items-center justify-center"
+            >
+              <VideoView 
+                player={mgmPlayer} 
+                style={{ width: '100%', height: '100%' }} 
+                contentFit="contain"
+                nativeControls={false}
+              />
+            </Animated.View>
+          )}
           
           {/* Animated Background Glows */}
-          <Animated.View 
-            entering={FadeIn.delay(200)}
-            className="absolute w-[500px] h-[500px] rounded-full bg-primary/20 blur-[100px]"
-            style={{ top: '10%', left: '-20%' }}
-          />
-          <Animated.View 
-            entering={FadeIn.delay(400)}
-            className="absolute w-[400px] h-[400px] rounded-full bg-secondary/15 blur-[80px]"
-            style={{ bottom: '10%', right: '-10%' }}
-          />
+          {isIntroFinished && (
+            <>
+              <Animated.View 
+                entering={FadeIn.delay(200)}
+                className="absolute w-[500px] h-[500px] rounded-full bg-primary/20 blur-[100px]"
+                style={{ top: '10%', left: '-20%' }}
+              />
+              <Animated.View 
+                entering={FadeIn.delay(400)}
+                className="absolute w-[400px] h-[400px] rounded-full bg-secondary/15 blur-[80px]"
+                style={{ bottom: '10%', right: '-10%' }}
+              />
+            </>
+          )}
 
-          <Animated.View 
-            entering={ZoomIn.delay(400).duration(1000).springify().damping(15)}
-            className="items-center z-10 overflow-visible"
-          >
+          {isIntroFinished && (
+            <Animated.View 
+              entering={ZoomIn.duration(1000).springify().damping(15)}
+              className="items-center z-10 overflow-visible"
+            >
             {/* The Golden Ticket with Floating Animation */}
             <Animated.View 
               className="shadow-2xl shadow-secondary/60 relative"
@@ -277,7 +324,8 @@ export default function CheckoutScreen() {
                 הסרט <Text className="text-white font-bold">{selectedMovieTitle}</Text> מחכה לך.{'\n'}תהנה מחוויה קולנועית מושלמת.
               </Text>
             </Animated.View>
-          </Animated.View>
+            </Animated.View>
+          )}
 
           {/* Bottom hint */}
           <Animated.View 
@@ -292,7 +340,7 @@ export default function CheckoutScreen() {
       {/* Success Modal */}
       <Modal visible={showModal} transparent animationType="fade">
         <View className="flex-1 bg-black/80 items-center justify-center px-8">
-          <BlurView intensity={40} tint="dark" className="absolute inset-0" />
+          <View className="absolute inset-0 bg-black/60" />
           <Animated.View 
             entering={FadeInDown.springify()} 
             className="bg-surface p-8 rounded-[40px] items-center w-full border border-white/10"

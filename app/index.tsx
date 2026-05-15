@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, FadeOut, runOnJS, useAnimatedStyle, useSharedValue, withDelay, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Colors } from '@/constants/Theme';
@@ -12,7 +12,7 @@ export default function SplashScreen() {
   const isLoading = useAuthStore(state => state.isLoading);
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const hasSeenOnboarding = useAuthStore(state => state.hasSeenOnboarding);
-  
+
   const [animationFinished, setAnimationFinished] = useState(false);
   const logoScale = useSharedValue(0.5);
   const logoOpacity = useSharedValue(0);
@@ -28,13 +28,13 @@ export default function SplashScreen() {
         runOnJS(setAnimationFinished)(true);
       }, 2000);
     });
-  }, []);
+  }, [logoOpacity, logoScale, hasSeenOnboarding, isAuthenticated, isLoading]);
 
   useEffect(() => {
     if (animationFinished && !isLoading) {
       console.log('--- SEQUENCE START ---');
       console.log('Splash finished, Auth:', isAuthenticated);
-      
+
       if (isAuthenticated) {
         console.log('Routing: Splash -> Tabs');
         router.replace('/(tabs)');
@@ -46,7 +46,7 @@ export default function SplashScreen() {
         router.replace('/login');
       }
     }
-  }, [animationFinished, isLoading, isAuthenticated, router]);
+  }, [animationFinished, isLoading, isAuthenticated, hasSeenOnboarding, router]);
 
   const animatedLogoStyle = useAnimatedStyle(() => {
     return {
@@ -61,7 +61,7 @@ export default function SplashScreen() {
         colors={[Colors.background, '#1a1a2e', Colors.background]}
         className="absolute inset-0"
       />
-      
+
       {/* Background glow */}
       <View className="absolute w-72 h-72 rounded-full bg-primary/20 blur-3xl" />
 
@@ -78,7 +78,7 @@ export default function SplashScreen() {
       </Animated.View>
 
       {/* Temporary Debug Button - Remove after testing */}
-      <TouchableOpacity 
+      <TouchableOpacity
         onPress={async () => {
           await useAuthStore.getState().resetOnboarding();
           console.log('Onboarding RESET from Splash');

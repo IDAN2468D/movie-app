@@ -1,7 +1,8 @@
 /**
  * Login Screen - Premium Cinematic Experience
  */
-import React, { useState } from 'react';
+import * as React from 'react';
+import { useState } from 'react';
 import { 
   View, 
   Text, 
@@ -14,10 +15,10 @@ import {
   Pressable,
   ActivityIndicator
 } from 'react-native';
-import { Mail, Lock, User, ChevronRight, Eye, EyeOff, ArrowRight, ArrowLeft } from 'lucide-react-native';
+import { Mail, Lock, User, Eye, EyeOff, ArrowLeft } from 'lucide-react-native';
 import { Colors } from '@/constants/Theme';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
+
 import Animated, { 
   FadeInDown, 
   FadeInUp, 
@@ -80,7 +81,7 @@ export default function LoginScreen() {
           colors={['transparent', 'rgba(0,0,0,0.8)', '#000000']} 
           className="absolute inset-0" 
         />
-        <BlurView intensity={20} tint="dark" className="absolute inset-0" />
+        <View className="absolute inset-0 bg-black/40" />
       </View>
 
       <KeyboardAvoidingView 
@@ -105,7 +106,7 @@ export default function LoginScreen() {
             >
               {/* Placeholder Element (Right side in RTL) */}
               <View className="w-24 h-32 rounded-3xl overflow-hidden border border-white/10 bg-white/5 items-center justify-center">
-                <BlurView intensity={20} className="absolute inset-0" />
+                <View className="absolute inset-0 bg-white/5" />
                 <Image 
                   source={require('../assets/images/poster-placeholder.png')}
                   className="w-full h-full opacity-30"
@@ -132,10 +133,8 @@ export default function LoginScreen() {
             <Animated.View 
               entering={FadeInDown.duration(1000).delay(400).springify()}
             >
-              <BlurView 
-                intensity={60} 
-                tint="dark" 
-                className="rounded-[40px] overflow-hidden border border-white/10 bg-white/5 p-8 shadow-2xl"
+              <View 
+                className="rounded-[40px] overflow-hidden border border-white/10 bg-black/60 p-8 shadow-2xl"
               >
                 {isLoading ? (
                   <View className="py-20 items-center justify-center">
@@ -162,8 +161,8 @@ export default function LoginScreen() {
                           className="flex-1 text-white text-lg"
                           value={form.email}
                           onChangeText={(val) => setForm({...form, email: val})}
-                          onFocus={() => setFocusedField('email')}
-                          onBlur={() => setFocusedField(null)}
+                          onFocus={() => onFocus('email')}
+                          onBlur={onBlur}
                         />
                       </View>
                     </Animated.View>
@@ -185,8 +184,8 @@ export default function LoginScreen() {
                           className="text-white text-lg"
                           value={form.password}
                           onChangeText={(val) => setForm({...form, password: val})}
-                          onFocus={() => setFocusedField('password')}
-                          onBlur={() => setFocusedField(null)}
+                          onFocus={() => onFocus('password')}
+                          onBlur={onBlur}
                         />
                         <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
                           {showPassword ? (
@@ -234,7 +233,7 @@ export default function LoginScreen() {
                     </TouchableOpacity>
                   </View>
                 )}
-              </BlurView>
+              </View>
             </Animated.View>
 
             {/* Footer */}

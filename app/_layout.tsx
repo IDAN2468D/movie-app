@@ -59,6 +59,7 @@ export default function RootLayout() {
   
   const isLoading = useAuthStore(state => state.isLoading);
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+  const hasSeenOnboarding = useAuthStore(state => state.hasSeenOnboarding);
   const segments = useSegments();
   const router = useRouter();
   
@@ -88,7 +89,6 @@ export default function RootLayout() {
   useEffect(() => {
     if (isLoading) return;
 
-    const hasSeenOnboarding = useAuthStore.getState().hasSeenOnboarding;
     const currentSegment = segments[0];
 
     console.log('Navigation Guard:', {
@@ -128,7 +128,7 @@ export default function RootLayout() {
         router.replace('/(tabs)');
       }
     }
-  }, [isAuthenticated, isLoading, segments, router]);
+  }, [isAuthenticated, isLoading, segments, router, hasSeenOnboarding]);
 
   // Hide splash screen as soon as fonts are loaded
   // This allows our custom app/index.tsx splash animation to take over

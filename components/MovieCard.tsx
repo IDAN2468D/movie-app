@@ -1,12 +1,12 @@
 /**
  * MovieCard - Premium glassmorphic movie poster card
  */
-import { View, Text, StyleSheet, Pressable, Image, Dimensions } from 'react-native';
+import { View, Text, Pressable, Image, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Star, Bookmark } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { Colors, Radius, Typography, POSTER_SIZES } from '@/constants/Theme';
+import { Colors, POSTER_SIZES } from '@/constants/Theme';
 import type { TMDBMovie } from '@/lib/tmdb';
 import { useWatchlistStore } from '@/store/useWatchlistStore';
 import { useAuthStore } from '@/store/useAuthStore';

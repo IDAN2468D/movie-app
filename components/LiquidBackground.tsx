@@ -29,7 +29,7 @@ const LiquidBackground: React.FC<LiquidBackgroundProps> = ({ movieColor = '#8E2D
     
     blob2X.value = withDelay(1000, withRepeat(withTiming(-width * 0.2, { duration: 9000 }), -1, true));
     blob2Y.value = withDelay(1000, withRepeat(withTiming(height * 0.1, { duration: 11000 }), -1, true));
-  }, []);
+  }, [blob1X, blob1Y, blob2X, blob2Y]);
 
   const style1 = useAnimatedStyle(() => ({
     transform: [

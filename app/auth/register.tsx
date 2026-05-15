@@ -14,7 +14,7 @@ import {
   Pressable,
   ActivityIndicator
 } from 'react-native';
-import { Mail, Lock, User, ChevronRight, Eye, EyeOff, ArrowRight, ArrowLeft } from 'lucide-react-native';
+import { Mail, Lock, User, Eye, EyeOff, ArrowLeft } from 'lucide-react-native';
 import { Colors } from '@/constants/Theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';

@@ -35,7 +35,7 @@ export const AIButton: React.FC<AIButtonProps> = ({ onPress }) => {
       -1,
       true
     );
-  }, []);
+  }, [pulseScale, opacity]);
 
   const animatedRingStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pulseScale.value }],

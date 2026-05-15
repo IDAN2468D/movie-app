@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { FadeInDown, FadeOutUp, SlideInRight, SlideOutLeft, Layout } from 'react-native-reanimated';
+import Animated, { SlideInRight, SlideOutLeft, Layout } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Colors } from '@/constants/Theme';
 
-const { width, height } = Dimensions.get('window');
+// Get window dimensions if needed, otherwise ignore if unused
 
 const ONBOARDING_STEPS = [
   {

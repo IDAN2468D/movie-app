@@ -1,9 +1,9 @@
 /**
  * SeatMap - Interactive seat selection grid
  */
-import { View, Text, StyleSheet, Pressable, Dimensions } from 'react-native';
+import { View, Text, Pressable, Dimensions } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { Colors, Radius, Typography } from '@/constants/Theme';
+import { Colors } from '@/constants/Theme';
 import { useBookingStore, type Seat } from '@/store/useBookingStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');

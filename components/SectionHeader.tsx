@@ -1,7 +1,7 @@
 /**
  * SectionHeader - Reusable RTL section title with optional "See All"
  */
-import { View, Text, TouchableOpacity, StyleSheet, I18nManager } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';
 import MarkerHighlight from './MarkerHighlight';
 import { Colors, Typography } from '@/constants/Theme';
