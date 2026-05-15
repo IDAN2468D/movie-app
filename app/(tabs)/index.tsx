@@ -1,6 +1,7 @@
 /**
  * Home Screen - Cinematic movie discovery feed
  */
+import React from 'react';
 import {
   View,
   Text,
@@ -8,7 +9,11 @@ import {
   FlatList,
   ActivityIndicator,
   RefreshControl,
+  Modal,
+  TouchableOpacity,
 } from 'react-native';
+import { useRouter } from 'expo-router';
+import { TrendingUp } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Theme';
 import HeroSlider from '@/components/HeroSlider';
@@ -17,6 +22,8 @@ import SectionHeader from '@/components/SectionHeader';
 import AIConciergeModal from '@/components/AIConciergeModal';
 import { AIButton } from '@/components/AIButton';
 import { useHome } from '@/hooks/useHome';
+import StoriesRow from '@/components/StoriesRow';
+import MovieStories from '@/components/MovieStories';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -30,6 +37,15 @@ export default function HomeScreen() {
     onRefresh,
     toggleAiModal,
   } = useHome();
+  const router = useRouter();
+
+  const [storiesVisible, setStoriesVisible] = React.useState(false);
+  const [selectedStoryIndex, setSelectedStoryIndex] = React.useState(0);
+
+  const handleStoryPress = (index: number) => {
+    setSelectedStoryIndex(index);
+    setStoriesVisible(true);
+  };
 
   if (loading) {
     return (
@@ -56,6 +72,28 @@ export default function HomeScreen() {
           />
         }
       >
+        {/* Custom Header (LTR) */}
+        <View className="flex-row items-center px-6 pt-4 mb-6">
+          <TouchableOpacity 
+            onPress={() => router.push('/analytics')}
+            className="bg-primary/20 p-3 rounded-2xl border border-primary/30 mr-4"
+          >
+            <TrendingUp size={24} color="#E50914" />
+          </TouchableOpacity>
+          <View>
+            <Text className="text-white/60 font-assistant text-sm text-left">שלום, חובב קולנוע 👋</Text>
+            <Text className="text-white text-2xl font-bold font-assistant text-left">הסרטים של CineBook</Text>
+          </View>
+        </View>
+
+        {/* Stories */}
+        {nowPlaying.length > 0 && (
+          <StoriesRow 
+            stories={nowPlaying.map(m => ({ id: m.id, title: m.title, poster: m.poster_path || '' }))} 
+            onStoryPress={handleStoryPress}
+          />
+        )}
+
         {/* Hero */}
         {nowPlaying.length > 0 && <HeroSlider movies={nowPlaying} />}
 
@@ -112,6 +150,24 @@ export default function HomeScreen() {
         visible={aiModalVisible} 
         onClose={() => toggleAiModal(false)} 
       />
+
+      <Modal
+        visible={storiesVisible}
+        animationType="fade"
+        transparent={false}
+        onRequestClose={() => setStoriesVisible(false)}
+      >
+        <MovieStories 
+          stories={nowPlaying.map(m => ({ 
+            id: m.id, 
+            title: m.title, 
+            poster: m.poster_path || '', 
+            overview: m.overview 
+          }))}
+          initialIndex={selectedStoryIndex}
+          onClose={() => setStoriesVisible(false)}
+        />
+      </Modal>
     </View>
   );
 }
