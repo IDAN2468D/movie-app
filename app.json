@@ -34,6 +34,7 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "@config-plugins/detox",
       "expo-router",
       "expo-secure-store",
       "expo-web-browser",

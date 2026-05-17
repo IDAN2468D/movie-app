@@ -17,13 +17,15 @@ interface MovieCardProps {
   movie: TMDBMovie;
 }
 
-export default function MovieCard({ movie }: MovieCardProps) {
-  const { isInWatchlist, addToWatchlist, removeFromWatchlist } = useWatchlistStore();
+const MovieCard = React.memo(function MovieCard({ movie }: MovieCardProps) {
+  const isBookmarked = useWatchlistStore(state => state.movies.some(m => m.id === movie.id));
+  const addToWatchlist = useWatchlistStore(state => state.addToWatchlist);
+  const removeFromWatchlist = useWatchlistStore(state => state.removeFromWatchlist);
+  
   const toggleFavorite = useAuthStore(state => state.toggleFavorite);
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   
   const [imgSource, setImgSource] = useState(getImageSource(movie.poster_path, 'poster', 'medium'));
-  const isBookmarked = isInWatchlist(movie.id);
 
   // Update image source when movie changes
   useEffect(() => {
@@ -100,6 +102,8 @@ export default function MovieCard({ movie }: MovieCardProps) {
       </Text>
     </Pressable>
   );
-}
+});
+
+export default MovieCard;
 
 // NativeWind migration complete - styles object removed

@@ -110,7 +110,14 @@ export const useCheckout = () => {
     const auth = await authenticateBiometrics('אשר את התשלום עבור הכרטיסים');
     
     if (auth) {
-      await bookCurrentSelection();
+      const snacksPayload = snacksInCart.map(item => ({
+        id: item.id!,
+        name: item.name!,
+        price: item.price!,
+        quantity: item.quantity,
+        image: typeof item.image === 'string' ? item.image : String(item.id)
+      }));
+      await bookCurrentSelection(snacksPayload);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setIsSuccess(true);
       

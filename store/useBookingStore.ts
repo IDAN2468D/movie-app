@@ -3,9 +3,13 @@
  * Manages movie selection, showtime, and seat booking state.
  */
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { AsyncStorage } from '@/utils/SafeModules';
 import { API_BASE_URL } from '@/constants/Config';
 import { safeFetch } from './apiHelper';
 import { useAuthStore } from './useAuthStore';
+import { z } from 'zod';
+import { ServerTicketSchema } from '@/lib/apiSchemas';
 
 export interface Showtime {
   id: string;
@@ -45,10 +49,18 @@ interface BookingState {
   selectDate: (date: string) => void;
   selectShowtime: (showtime: Showtime) => void;
   toggleSeat: (row: string, number: number) => void;
-  bookCurrentSelection: () => Promise<void>;
+  bookCurrentSelection: (snacks?: SnackBookingItem[]) => Promise<void>;
   clearBooking: () => void;
   generateSeats: (rows: number, cols: number) => void;
   fetchMyTickets: () => Promise<void>;
+}
+
+export interface SnackBookingItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image: string;
 }
 
 export interface BookedTicket {
@@ -58,13 +70,16 @@ export interface BookedTicket {
   date: string;
   showtime: Showtime;
   seats: Seat[];
+  snacks?: SnackBookingItem[];
   totalPrice: number;
   bookingDate: string;
 }
 
 const ROW_LABELS = 'ABCDEFGHIJKLMNOP'.split('');
 
-export const useBookingStore = create<BookingState>((set, get) => ({
+export const useBookingStore = create<BookingState>()(
+  persist(
+    (set, get) => ({
   selectedMovieId: null,
   selectedMovieTitle: '',
   selectedMoviePoster: '',
@@ -144,7 +159,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
     set({ seats: updated, selectedSeats: selected, totalPrice: price });
   },
 
-  bookCurrentSelection: async () => {
+  bookCurrentSelection: async (snacks) => {
     const { selectedMovieId, selectedMovieTitle, selectedDate, selectedShowtime, selectedSeats, totalPrice } = get();
     if (!selectedMovieId || !selectedShowtime || selectedSeats.length === 0) return;
 
@@ -168,14 +183,23 @@ export const useBookingStore = create<BookingState>((set, get) => ({
           date: selectedDate,
           showtime: selectedShowtime,
           seats: selectedSeats,
+          snacks: snacks || [],
           totalPrice
         }),
       });
       
       if (result.success) {
+        const validatedTicket = ServerTicketSchema.safeParse(result.data);
+        const ticketToUse = validatedTicket.success ? validatedTicket.data : result.data;
+        
         set((state) => ({
-          myTickets: [result.data, ...state.myTickets],
+          myTickets: [ticketToUse as any, ...state.myTickets],
         }));
+        try {
+          await useAuthStore.getState().checkAuth();
+        } catch (e) {
+          console.error('Failed to sync user profile:', e);
+        }
       } else {
         console.error('Failed to book ticket:', result.message);
       }
@@ -197,7 +221,11 @@ export const useBookingStore = create<BookingState>((set, get) => ({
       });
       
       if (result.success) {
-        set({ myTickets: result.data });
+        const ticketListSchema = z.array(ServerTicketSchema);
+        const validatedTickets = ticketListSchema.safeParse(result.data);
+        const ticketsToUse = validatedTickets.success ? validatedTickets.data : result.data;
+        
+        set({ myTickets: ticketsToUse as any[] });
       }
     } catch (error) {
       console.error('Error fetching tickets:', error);
@@ -215,4 +243,13 @@ export const useBookingStore = create<BookingState>((set, get) => ({
       selectedSeats: [],
       totalPrice: 0,
     }),
-}));
+    }),
+    {
+      name: 'cinebook-booking',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        myTickets: state.myTickets,
+      }),
+    }
+  )
+);

@@ -9,6 +9,7 @@ import { AIService } from '@/services/AIService';
 import { Colors } from '@/constants/Theme';
 import { useWatchlistStore } from '@/store/useWatchlistStore';
 import { getGenreName } from '@/lib/tmdb';
+import { useVoiceRecording } from '@/hooks/useVoiceRecording';
 
 interface Message {
   id: string;
@@ -58,13 +59,16 @@ const TypingDot = ({ index }: { index: number }) => {
 const TypingIndicator = () => (
   <Animated.View 
     entering={FadeInLeft}
-    className="flex-row items-center ms-10 mb-6"
+    className="mb-6 flex-row items-end justify-end gap-2"
   >
-    <View className="bg-white/5 px-4 py-3 rounded-2xl rounded-ts-none border border-white/10 flex-row items-center">
+    <View className="bg-white/5 px-4 py-3 rounded-2xl rounded-bl-none border border-white/10 flex-row items-center">
       <TypingDot index={0} />
       <TypingDot index={1} />
       <TypingDot index={2} />
       <Text className="text-[12px] text-white/40 ms-3 font-body">ה-AI חושב...</Text>
+    </View>
+    <View className="w-8 h-8 rounded-full bg-white/5 border border-white/10 items-center justify-center">
+      <Zap size={14} color={Colors.primary} />
     </View>
   </Animated.View>
 );
@@ -184,11 +188,16 @@ export default function AIConciergeModal({ visible, onClose }: AIConciergeModalP
     );
   }, [pulseValue]);
 
+  const { isRecording, startRecording, stopRecording } = useVoiceRecording();
+
   useEffect(() => {
     if (!visible) {
       AIService.stopSpeaking();
+      if (isRecording) {
+        stopRecording();
+      }
     }
-  }, [visible]);
+  }, [visible, isRecording]);
 
   const animatedPulseStyle = useAnimatedStyle(() => ({
     opacity: pulseValue.value,
@@ -263,23 +272,30 @@ export default function AIConciergeModal({ visible, onClose }: AIConciergeModalP
     }
   };
 
-  const startListening = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    setIsListening(true);
-    
-    // Simulate Voice Recognition
-    setTimeout(() => {
+  const handleVoicePress = async () => {
+    if (isRecording) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setIsListening(false);
-      const sampleQueries = [
-        'אני רוצה לראות סרט אקשן הערב',
-        'מה מתאים לי על פי הרשימה שלי?',
-        'איזה סרטים מומלצים לילדים?',
-        'תמליץ לי על משהו מרגש',
-      ];
-      const randomQuery = sampleQueries[Math.floor(Math.random() * sampleQueries.length)];
-      setInput(randomQuery);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }, 3000);
+      const base64 = await stopRecording();
+      if (base64) {
+        setIsLoading(true);
+        try {
+          const transcription = await AIService.transcribeVoice(base64);
+          if (transcription && transcription.trim()) {
+            setInput(transcription);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          }
+        } catch (error) {
+          console.error('AI Concierge voice transcription error:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    } else {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      setIsListening(true);
+      await startRecording();
+    }
   };
 
   useEffect(() => {
@@ -361,50 +377,86 @@ export default function AIConciergeModal({ visible, onClose }: AIConciergeModalP
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ paddingBottom: 30 }}
             >
-              {messages.map((msg) => (
-                <Animated.View 
-                  key={msg.id}
-                  entering={msg.role === 'user' ? FadeInRight.springify() : FadeInLeft.springify()}
-                  className={`mb-5 flex-row items-end ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  {msg.role === 'model' && (
-                    <View className="w-8 h-8 rounded-full bg-white/5 border border-white/10 items-center justify-center me-2 mb-1">
-                      <Zap size={14} color={Colors.primary} />
-                    </View>
-                  )}
-                  
-                  <View 
-                    style={{
-                      backgroundColor: msg.role === 'user' ? Colors.primary : 'rgba(255,255,255,0.06)',
-                      borderTopLeftRadius: 20,
-                      borderTopRightRadius: 20,
-                      borderBottomLeftRadius: msg.role === 'model' ? 4 : 20,
-                      borderBottomRightRadius: msg.role === 'user' ? 4 : 20,
-                      padding: 14,
-                      maxWidth: '80%',
-                      borderWidth: 1,
-                      borderColor: msg.role === 'user' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)',
-                      shadowColor: msg.role === 'user' ? Colors.primary : '#000',
-                      shadowOffset: { width: 0, height: 4 },
-                      shadowOpacity: 0.2,
-                      shadowRadius: 8,
-                      elevation: 4
-                    }}
+              {messages.map((msg) => {
+                const isUser = msg.role === 'user';
+                return (
+                  <Animated.View 
+                    key={msg.id}
+                    entering={isUser ? FadeInRight.springify() : FadeInLeft.springify()}
+                    className={`mb-5 flex-row items-end gap-2 ${isUser ? 'justify-start' : 'justify-end'}`}
                   >
-                    <Text 
-                      className={`text-[15px] font-body leading-relaxed text-start ${msg.role === 'user' ? 'text-white' : 'text-white/90'}`}
-                    >
-                      {msg.content}
-                    </Text>
-                  </View>
-
-                  {msg.role === 'user' && (
-                    <View className="w-8 h-8 rounded-full bg-primary items-center justify-center ms-2 mb-1 border border-white/20">
-                      <User size={14} color="white" />
-                    </View>
-                  )}
-                </Animated.View>
-              ))}
+                    {isUser ? (
+                      <>
+                        <View className="w-8 h-8 rounded-full bg-primary items-center justify-center border border-white/20">
+                          <User size={14} color="white" />
+                        </View>
+                        <View 
+                          style={{
+                            backgroundColor: Colors.primary,
+                            borderTopLeftRadius: 20,
+                            borderTopRightRadius: 20,
+                            borderBottomLeftRadius: 20,
+                            borderBottomRightRadius: 4,
+                            padding: 14,
+                            maxWidth: '80%',
+                            borderWidth: 1,
+                            borderColor: 'rgba(255,255,255,0.2)',
+                            shadowColor: Colors.primary,
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowOpacity: 0.2,
+                            shadowRadius: 8,
+                            elevation: 4
+                          }}
+                        >
+                          <Text 
+                            className="text-[15px] font-body leading-relaxed text-white text-start"
+                            style={{
+                              textAlign: 'right',
+                              writingDirection: 'rtl',
+                            }}
+                          >
+                            {msg.content}
+                          </Text>
+                        </View>
+                      </>
+                    ) : (
+                      <>
+                        <View 
+                          style={{
+                            backgroundColor: 'rgba(255,255,255,0.06)',
+                            borderTopLeftRadius: 20,
+                            borderTopRightRadius: 20,
+                            borderBottomLeftRadius: 4,
+                            borderBottomRightRadius: 20,
+                            padding: 14,
+                            maxWidth: '80%',
+                            borderWidth: 1,
+                            borderColor: 'rgba(255,255,255,0.1)',
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowOpacity: 0.2,
+                            shadowRadius: 8,
+                            elevation: 4
+                          }}
+                        >
+                          <Text 
+                            className="text-[15px] font-body leading-relaxed text-white/90 text-left"
+                            style={{
+                              textAlign: 'left',
+                              writingDirection: 'ltr',
+                            }}
+                          >
+                            {msg.content}
+                          </Text>
+                        </View>
+                        <View className="w-8 h-8 rounded-full bg-white/5 border border-white/10 items-center justify-center">
+                          <Zap size={14} color={Colors.primary} />
+                        </View>
+                      </>
+                    )}
+                  </Animated.View>
+                );
+              })}
               
               {isLoading && (
                 <TypingIndicator />
@@ -439,7 +491,7 @@ export default function AIConciergeModal({ visible, onClose }: AIConciergeModalP
               {/* Input Area */}
               <View className="flex-row items-center bg-white/5 border border-white/10 rounded-[28px] p-1.5 px-4">
                 <Pressable 
-                  onPress={startListening}
+                  onPress={handleVoicePress}
                   className={`me-2 w-10 h-10 items-center justify-center rounded-full ${isListening ? 'bg-primary/20' : ''}`}
                 >
                   {isListening ? (

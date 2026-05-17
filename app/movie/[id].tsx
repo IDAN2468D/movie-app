@@ -402,36 +402,36 @@ export default function MovieDetailsScreen() {
                 borderColor: `${themeColors.primary}1A`
               }}
             >
-              <View className="flex-row items-center mb-6" style={{ flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row' }}>
+              <View className="flex-row items-center mb-6 gap-3" style={{ flexDirection: 'row' }}>
                 <View style={{ backgroundColor: `${themeColors.primary}33` }} className="p-2 rounded-xl">
                   <Sparkles size={20} color={themeColors.primary} />
                 </View>
-                <Text className="text-h2 text-white font-display ms-3">תובנות AI</Text>
+                <Text className="text-h2 text-white font-display">תובנות AI</Text>
               </View>
 
               <View className="space-y-4">
-                <View style={{ alignItems: I18nManager.isRTL ? 'flex-end' : 'flex-start' }}>
-                  <View className="flex-row items-center mb-2" style={{ flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row' }}>
+                <View style={{ alignItems: 'flex-start' }}>
+                  <View className="flex-row items-center mb-2 gap-2" style={{ flexDirection: 'row' }}>
                     <ThumbsUp size={16} color="#22c55e" />
-                    <Text className="text-white font-bold font-body ms-2">מה אנחנו אוהבים:</Text>
+                    <Text className="text-white font-bold font-body">מה אנחנו אוהבים:</Text>
                   </View>
                   {insights.pros.map((pro, index) => (
-                    <Text key={index} className="text-textSecondary font-body mb-1" style={{ textAlign: 'left', writingDirection: I18nManager.isRTL ? 'rtl' : 'ltr' }}>• {pro}</Text>
+                    <Text key={index} className="text-textSecondary font-body mb-1" style={{ textAlign: 'left', writingDirection: 'ltr' }}>• {pro}</Text>
                   ))}
                 </View>
 
-                <View style={{ alignItems: I18nManager.isRTL ? 'flex-end' : 'flex-start' }} className="mt-4">
-                  <View className="flex-row items-center mb-2" style={{ flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row' }}>
+                <View style={{ alignItems: 'flex-start' }} className="mt-4">
+                  <View className="flex-row items-center mb-2 gap-2" style={{ flexDirection: 'row' }}>
                     <ThumbsDown size={16} color="#ef4444" />
-                    <Text className="text-white font-bold font-body ms-2">פחות אהבנו:</Text>
+                    <Text className="text-white font-bold font-body">פחות אהבנו:</Text>
                   </View>
                   {insights.cons.map((con, index) => (
-                    <Text key={index} className="text-textSecondary font-body mb-1" style={{ textAlign: 'left', writingDirection: I18nManager.isRTL ? 'rtl' : 'ltr' }}>• {con}</Text>
+                    <Text key={index} className="text-textSecondary font-body mb-1" style={{ textAlign: 'left', writingDirection: 'ltr' }}>• {con}</Text>
                   ))}
                 </View>
 
                 <View className="mt-6 pt-6 border-t border-white/5">
-                  <Text style={{ color: themeColors.primary, textAlign: 'left', writingDirection: I18nManager.isRTL ? 'rtl' : 'ltr' }} className="font-bold italic font-body leading-relaxed">
+                  <Text style={{ color: themeColors.primary, textAlign: 'left', writingDirection: 'ltr' }} className="font-bold italic font-body leading-relaxed">
                     "{insights.verdict}"
                   </Text>
                 </View>
@@ -445,27 +445,27 @@ export default function MovieDetailsScreen() {
             className="mt-8 overflow-hidden rounded-[32px] border border-white/5 bg-[#121214]" // Solid background
           >
             <View className="p-8">
-              <View className="flex-row items-center mb-6 gap-4" style={{ flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row' }}>
+              <View className="flex-row items-center mb-6 gap-4" style={{ flexDirection: 'row' }}>
                 <View className="p-3 bg-secondary/20 rounded-2xl">
                   <Film size={24} color={Colors.secondary} />
                 </View>
                 <View style={{ alignItems: 'flex-start' }}>
-                  <Text className="text-h2 text-white font-display">גרסת הבמאי</Text>
-                  <Text className="text-caption text-secondary/60 uppercase tracking-widest font-label">תובנות מאחורי הקלעים</Text>
+                  <Text className="text-h2 text-white font-display" style={{ textAlign: 'left', writingDirection: 'ltr' }}>גרסת הבמאי</Text>
+                  <Text className="text-caption text-secondary/60 uppercase tracking-widest font-label" style={{ textAlign: 'left', writingDirection: 'ltr' }}>תובנות מאחורי הקלעים</Text>
                 </View>
               </View>
 
-              <View className="flex-wrap gap-3 mb-8" style={{ flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row' }}>
+              <View className="flex-wrap gap-3 mb-8" style={{ flexDirection: 'row' }}>
                 <CutBadge icon={<Zap size={12} color="white" />} text="סצנות מורחבות" />
                 <CutBadge icon={<Star size={12} color="white" />} text="פרשנות שחקנים" />
                 <CutBadge icon={<Info size={12} color="white" />} text="שחזור 4K" />
               </View>
 
               <View className="bg-white/5 p-5 rounded-2xl border border-white/10" style={{ alignItems: 'flex-start' }}>
-                <Text className="text-body text-white/80 leading-relaxed font-body" style={{ textAlign: 'left', writingDirection: I18nManager.isRTL ? 'rtl' : 'ltr' }}>
+                <Text className="text-body text-white/80 leading-relaxed font-body" style={{ textAlign: 'left', writingDirection: 'ltr' }}>
                   "ההפקה כללה מעל 200 סטים פיזיים והשתמשה בטכניקת תאורה מהפכנית כדי ללכוד את הזוהר הטבעי של הסביבה הקולנועית."
                 </Text>
-                <Text className="text-caption text-secondary font-bold mt-4 font-display">— סוד מההפקה</Text>
+                <Text className="text-caption text-secondary font-bold mt-4 font-display" style={{ textAlign: 'left', writingDirection: 'ltr' }}>— סוד מההפקה</Text>
               </View>
             </View>
           </Animated.View>
@@ -672,9 +672,9 @@ function CastItem({ castMember }: { castMember: any }) {
 
 function CutBadge({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
-    <View className="flex-row items-center bg-white/10 px-3 py-1.5 rounded-full border border-white/10 gap-2">
+    <View className="items-center bg-white/10 px-3 py-1.5 rounded-full border border-white/10 gap-2" style={{ flexDirection: 'row' }}>
       {icon}
-      <Text className="text-[10px] text-white font-bold font-label uppercase tracking-tighter">{text}</Text>
+      <Text className="text-[10px] text-white font-bold font-label uppercase tracking-tighter" style={{ textAlign: 'left', writingDirection: 'ltr' }}>{text}</Text>
     </View>
   );
 }

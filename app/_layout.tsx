@@ -21,6 +21,7 @@ import { Assistant_400Regular, Assistant_500Medium, Assistant_600SemiBold, Assis
 import { useAuthStore } from '@/store/useAuthStore';
 import NotificationService from '../services/NotificationService';
 import InTheaterOverlay from '@/components/InTheaterOverlay';
+import OfflineBanner from '@/components/OfflineBanner';
 
 cssInterop(LinearGradient, { className: 'style' });
 
@@ -177,6 +178,7 @@ function RootLayoutNav() {
   return (
     <>
       <NavigationGuard />
+      <OfflineBanner />
       <Stack
         screenOptions={{
           headerShown: false,

@@ -64,11 +64,11 @@ export default function SplashScreen() {
       {/* Background glow */}
       <View className="absolute w-72 h-72 rounded-full bg-primary/20 blur-3xl" />
 
-      <Animated.View style={animatedLogoStyle} className="items-center justify-center">
+      <Animated.View testID="splash-logo-container" style={animatedLogoStyle} className="items-center justify-center">
         <View className="w-32 h-32 rounded-[40px] bg-white/5 items-center justify-center border border-white/10 shadow-2xl mb-6 backdrop-blur-xl">
           <Ionicons name="film-outline" size={60} color={Colors.primary} />
         </View>
-        <Text className="text-4xl font-display text-white tracking-widest font-bold">
+        <Text testID="splash-app-title" className="text-4xl font-display text-white tracking-widest font-bold">
           CineBook
         </Text>
         <Text className="text-white/50 font-display-secondary mt-2 text-lg">

@@ -40,7 +40,7 @@ export default function OnboardingScreen() {
       >
         {/* Skip button */}
         <View className="flex-row justify-end">
-          <TouchableOpacity onPress={handleSkip}>
+          <TouchableOpacity testID="onboarding-skip-button" onPress={handleSkip}>
             <Text className="text-white/60 font-body text-base">דלג</Text>
           </TouchableOpacity>
         </View>
@@ -59,7 +59,7 @@ export default function OnboardingScreen() {
               <Ionicons name={step.icon} size={80} color={Colors.primary} />
             </View>
 
-            <Text className="text-3xl font-display-secondary text-white text-center mb-4">
+            <Text testID="onboarding-step-title" className="text-3xl font-display-secondary text-white text-center mb-4">
               {step.title}
             </Text>
             
@@ -84,6 +84,7 @@ export default function OnboardingScreen() {
 
           {/* Next/Start button */}
           <TouchableOpacity
+            testID="onboarding-next-button"
             onPress={handleNext}
             className="w-16 h-16 rounded-full bg-primary items-center justify-center shadow-lg shadow-primary/30"
           >

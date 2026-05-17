@@ -73,3 +73,64 @@ jest.mock('react-native-worklets', () => ({
 jest.mock('expo-blur', () => ({
   BlurView: ({ children }) => children,
 }));
+
+// Mock React Navigation
+jest.mock('@react-navigation/native', () => {
+  return {
+    useNavigation: () => ({
+      navigate: jest.fn(),
+      goBack: jest.fn(),
+      setOptions: jest.fn(),
+      addListener: jest.fn(() => () => {}),
+      isFocused: () => true,
+      dispatch: jest.fn(),
+      canGoBack: () => true,
+    }),
+    useRoute: () => ({
+      params: {},
+    }),
+    useNavigationState: () => ({}),
+    useFocusEffect: (callback) => callback(),
+    NavigationContainer: 'NavigationContainer',
+  };
+});
+
+// Mock Expo Router
+jest.mock('expo-router', () => {
+  const mockRouter = {
+    push: jest.fn(),
+    replace: jest.fn(),
+    back: jest.fn(),
+    dismiss: jest.fn(),
+    setParams: jest.fn(),
+    canGoBack: () => true,
+  };
+
+  return {
+    router: mockRouter,
+    useRouter: () => mockRouter,
+    useLocalSearchParams: () => ({}),
+    useGlobalSearchParams: () => ({}),
+    usePathname: () => '/',
+    useSegments: () => [],
+    Link: 'Link',
+    Stack: 'Stack',
+    Tabs: 'Tabs',
+    useNavigation: () => ({
+      navigate: jest.fn(),
+      goBack: jest.fn(),
+      setOptions: jest.fn(),
+      addListener: jest.fn(() => () => {}),
+      isFocused: () => true,
+      dispatch: jest.fn(),
+      canGoBack: () => true,
+    }),
+    useRootNavigationState: () => ({
+      key: 'root',
+      index: 0,
+      routes: [],
+    }),
+  };
+});
+
+

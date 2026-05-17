@@ -17,6 +17,14 @@
       "android": {
         "buildType": "app-bundle"
       }
+    },
+    "detox-test": {
+      "android": {
+        "gradleCommand": ":app:assembleRelease :app:assembleAndroidTest -DtestBuildType=release"
+      },
+      "ios": {
+        "simulator": true
+      }
     }
   },
   "submit": {

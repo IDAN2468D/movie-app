@@ -387,6 +387,33 @@ ${watchlistInfo}
   }
 
   /**
+   * Transcribes conversational speech to Hebrew text
+   */
+  static async transcribeVoice(audioBase64: string): Promise<string> {
+    const model = this.getModel("אתה מומחה לתמלול הודעות קוליות בעברית עבור אפליקציית קולנוע. תפקידך לתמלל את מה שהמשתמש אמר בדיוק מרבי.");
+    if (!model) return "";
+
+    try {
+      return await this.withRetry(async () => {
+        const result = await model.generateContent([
+          {
+            inlineData: {
+              mimeType: "audio/mp4",
+              data: audioBase64
+            }
+          },
+          `תמלל את הודעת השמע המצורפת לעברית בלבד. החזר את התמלול המדויק כטקסט פשוט, ללא תוספות, ללא הקדמות וללא מרכאות.`
+        ]);
+        
+        return result.response.text().trim();
+      });
+    } catch (error) {
+      console.error("AIService Error (Voice Transcription):", error);
+      return "";
+    }
+  }
+
+  /**
    * Identifies a movie from a poster image (base64) using Gemini Vision
    */
   static async identifyMovieFromPoster(base64Image: string): Promise<string | null> {

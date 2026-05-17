@@ -1,10 +1,11 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Alert } from 'react-native';
-import { useBookingStore, type BookedTicket } from '@/store/useBookingStore';
+import { type BookedTicket } from '@/store/useBookingStore';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useMyTicketsQuery } from '@/hooks/useServerQueries';
 
 export const useTickets = () => {
-  const { myTickets, fetchMyTickets } = useBookingStore();
+  const { data: myTickets = [], refetch, isLoading } = useMyTicketsQuery();
   const { biometricsEnabled, authenticateBiometrics } = useAuthStore();
   
   const [isUnlocked, setIsUnlocked] = useState(!biometricsEnabled);
@@ -13,31 +14,25 @@ export const useTickets = () => {
   const [isScannerVisible, setIsScannerVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const loadTickets = useCallback(async () => {
-    try {
-      await fetchMyTickets();
-    } catch (error) {
-      console.error('[useTickets] Error fetching tickets:', error);
-    }
-  }, [fetchMyTickets]);
-
   useEffect(() => {
     if (biometricsEnabled && !isUnlocked) {
       authenticateBiometrics('אימות ביומטרי נדרש לצפייה בכרטיסים שלך').then((success) => {
         setIsUnlocked(success);
-        if (success) loadTickets();
       });
     } else {
       setIsUnlocked(true);
-      loadTickets();
     }
-  }, [biometricsEnabled, loadTickets]);
+  }, [biometricsEnabled]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadTickets();
+    try {
+      await refetch();
+    } catch (e) {
+      console.error('[useTickets] refresh error:', e);
+    }
     setRefreshing(false);
-  }, [loadTickets]);
+  }, [refetch]);
 
   const handleViewTicket = async (ticket: BookedTicket) => {
     if (biometricsEnabled) {
@@ -52,11 +47,11 @@ export const useTickets = () => {
     setIsScannerVisible(false);
     
     // Find the ticket that matches the scanned ID
-    const foundTicket = myTickets.find(t => t.id === data);
+    const foundTicket = myTickets.find((t: any) => t.id === data || t._id === data);
     
     setTimeout(() => {
       if (foundTicket) {
-        handleViewTicket(foundTicket);
+        handleViewTicket(foundTicket as BookedTicket);
       } else {
         Alert.alert('כרטיס לא נמצא', 'הכרטיס שנסרק אינו מופיע ברשימת הכרטיסים שלך.');
       }
@@ -76,12 +71,12 @@ export const useTickets = () => {
   };
 
   return {
-    myTickets,
+    myTickets: myTickets as BookedTicket[],
     isUnlocked,
     selectedTicket,
     isModalVisible,
     isScannerVisible,
-    refreshing,
+    refreshing: refreshing || isLoading,
     onRefresh,
     handleViewTicket,
     handleScan,

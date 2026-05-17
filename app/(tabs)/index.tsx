@@ -1,7 +1,7 @@
 /**
  * Home Screen - Cinematic movie discovery feed
  */
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,11 +10,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Modal,
-  TouchableOpacity,
 } from 'react-native';
-import { router } from 'expo-router';
-import { TrendingUp, Moon, MapPin } from 'lucide-react-native';
-import { usePremiumStore } from '@/store/usePremiumStore';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Theme';
 import HeroSlider from '@/components/HeroSlider';
@@ -43,7 +39,20 @@ export default function HomeScreen() {
     handleStoryPress,
     closeStories,
   } = useHome();
-  const { isInTheaterMode, toggleInTheaterMode } = usePremiumStore();
+
+  // Cache mapped arrays using useMemo to avoid re-calculating lists and creating new array references on every render
+  const storiesData = useMemo(() => {
+    return nowPlaying.map(m => ({ id: m.id, title: m.title, poster: m.poster_path || '' }));
+  }, [nowPlaying]);
+
+  const movieStoriesData = useMemo(() => {
+    return nowPlaying.map(m => ({ 
+      id: m.id, 
+      title: m.title, 
+      poster: m.poster_path || '', 
+      overview: m.overview 
+    }));
+  }, [nowPlaying]);
 
   if (loading) {
     return (
@@ -79,9 +88,9 @@ export default function HomeScreen() {
         </View>
 
         {/* Stories */}
-        {nowPlaying.length > 0 && (
+        {storiesData.length > 0 && (
           <StoriesRow 
-            stories={nowPlaying.map(m => ({ id: m.id, title: m.title, poster: m.poster_path || '' }))} 
+            stories={storiesData} 
             onStoryPress={handleStoryPress}
           />
         )}
@@ -99,6 +108,10 @@ export default function HomeScreen() {
           keyExtractor={(item) => `np-${item.id}`}
           contentContainerStyle={{ paddingHorizontal: 16 }}
           scrollEnabled
+          initialNumToRender={4}
+          maxToRenderPerBatch={4}
+          windowSize={3}
+          removeClippedSubviews={true}
         />
 
         {/* Popular */}
@@ -111,6 +124,10 @@ export default function HomeScreen() {
           keyExtractor={(item) => `pop-${item.id}`}
           contentContainerStyle={{ paddingHorizontal: 16 }}
           scrollEnabled
+          initialNumToRender={4}
+          maxToRenderPerBatch={4}
+          windowSize={3}
+          removeClippedSubviews={true}
         />
 
         {/* Top Rated */}
@@ -123,6 +140,10 @@ export default function HomeScreen() {
           keyExtractor={(item) => `tr-${item.id}`}
           contentContainerStyle={{ paddingHorizontal: 16 }}
           scrollEnabled
+          initialNumToRender={4}
+          maxToRenderPerBatch={4}
+          windowSize={3}
+          removeClippedSubviews={true}
         />
       </ScrollView>
 
@@ -160,12 +181,7 @@ export default function HomeScreen() {
         onRequestClose={closeStories}
       >
         <MovieStories 
-          stories={nowPlaying.map(m => ({ 
-            id: m.id, 
-            title: m.title, 
-            poster: m.poster_path || '', 
-            overview: m.overview 
-          }))}
+          stories={movieStoriesData}
           initialIndex={selectedStoryIndex}
           onClose={closeStories}
         />

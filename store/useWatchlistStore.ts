@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import * as SecureStore from 'expo-secure-store';
+import { AsyncStorage } from '@/utils/SafeModules';
 import { type TMDBMovie } from '@/lib/tmdb';
 
 interface WatchlistState {
@@ -10,19 +10,6 @@ interface WatchlistState {
   isInWatchlist: (movieId: number) => boolean;
   clearWatchlist: () => void;
 }
-
-// Custom storage for SecureStore
-const secureStorage = {
-  getItem: async (name: string): Promise<string | null> => {
-    return await SecureStore.getItemAsync(name);
-  },
-  setItem: async (name: string, value: string): Promise<void> => {
-    await SecureStore.setItemAsync(name, value);
-  },
-  removeItem: async (name: string): Promise<void> => {
-    await SecureStore.deleteItemAsync(name);
-  },
-};
 
 export const useWatchlistStore = create<WatchlistState>()(
   persist(
@@ -49,7 +36,7 @@ export const useWatchlistStore = create<WatchlistState>()(
     }),
     {
       name: 'cinebook-watchlist',
-      storage: createJSONStorage(() => secureStorage),
+      storage: createJSONStorage(() => AsyncStorage),
     }
   )
 );

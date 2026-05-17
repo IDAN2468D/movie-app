@@ -76,3 +76,82 @@ export type Movie = z.infer<typeof MovieSchema>;
 export type MovieDetails = z.infer<typeof MovieDetailsSchema>;
 export type Cast = z.infer<typeof CastSchema>;
 export type Video = z.infer<typeof VideoSchema>;
+
+/**
+ * Server User Schemas
+ */
+export const ServerPaymentMethodSchema = z.object({
+  id: z.string(),
+  last4: z.string(),
+  brand: z.string(),
+  expiryDate: z.string(),
+  holderName: z.string(),
+});
+
+export const ServerLoyaltyActivitySchema = z.object({
+  action: z.string(),
+  points: z.string(),
+  date: z.string().or(z.date()),
+});
+
+export const ServerUserSchema = z.object({
+  id: z.string().optional(),
+  _id: z.string().optional(),
+  name: z.string(),
+  email: z.string(),
+  profileImage: z.string().optional(),
+  watchlist: z.array(z.number()).optional().default([]),
+  paymentMethods: z.array(ServerPaymentMethodSchema).optional().default([]),
+  loyaltyPoints: z.number().default(0),
+  loyaltyTrophies: z.array(z.string()).optional().default([]),
+  loyaltyActivity: z.array(ServerLoyaltyActivitySchema).optional().default([]),
+});
+
+/**
+ * Server Ticket Schemas
+ */
+export const ServerShowtimeSchema = z.object({
+  time: z.string(),
+  format: z.string(),
+  price: z.number(),
+  hall: z.string(),
+});
+
+export const ServerSeatSchema = z.object({
+  row: z.string(),
+  number: z.number(),
+  type: z.string(),
+});
+
+export const ServerSnackItemSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  price: z.number(),
+  quantity: z.number(),
+  image: z.string().optional(),
+});
+
+export const ServerTicketSchema = z.object({
+  id: z.string().optional(),
+  _id: z.string().optional(),
+  movieId: z.number(),
+  movieTitle: z.string(),
+  date: z.string(),
+  showtime: ServerShowtimeSchema,
+  seats: z.array(ServerSeatSchema),
+  snacks: z.array(ServerSnackItemSchema).optional().default([]),
+  totalPrice: z.number(),
+  bookingDate: z.string().or(z.date()).optional(),
+});
+
+/**
+ * Generic Server Response Schema
+ */
+export const ServerResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string().optional(),
+  data: z.any().optional(),
+});
+
+export type ServerUser = z.infer<typeof ServerUserSchema>;
+export type ServerTicket = z.infer<typeof ServerTicketSchema>;

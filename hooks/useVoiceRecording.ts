@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { Audio } from 'expo-av';
-import { File } from 'expo-file-system';
+import * as FileSystem from 'expo-file-system';
 import * as Haptics from 'expo-haptics';
 
 export const useVoiceRecording = () => {
@@ -42,9 +42,9 @@ export const useVoiceRecording = () => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       
       if (uri) {
-        // Use the new Expo SDK 54+ File API
-        const file = new File(uri);
-        const base64 = await file.base64();
+        const base64 = await FileSystem.readAsStringAsync(uri, {
+          encoding: 'base64'
+        });
         return base64;
       }
       return null;
