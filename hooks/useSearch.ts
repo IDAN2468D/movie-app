@@ -1,18 +1,23 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Keyboard, Animated } from 'react-native';
 import { useSharedValue, withTiming } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { searchMovies, getPopular, type TMDBMovie, getMoviesByGenre, discoverMovies } from '@/lib/tmdb';
+import { 
+  usePopular, 
+  useSearchMovies, 
+  useDiscoverMovies, 
+  useMoviesByGenre 
+} from '@/hooks/useMovieQueries';
 import { AIService } from '@/services/AIService';
 
 export const useSearch = () => {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<TMDBMovie[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false);
-  const [popular, setPopular] = useState<TMDBMovie[]>([]);
   const [activeGenre, setActiveGenre] = useState<number | null>(null);
   const [isAISearch, setIsAISearch] = useState(false);
+  const [searched, setSearched] = useState(false);
+  const [aiFilters, setAiFilters] = useState<Record<string, string>>({});
+  const [manualFilters, setManualFilters] = useState<Record<string, string | null>>({});
+  const [isAiLoading, setIsAiLoading] = useState(false);
 
   const scrollY = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -25,9 +30,60 @@ export const useSearch = () => {
     focusAnim.value = withTiming(isFocused ? 1 : 0, { duration: 300 });
   }, [isFocused]);
 
-  useEffect(() => {
-    loadDiscovery();
-  }, []);
+  // React Query Hooks
+  const { data: popularData = [] } = usePopular();
+  const popular = useMemo(() => popularData.slice(0, 6), [popularData]);
+
+  const { data: searchResults = [], isLoading: isSearchLoading } = useSearchMovies(query, isAISearch);
+  const { data: genreResults = [], isLoading: isGenreLoading } = useMoviesByGenre(activeGenre);
+  
+  const activeFilters = useMemo(() => {
+    const rawFilters = isAISearch ? aiFilters : manualFilters;
+    const params: Record<string, string> = {};
+
+    // Map internal/UI keys to TMDB keys
+    if (rawFilters.genre) params.with_genres = rawFilters.genre;
+    if (rawFilters.rating) params['vote_average.gte'] = rawFilters.rating;
+    if (rawFilters.language) params.with_original_language = rawFilters.language;
+    if (rawFilters.primary_release_year) params.primary_release_year = rawFilters.primary_release_year;
+    if (rawFilters.sort_by) params.sort_by = rawFilters.sort_by;
+    
+    // Custom mappings for vote count and certification
+    if (rawFilters.vote_count) params['vote_count.gte'] = rawFilters.vote_count;
+    if (rawFilters.certification) {
+      params.certification_country = 'US'; // Standard for most global content
+      params.certification = rawFilters.certification;
+    }
+    
+    // Mapping vote_average.gte directly if provided from UI
+    if (rawFilters['vote_average.gte']) params['vote_average.gte'] = rawFilters['vote_average.gte'];
+
+    if (rawFilters.runtime) {
+      if (rawFilters.runtime === 'short') params['with_runtime.lte'] = '90';
+      else if (rawFilters.runtime === 'medium') {
+        params['with_runtime.gte'] = '90';
+        params['with_runtime.lte'] = '150';
+      } else if (rawFilters.runtime === 'long') params['with_runtime.gte'] = '150';
+    }
+
+    if (!isAISearch && activeGenre !== null) {
+      params.with_genres = activeGenre.toString();
+    }
+
+    return params;
+  }, [isAISearch, aiFilters, manualFilters, activeGenre]);
+
+  const shouldDiscover = isAISearch || Object.keys(activeFilters).length > 0;
+  
+  const { data: discoveryResults = [], isLoading: isDiscoveryLoading } = useDiscoverMovies(activeFilters, shouldDiscover);
+
+  const results = useMemo(() => {
+    if (shouldDiscover) return discoveryResults;
+    if (activeGenre !== null) return genreResults;
+    return searchResults;
+  }, [shouldDiscover, discoveryResults, activeGenre, genreResults, searchResults]);
+
+  const loading = isSearchLoading || isGenreLoading || isDiscoveryLoading || isAiLoading;
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -37,56 +93,32 @@ export const useSearch = () => {
     }).start();
   }, [results, popular]);
 
-  const loadDiscovery = async () => {
-    try {
-      const movies = await getPopular();
-      setPopular(movies.slice(0, 6));
-    } catch (e) {
-      console.error('[useSearch] loadDiscovery failed:', e);
-    }
-  };
-
-  const handleSearch = useCallback(async (text: string) => {
+  const handleSearch = useCallback((text: string) => {
     setQuery(text);
-    if (text.length < 2) {
-      setResults([]);
-      setSearched(false);
-      return;
-    }
-    
-    if (!isAISearch) {
-      setLoading(true);
+    if (text.length >= 2) {
       setSearched(true);
       setActiveGenre(null);
-      try {
-        const movies = await searchMovies(text);
-        setResults(movies);
-      } catch {
-        setResults([]);
-      } finally {
-        setLoading(false);
-      }
+    } else {
+      setSearched(false);
     }
-  }, [isAISearch]);
+  }, []);
 
   const executeAISearch = async () => {
     if (query.length < 2) return;
     
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setLoading(true);
+    setIsAiLoading(true);
     setSearched(true);
     setActiveGenre(null);
     Keyboard.dismiss();
 
     try {
       const filters = await AIService.getSemanticFilters(query);
-      const movies = await discoverMovies(filters);
-      setResults(movies);
+      setAiFilters(filters);
     } catch (error) {
       console.error("[useSearch] AI Search Failed:", error);
-      setResults([]);
     } finally {
-      setLoading(false);
+      setIsAiLoading(false);
     }
   };
 
@@ -95,47 +127,65 @@ export const useSearch = () => {
     const newMode = !isAISearch;
     setIsAISearch(newMode);
     if (newMode) {
-      setResults([]);
+      setAiFilters({});
       setSearched(false);
     }
   };
 
-  const handleGenrePress = async (genreId: number | null) => {
+  const handleGenrePress = (genreId: number | null) => {
     if (genreId === activeGenre) {
       setActiveGenre(null);
-      setResults([]);
       setSearched(false);
       return;
     }
 
-    setLoading(true);
     setSearched(true);
     setActiveGenre(genreId);
-    setQuery(''); 
-
-    try {
-      let movies;
-      if (genreId === null) {
-        movies = await getPopular();
-      } else {
-        movies = await getMoviesByGenre(genreId);
-      }
-      setResults(movies);
-    } catch (e) {
-      console.error('[useSearch] handleGenrePress failed:', e);
-      setResults([]);
-    } finally {
-      setLoading(false);
-    }
+    setQuery('');
+    setIsAISearch(false);
   };
 
-  const clearSearch = () => {
+  const clearSearch = useCallback(() => {
     setQuery('');
-    setResults([]);
     setSearched(false);
     setActiveGenre(null);
+    setAiFilters({});
+    setManualFilters({});
+    setIsAISearch(false);
     Keyboard.dismiss();
-  };
+  }, []);
+
+  const applyVoiceResults = useCallback((filters: Record<string, string>) => {
+    setAiFilters(filters);
+    setIsAISearch(true);
+    setSearched(true);
+    setActiveGenre(null);
+    if (filters.query) {
+      setQuery(filters.query);
+    }
+  }, []);
+
+  const updateManualFilter = useCallback((key: string, value: string | null) => {
+    setManualFilters(prev => ({
+      ...prev,
+      [key]: value
+    }));
+    setSearched(true);
+    setIsAISearch(false);
+    setQuery('');
+  }, []);
+
+  const clearManualFilters = useCallback(() => {
+    setManualFilters({
+      genre: null,
+      rating: null,
+      language: null,
+      runtime: null,
+    });
+    if (!query && activeGenre === null) {
+      setSearched(false);
+    }
+  }, [query, activeGenre]);
 
   return {
     query,
@@ -155,5 +205,9 @@ export const useSearch = () => {
     toggleAIMode,
     handleGenrePress,
     clearSearch,
+    applyVoiceResults,
+    manualFilters,
+    updateManualFilter,
+    clearManualFilters,
   };
 };

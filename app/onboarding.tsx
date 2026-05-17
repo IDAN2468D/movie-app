@@ -1,57 +1,23 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, TouchableOpacity, Dimensions } from 'react-native';
-import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { SlideInRight, SlideOutLeft, Layout } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '@/store/useAuthStore';
 import { Colors } from '@/constants/Theme';
+import { useOnboarding } from '@/hooks/useOnboarding';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Get window dimensions if needed, otherwise ignore if unused
 
-const ONBOARDING_STEPS = [
-  {
-    id: '1',
-    title: 'חוויה קולנועית חדשה',
-    description: 'גלה את הסרטים החמים ביותר, צפה בטריילרים, והזמן כרטיסים בקלות ובמהירות.',
-    icon: 'film-outline' as const,
-  },
-  {
-    id: '2',
-    title: 'בחירת מושבים חכמה',
-    description: 'בחר את המושבים המועדפים עליך באולם הקולנוע בצורה חזותית ונוחה.',
-    icon: 'apps-outline' as const,
-  },
-  {
-    id: '3',
-    title: 'הכל נשמר בשבילך',
-    description: 'היסטוריית ההזמנות, הסרטים המועדפים, והכרטיסים שלך במקום אחד נגיש תמיד.',
-    icon: 'bookmark-outline' as const,
-  },
-];
-
 export default function OnboardingScreen() {
-  const [currentStep, setCurrentStep] = useState(0);
-  const router = useRouter();
-  const completeOnboarding = useAuthStore((state) => state.completeOnboarding);
-
-  const handleNext = async () => {
-    if (currentStep < ONBOARDING_STEPS.length - 1) {
-      setCurrentStep((prev) => prev + 1);
-    } else {
-      console.log('Onboarding complete, routing to Login');
-      await completeOnboarding();
-      router.replace('/login');
-    }
-  };
-
-  const handleSkip = async () => {
-    console.log('Onboarding skipped, routing to Login');
-    await completeOnboarding();
-    router.replace('/login');
-  };
-
-  const step = ONBOARDING_STEPS[currentStep];
+  const insets = useSafeAreaInsets();
+  const { 
+    currentStep, 
+    step, 
+    handleNext, 
+    handleSkip, 
+    ONBOARDING_STEPS 
+  } = useOnboarding();
 
   return (
     <View className="flex-1 bg-black">
@@ -65,7 +31,13 @@ export default function OnboardingScreen() {
         <View className="absolute bottom-1/4 -left-20 w-72 h-72 rounded-full bg-blue-600/20 blur-3xl" />
       </View>
 
-      <View className="flex-1 z-10 pt-20 pb-12 px-6">
+      <View 
+        className="flex-1 z-10 px-6"
+        style={{ 
+          paddingTop: insets.top + 20, 
+          paddingBottom: Math.max(insets.bottom + 48, 68) 
+        }}
+      >
         {/* Skip button */}
         <View className="flex-row justify-end">
           <TouchableOpacity onPress={handleSkip}>

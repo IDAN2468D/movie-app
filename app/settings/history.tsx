@@ -1,13 +1,12 @@
 import React, { useEffect } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 import { ChevronRight, Ticket, Calendar, Clock } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Typography } from '@/constants/Theme';
 import { useBookingStore } from '@/store/useBookingStore';
 
 export default function HistoryScreen() {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { myTickets, fetchMyTickets } = useBookingStore();
   const [isLoading, setIsLoading] = React.useState(true);

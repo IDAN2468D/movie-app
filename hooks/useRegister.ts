@@ -1,9 +1,14 @@
 import { useState, useCallback } from 'react';
 import { Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 import { useAuthStore } from '@/store/useAuthStore';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { GOOGLE_CONFIG } from '@/constants/Config';
+import { 
+  useAnimatedStyle, 
+  useSharedValue, 
+  withSpring 
+} from 'react-native-reanimated';
 
 GoogleSignin.configure({
   webClientId: GOOGLE_CONFIG.web,
@@ -11,7 +16,6 @@ GoogleSignin.configure({
 });
 
 export const useRegister = () => {
-  const router = useRouter();
   const { register, isLoading } = useAuthStore();
   
   const [form, setForm] = useState({
@@ -20,6 +24,44 @@ export const useRegister = () => {
     password: '',
     confirmPassword: '',
   });
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+
+  // Animated focus styles
+  const nameScale = useSharedValue(1);
+  const emailScale = useSharedValue(1);
+  const passScale = useSharedValue(1);
+
+  const onFocus = (field: string) => {
+    setFocusedField(field);
+    if (field === 'name') nameScale.value = withSpring(1.02);
+    if (field === 'email') emailScale.value = withSpring(1.02);
+    if (field === 'password' || field === 'confirmPassword') passScale.value = withSpring(1.02);
+  };
+
+  const onBlur = () => {
+    setFocusedField(null);
+    nameScale.value = withSpring(1);
+    emailScale.value = withSpring(1);
+    passScale.value = withSpring(1);
+  };
+
+  const animatedNameStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: nameScale.value }]
+  }));
+
+  const animatedEmailStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: emailScale.value }]
+  }));
+
+  const animatedPassStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: passScale.value }]
+  }));
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
 
   const handleRegister = useCallback(async () => {
     if (!form.name || !form.email || !form.password || !form.confirmPassword) {
@@ -45,7 +87,7 @@ export const useRegister = () => {
     } else {
       Alert.alert('שגיאת הרשמה', result.message || 'לא ניתן ליצור חשבון כרגע');
     }
-  }, [form, register, router]);
+  }, [form, register]);
 
   const navigateToLogin = () => {
     router.back();
@@ -81,6 +123,14 @@ export const useRegister = () => {
     form,
     setForm,
     isLoading,
+    showPassword,
+    focusedField,
+    animatedNameStyle,
+    animatedEmailStyle,
+    animatedPassStyle,
+    onFocus,
+    onBlur,
+    togglePasswordVisibility,
     handleRegister,
     navigateToLogin,
     handleGoogleLogin,

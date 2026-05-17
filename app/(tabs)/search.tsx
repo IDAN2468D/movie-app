@@ -1,3 +1,4 @@
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,11 +11,16 @@ import {
   Animated as RNAnimated,
   StyleSheet,
 } from 'react-native';
-import Animated, { 
+import Reanimated, { 
   FadeInRight, 
   Layout,
   useAnimatedStyle, 
   interpolateColor,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+  FadeInDown,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { 
@@ -27,25 +33,31 @@ import {
   Sparkles, 
   Calendar,
   ChevronRight,
-  ChevronLeft
+  ChevronLeft,
+  Mic
 } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
+import { useVoiceRecording } from '@/hooks/useVoiceRecording';
+import { AIService } from '@/services/AIService';
+import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { Colors, POSTER_SIZES, BACKDROP_SIZES, Typography } from '@/constants/Theme';
 import MarkerHighlight from '@/components/MarkerHighlight';
 import { type TMDBMovie, getGenreName } from '@/lib/tmdb';
 import { useSearch } from '@/hooks/useSearch';
+import AIOrb from '@/components/AIOrb';
+import { FadeIn, FadeOut } from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');
 const ITEM_HEIGHT = 160;
 const GENRE_FILTERS = [28, 12, 16, 35, 80, 27, 10749, 878];
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+const AnimatedPressable = Reanimated.createAnimatedComponent(Pressable);
+
+// VoiceWave removed in favor of AIOrb
 
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
   
   const {
     query,
@@ -65,7 +77,34 @@ export default function SearchScreen() {
     toggleAIMode,
     handleGenrePress,
     clearSearch,
+    applyVoiceResults,
+    manualFilters,
+    updateManualFilter,
+    clearManualFilters,
   } = useSearch();
+
+  const { isRecording, startRecording, stopRecording } = useVoiceRecording();
+  const [isVoiceProcessing, setIsVoiceProcessing] = useState(false);
+  const [isFilterVisible, setIsFilterVisible] = useState(false);
+
+  const handleVoicePress = async () => {
+    if (isRecording) {
+      const base64 = await stopRecording();
+      if (base64) {
+        setIsVoiceProcessing(true);
+        try {
+          const filters = await AIService.processVoiceSearch(base64);
+          applyVoiceResults(filters);
+        } catch (error) {
+          console.error('Voice search processing failed', error);
+        } finally {
+          setIsVoiceProcessing(false);
+        }
+      }
+    } else {
+      await startRecording();
+    }
+  };
 
   const inputAnimatedStyle = useAnimatedStyle(() => {
     return {
@@ -127,18 +166,163 @@ export default function SearchScreen() {
     <View className="mt-6 px-5">
       <View className="flex-row items-center justify-between px-5 mb-5">
         <MarkerHighlight 
-          text="קטגוריות" 
+          text="קטגוריות וסינון" 
           className="text-h2 text-text"
           color={Colors.secondary} 
         />
-        <Filter size={20} color={Colors.secondary} />
+        <Pressable 
+          onPress={() => setIsFilterVisible(!isFilterVisible)}
+          className={`p-2 rounded-full ${isFilterVisible || Object.keys(manualFilters).length > 0 ? 'bg-secondary/20' : 'bg-transparent'}`}
+        >
+          <Filter size={20} color={isFilterVisible || Object.keys(manualFilters).length > 0 ? Colors.secondary : Colors.textSecondary} />
+        </Pressable>
       </View>
+
+      {isFilterVisible && (
+        <Reanimated.View entering={FadeInRight.duration(300)} className="mb-6 px-2">
+          {/* Release Year */}
+          <Text className="text-textSecondary text-[14px] mb-3 text-left" style={{ fontFamily: 'Rubik-Medium', textAlign: 'left', writingDirection: 'ltr' }}>שנת יציאה</Text>
+          <View className="flex-row flex-wrap gap-2.5 justify-start mb-5">
+            {['2025', '2024', '2023', '2022', '2021'].map(year => (
+              <Pressable
+                key={year}
+                className={`px-4 py-2 rounded-xl border ${manualFilters['primary_release_year'] === year ? 'bg-secondary border-secondary shadow-lg shadow-secondary/20' : 'bg-surfaceLight border-white/5'}`}
+                onPress={() => updateManualFilter('primary_release_year', manualFilters['primary_release_year'] === year ? null : year)}
+              >
+                <Text className={`text-[13px] font-bold ${manualFilters['primary_release_year'] === year ? 'text-background' : 'text-textSecondary'}`} style={{ fontFamily: 'Rubik-Bold' }}>
+                  {year}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {/* Certification / Age Rating */}
+          <Text className="text-textSecondary text-[14px] mb-3 text-left" style={{ fontFamily: 'Rubik-Medium', textAlign: 'left', writingDirection: 'ltr' }}>דירוג גיל</Text>
+          <View className="flex-row flex-wrap gap-2.5 justify-start mb-5">
+            {[ {label: 'לכולם', val: 'G'}, {label: 'PG', val: 'PG'}, {label: 'PG-13', val: 'PG-13'}, {label: 'למבוגרים', val: 'R'} ].map(cert => (
+              <Pressable
+                key={cert.val}
+                className={`px-4 py-2 rounded-xl border ${manualFilters['certification'] === cert.val ? 'bg-secondary border-secondary shadow-lg shadow-secondary/20' : 'bg-surfaceLight border-white/5'}`}
+                onPress={() => updateManualFilter('certification', manualFilters['certification'] === cert.val ? null : cert.val)}
+              >
+                <Text className={`text-[13px] font-bold ${manualFilters['certification'] === cert.val ? 'text-background' : 'text-textSecondary'}`} style={{ fontFamily: 'Rubik-Bold' }}>
+                  {cert.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {/* Minimum Rating */}
+          <Text className="text-textSecondary text-[14px] mb-3 text-left" style={{ fontFamily: 'Rubik-Medium', textAlign: 'left', writingDirection: 'ltr' }}>דירוג מינימלי</Text>
+          <View className="flex-row flex-wrap gap-2.5 justify-start mb-5">
+            {[ {label: '8+', val: '8.0'}, {label: '7+', val: '7.0'}, {label: '6+', val: '6.0'} ].map(rating => (
+              <Pressable
+                key={rating.val}
+                className={`px-4 py-2 rounded-xl border flex-row items-center gap-1 ${manualFilters['vote_average.gte'] === rating.val ? 'bg-secondary border-secondary shadow-lg shadow-secondary/20' : 'bg-surfaceLight border-white/5'}`}
+                onPress={() => updateManualFilter('vote_average.gte', manualFilters['vote_average.gte'] === rating.val ? null : rating.val)}
+              >
+                <Star size={12} color={manualFilters['vote_average.gte'] === rating.val ? Colors.background : Colors.textSecondary} />
+                <Text className={`text-[13px] font-bold ${manualFilters['vote_average.gte'] === rating.val ? 'text-background' : 'text-textSecondary'}`} style={{ fontFamily: 'Rubik-Bold' }}>
+                  {rating.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {/* Sort By */}
+          <Text className="text-textSecondary text-[14px] mb-3 text-left" style={{ fontFamily: 'Rubik-Medium', textAlign: 'left', writingDirection: 'ltr' }}>מיין לפי</Text>
+          <View className="flex-row flex-wrap gap-2.5 justify-start mb-5">
+            {[ 
+              {label: 'פופולריות', val: 'popularity.desc'}, 
+              {label: 'דירוג', val: 'vote_average.desc'}, 
+              {label: 'חדש ביותר', val: 'primary_release_date.desc'} 
+            ].map(sort => (
+              <Pressable
+                key={sort.val}
+                className={`px-4 py-2 rounded-xl border ${manualFilters['sort_by'] === sort.val ? 'bg-secondary border-secondary shadow-lg shadow-secondary/20' : 'bg-surfaceLight border-white/5'}`}
+                onPress={() => updateManualFilter('sort_by', manualFilters['sort_by'] === sort.val ? null : sort.val)}
+              >
+                <Text className={`text-[13px] font-bold ${manualFilters['sort_by'] === sort.val ? 'text-background' : 'text-textSecondary'}`} style={{ fontFamily: 'Rubik-Bold' }}>
+                  {sort.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {/* Original Language */}
+          <Text className="text-textSecondary text-[14px] mb-3 text-left" style={{ fontFamily: 'Rubik-Medium', textAlign: 'left', writingDirection: 'ltr' }}>שפה מקורית</Text>
+          <View className="flex-row flex-wrap gap-2.5 justify-start mb-5">
+            {[ {label: 'אנגלית', val: 'en'}, {label: 'עברית', val: 'he'}, {label: 'ספרדית', val: 'es'}, {label: 'צרפתית', val: 'fr'} ].map(lang => (
+              <Pressable
+                key={lang.val}
+                className={`px-4 py-2 rounded-xl border ${manualFilters['language'] === lang.val ? 'bg-secondary border-secondary shadow-lg shadow-secondary/20' : 'bg-surfaceLight border-white/5'}`}
+                onPress={() => updateManualFilter('language', manualFilters['language'] === lang.val ? null : lang.val)}
+              >
+                <Text className={`text-[13px] font-bold ${manualFilters['language'] === lang.val ? 'text-background' : 'text-textSecondary'}`} style={{ fontFamily: 'Rubik-Bold' }}>
+                  {lang.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {/* Runtime */}
+          <Text className="text-textSecondary text-[14px] mb-3 text-left" style={{ fontFamily: 'Rubik-Medium', textAlign: 'left', writingDirection: 'ltr' }}>אורך סרט</Text>
+          <View className="flex-row flex-wrap gap-2.5 justify-start mb-5">
+            {[ 
+              {label: 'קצר', val: 'short'}, 
+              {label: 'בינוני', val: 'medium'}, 
+              {label: 'ארוך', val: 'long'} 
+            ].map(time => (
+              <Pressable
+                key={time.val}
+                className={`px-4 py-2 rounded-xl border ${manualFilters['runtime'] === time.val ? 'bg-secondary border-secondary shadow-lg shadow-secondary/20' : 'bg-surfaceLight border-white/5'}`}
+                onPress={() => updateManualFilter('runtime', manualFilters['runtime'] === time.val ? null : time.val)}
+              >
+                <Text className={`text-[13px] font-bold ${manualFilters['runtime'] === time.val ? 'text-background' : 'text-textSecondary'}`} style={{ fontFamily: 'Rubik-Bold' }}>
+                  {time.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {/* Vote Count */}
+          <Text className="text-textSecondary text-[14px] mb-3 text-left" style={{ fontFamily: 'Rubik-Medium', textAlign: 'left', writingDirection: 'ltr' }}>מספר מדרגים</Text>
+          <View className="flex-row flex-wrap gap-2.5 justify-start mb-5">
+            {[ 
+              {label: '100+', val: '100'}, 
+              {label: '500+', val: '500'}, 
+              {label: '1000+', val: '1000'} 
+            ].map(votes => (
+              <Pressable
+                key={votes.val}
+                className={`px-4 py-2 rounded-xl border ${manualFilters['vote_count'] === votes.val ? 'bg-secondary border-secondary shadow-lg shadow-secondary/20' : 'bg-surfaceLight border-white/5'}`}
+                onPress={() => updateManualFilter('vote_count', manualFilters['vote_count'] === votes.val ? null : votes.val)}
+              >
+                <Text className={`text-[13px] font-bold ${manualFilters['vote_count'] === votes.val ? 'text-background' : 'text-textSecondary'}`} style={{ fontFamily: 'Rubik-Bold' }}>
+                  {votes.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {Object.keys(manualFilters).length > 0 && (
+            <Pressable onPress={clearManualFilters} className="self-start mt-2">
+              <Text className="text-error text-[14px] text-left" style={{ fontFamily: 'Rubik-Medium', textAlign: 'left', writingDirection: 'ltr' }}>נקה סינון</Text>
+            </Pressable>
+          )}
+          <View className="h-[1px] bg-white/10 w-full my-4" />
+        </Reanimated.View>
+      )}
+
       <View className="flex-row flex-wrap gap-2.5 justify-start">
         <Pressable
-          className={`px-5 py-2.5 rounded-2xl border ${activeGenre === null ? 'bg-primary border-primary shadow-lg shadow-primary/20' : 'bg-surfaceLight border-white/5'}`}
-          onPress={() => handleGenrePress(null)}
+          className={`px-5 py-2.5 rounded-2xl border ${activeGenre === null && Object.keys(manualFilters).length === 0 ? 'bg-primary border-primary shadow-lg shadow-primary/20' : 'bg-surfaceLight border-white/5'}`}
+          onPress={() => {
+            handleGenrePress(null);
+            clearManualFilters();
+          }}
         >
-          <Text className={`text-[14px] font-bold ${activeGenre === null ? 'text-background' : 'text-textSecondary'}`} style={{ fontFamily: 'Rubik-Bold' }}>הכל</Text>
+          <Text className={`text-[14px] font-bold ${activeGenre === null && Object.keys(manualFilters).length === 0 ? 'text-background' : 'text-textSecondary'}`} style={{ fontFamily: 'Rubik-Bold' }}>הכל</Text>
         </Pressable>
         {GENRE_FILTERS.map((genreId: number) => (
           <Pressable
@@ -271,7 +455,7 @@ export default function SearchScreen() {
       <View className="absolute top-0 start-0 end-0 z-50 pb-5 border-b border-white/10" style={{ paddingTop: insets.top + 10 }}>
         <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
         <View className="px-5">
-          <Animated.View 
+        <Reanimated.View 
             style={[
               inputAnimatedStyle,
               {
@@ -290,7 +474,7 @@ export default function SearchScreen() {
             </Pressable>
             <TextInput
               className="flex-1 text-[16px] text-white h-12 mx-3 font-body bg-transparent"
-              placeholder={isAISearch ? "חיפוש חכם (למשל: 'סרט חלל עצוב')" : "חפש סרטים, ז'אנרים או שחקנים..."}
+              placeholder={isRecording ? "מקשיב..." : isVoiceProcessing ? "מעבד קול..." : isAISearch ? "חיפוש חכם (למשל: 'סרט חלל עצוב')" : "חפש סרטים, ז'אנרים או שחקנים..."}
               placeholderTextColor={Colors.textMuted}
               value={query}
               onChangeText={handleSearch}
@@ -303,20 +487,70 @@ export default function SearchScreen() {
               textAlign="left"
               selectionColor={isAISearch ? Colors.secondary : Colors.primary}
               style={{ fontFamily: 'Rubik-Regular' }}
+              editable={!isRecording && !isVoiceProcessing}
             />
-            {query.length > 0 ? (
-              <Pressable 
-                onPress={clearSearch} 
-                className="w-8 h-8 rounded-full bg-white/10 justify-center items-center"
-              >
-                <X size={16} color={Colors.text} />
-              </Pressable>
-            ) : (
-              <SearchIcon size={22} color={isFocused && !isAISearch ? Colors.primary : Colors.textMuted} />
-            )}
-          </Animated.View>
+            
+            <View className="flex-row items-center gap-2">
+              {query.length > 0 && !isRecording ? (
+                <Pressable 
+                  onPress={clearSearch} 
+                  className="w-8 h-8 rounded-full bg-white/10 justify-center items-center"
+                >
+                  <X size={16} color={Colors.text} />
+                </Pressable>
+              ) : (
+                <Pressable 
+                  onPress={handleVoicePress}
+                  className={`w-10 h-10 rounded-full justify-center items-center ${isRecording ? 'bg-primary' : 'bg-white/5'}`}
+                >
+                  {isRecording && <View className="absolute inset-0 items-center justify-center"><View className="w-8 h-8 bg-white/20 rounded-full animate-pulse" /></View>}
+                  {isVoiceProcessing ? (
+                    <ActivityIndicator size="small" color={Colors.primary} />
+                  ) : (
+                    <Mic size={20} color={isRecording ? 'white' : (isFocused && !isAISearch ? Colors.primary : Colors.textMuted)} />
+                  )}
+                </Pressable>
+              )}
+              {query.length === 0 && !isRecording && (
+                <SearchIcon size={22} color={isFocused && !isAISearch ? Colors.primary : Colors.textMuted} />
+              )}
+            </View>
+          </Reanimated.View>
         </View>
       </View>
+
+      {(isRecording || isVoiceProcessing) && (
+        <Reanimated.View 
+          entering={FadeIn.duration(400)}
+          exiting={FadeOut.duration(400)}
+          className="absolute inset-0 z-[100] items-center justify-center"
+        >
+          <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
+          <AIOrb isRecording={isRecording} isProcessing={isVoiceProcessing} size={160} />
+          <Reanimated.Text 
+            entering={FadeIn.delay(200)}
+            className="text-white text-[20px] mt-12 font-bold text-center px-10" 
+            style={{ fontFamily: 'Rubik-Bold' }}
+          >
+            {isRecording ? "אני מקשיב... ספר לי איזה סרט מתחשק לך לראות" : "מעבד את הבקשה שלך..."}
+          </Reanimated.Text>
+          
+          {isRecording && (
+            <Reanimated.View 
+              entering={FadeInDown.delay(50)}
+              layout={Layout.springify()}
+              style={[
+                { width: '48%', marginBottom: 16 },
+                inputAnimatedStyle,
+              ]}
+            >
+              <Pressable onPress={handleVoicePress} className="bg-primary/20 px-10 py-4 rounded-[24px] border border-primary/30">
+                <Text className="text-primary font-bold text-[16px]" style={{ fontFamily: 'Rubik-Bold' }}>סיום והקלטה</Text>
+              </Pressable>
+            </Reanimated.View>
+          )}
+        </Reanimated.View>
+      )}
     </View>
   );
 }

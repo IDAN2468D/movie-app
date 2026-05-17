@@ -19,11 +19,13 @@ const SeatIcon = ({
   isSelected, 
   isTaken, 
   isVIP, 
+  isSweetSpot,
   onPress 
 }: { 
   isSelected: boolean; 
   isTaken: boolean; 
   isVIP: boolean; 
+  isSweetSpot: boolean;
   onPress: () => void;
 }) => {
   const scale = useSharedValue(1);
@@ -52,7 +54,6 @@ const SeatIcon = ({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
     >
-      {/* Selection Glow */}
       {isSelected && (
         <Rect 
           x={-4} y={-4} 
@@ -60,6 +61,17 @@ const SeatIcon = ({
           rx={8} 
           fill={Colors.primary} 
           opacity={0.3} 
+        />
+      )}
+
+      {/* Sweet Spot Glow */}
+      {isSweetSpot && !isTaken && !isSelected && (
+        <Rect 
+          x={-2} y={-2} 
+          width={28} height={32} 
+          rx={8} 
+          fill={Colors.secondary} 
+          opacity={0.15} 
         />
       )}
       
@@ -222,17 +234,26 @@ export default function ZoomableSeatMap() {
 
                     {row.map((seat, colIndex) => (
                       <G key={`${seat.row}-${seat.number}`} x={colIndex * COL_WIDTH}>
-                        <SeatIcon 
-                          isSelected={seat.status === 'selected'}
-                          isTaken={seat.status === 'taken'}
-                          isVIP={seat.type === 'vip'}
-                          onPress={() => {
-                            if (seat.status !== 'taken') {
-                              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                              toggleSeat(seat.row, seat.number);
-                            }
-                          }}
-                        />
+                        {(() => {
+                          const isSweetSpotRow = rowIndex >= Math.floor(rows * 0.4) && rowIndex <= Math.floor(rows * 0.6);
+                          const isSweetSpotCol = colIndex >= Math.floor(cols * 0.3) && colIndex <= Math.floor(cols * 0.7);
+                          const isSweetSpot = isSweetSpotRow && isSweetSpotCol;
+
+                          return (
+                            <SeatIcon 
+                              isSelected={seat.status === 'selected'}
+                              isTaken={seat.status === 'taken'}
+                              isVIP={seat.type === 'vip'}
+                              isSweetSpot={isSweetSpot}
+                              onPress={() => {
+                                if (seat.status !== 'taken') {
+                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                  toggleSeat(seat.row, seat.number);
+                                }
+                              }}
+                            />
+                          );
+                        })()}
                       </G>
                     ))}
                   </G>
@@ -244,20 +265,30 @@ export default function ZoomableSeatMap() {
       </GestureDetector>
 
       {/* Premium Legend - Moved lower as requested */}
-      <View className="absolute top-40 flex-row gap-5 px-6 py-2.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-xl">
+      <View className="absolute top-40 flex-row gap-5 px-6 py-2.5 rounded-full bg-surfaceLight border border-white/10">
         <LegendItem color="rgba(255,255,255,0.12)" label="פנוי" />
         <LegendItem color={Colors.primary} label="נבחר" />
         <LegendItem color="rgba(255,255,255,0.05)" label="תפוס" />
         <LegendItem color={Colors.seatVIP} label="VIP" />
+        <LegendItem color={Colors.secondary} label="הנקודה המושלמת" isGlow />
       </View>
     </View>
   );
 }
 
-function LegendItem({ color, label }: { color: string; label: string }) {
+function LegendItem({ color, label, isGlow }: { color: string; label: string; isGlow?: boolean }) {
   return (
     <View className="flex-row items-center gap-2">
-      <View className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
+      <View 
+        className="w-3 h-3 rounded-full" 
+        style={{ 
+          backgroundColor: color,
+          opacity: isGlow ? 0.6 : 1,
+          shadowColor: color,
+          shadowRadius: isGlow ? 4 : 0,
+          shadowOpacity: isGlow ? 1 : 0,
+        }} 
+      />
       <Text className="text-[10px] text-white/60 font-bold">{label}</Text>
     </View>
   );

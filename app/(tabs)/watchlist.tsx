@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, FlatList, StyleSheet, Pressable, Image, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Bookmark, Trash2, Star, Play, Calendar } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 import Animated, { FadeInRight, Layout } from 'react-native-reanimated';
@@ -19,7 +19,6 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function WatchlistScreen() {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
   const { movies, removeFromWatchlist } = useWatchlistStore();
 
   const handleRemove = (id: number) => {

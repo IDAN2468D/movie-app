@@ -1,7 +1,7 @@
 /**
  * Register Screen - Premium Cinematic Experience
  */
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   View, 
   Text, 
@@ -21,9 +21,6 @@ import { BlurView } from 'expo-blur';
 import Animated, { 
   FadeInDown, 
   FadeInUp,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring
 } from 'react-native-reanimated';
 import { useRegister } from '@/hooks/useRegister';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -34,44 +31,18 @@ export default function RegisterScreen() {
     form,
     setForm,
     isLoading,
+    showPassword,
+    focusedField,
+    animatedNameStyle,
+    animatedEmailStyle,
+    animatedPassStyle,
+    onFocus,
+    onBlur,
+    togglePasswordVisibility,
     handleRegister,
     navigateToLogin,
     handleGoogleLogin,
   } = useRegister();
-  
-  const [showPassword, setShowPassword] = useState(false);
-  const [focusedField, setFocusedField] = useState<string | null>(null);
-
-  // Animated focus styles
-  const nameScale = useSharedValue(1);
-  const emailScale = useSharedValue(1);
-  const passScale = useSharedValue(1);
-
-  const onFocus = (field: string) => {
-    setFocusedField(field);
-    if (field === 'name') nameScale.value = withSpring(1.02);
-    if (field === 'email') emailScale.value = withSpring(1.02);
-    if (field === 'password') passScale.value = withSpring(1.02);
-  };
-
-  const onBlur = () => {
-    setFocusedField(null);
-    nameScale.value = withSpring(1);
-    emailScale.value = withSpring(1);
-    passScale.value = withSpring(1);
-  };
-
-  const animatedNameStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: nameScale.value }]
-  }));
-
-  const animatedEmailStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: emailScale.value }]
-  }));
-
-  const animatedPassStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: passScale.value }]
-  }));
 
   return (
     <View className="flex-1 bg-black">
@@ -166,8 +137,8 @@ export default function RegisterScreen() {
                           className="flex-1 text-white text-base"
                           value={form.name}
                           onChangeText={(val) => setForm({...form, name: val})}
-                          onFocus={() => setFocusedField('name')}
-                          onBlur={() => setFocusedField(null)}
+                          onFocus={() => onFocus('name')}
+                          onBlur={onBlur}
                         />
                       </View>
                     </Animated.View>
@@ -190,8 +161,8 @@ export default function RegisterScreen() {
                           className="flex-1 text-white text-base"
                           value={form.email}
                           onChangeText={(val) => setForm({...form, email: val})}
-                          onFocus={() => setFocusedField('email')}
-                          onBlur={() => setFocusedField(null)}
+                          onFocus={() => onFocus('email')}
+                          onBlur={onBlur}
                         />
                       </View>
                     </Animated.View>
@@ -202,7 +173,7 @@ export default function RegisterScreen() {
                       <View 
                         className={`flex-row items-center rounded-2xl px-4 py-4 border ${
                           focusedField === 'password' ? 'border-[#DFFF1A] bg-[#DFFF1A]/10' : 'border-white/10 bg-white/5'
-                        } mb-6`}
+                        } mb-4`}
                       >
                         <Lock size={20} color={focusedField === 'password' ? '#DFFF1A' : 'rgba(255,255,255,0.5)'} />
                         <TextInput
@@ -213,16 +184,39 @@ export default function RegisterScreen() {
                           className="text-white text-base"
                           value={form.password}
                           onChangeText={(val) => setForm({...form, password: val})}
-                          onFocus={() => setFocusedField('password')}
-                          onBlur={() => setFocusedField(null)}
+                          onFocus={() => onFocus('password')}
+                          onBlur={onBlur}
                         />
-                        <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                        <TouchableOpacity onPress={togglePasswordVisibility}>
                           {showPassword ? (
                             <EyeOff size={20} color={focusedField === 'password' ? '#DFFF1A' : 'rgba(255,255,255,0.5)'} />
                           ) : (
                             <Eye size={20} color={focusedField === 'password' ? '#DFFF1A' : 'rgba(255,255,255,0.5)'} />
                           )}
                         </TouchableOpacity>
+                      </View>
+                    </Animated.View>
+
+                    {/* Confirm Password Input */}
+                    <Animated.View style={animatedPassStyle} className="mb-6">
+                      <Text style={{ fontFamily: 'Rubik-Medium', textAlign: 'left' }} className="text-white/40 text-[10px] uppercase tracking-[2px] mb-2 ml-1">אימות סיסמה</Text>
+                      <View 
+                        className={`flex-row items-center rounded-2xl px-4 py-4 border ${
+                          focusedField === 'confirmPassword' ? 'border-[#DFFF1A] bg-[#DFFF1A]/10' : 'border-white/10 bg-white/5'
+                        }`}
+                      >
+                        <Lock size={20} color={focusedField === 'confirmPassword' ? '#DFFF1A' : 'rgba(255,255,255,0.5)'} />
+                        <TextInput
+                          placeholder="הזן סיסמה שוב"
+                          placeholderTextColor="rgba(255,255,255,0.5)"
+                          secureTextEntry={!showPassword}
+                          style={{ fontFamily: 'Rubik-Regular', flex: 1, marginHorizontal: 16, textAlign: 'right' }}
+                          className="text-white text-base"
+                          value={form.confirmPassword}
+                          onChangeText={(val) => setForm({...form, confirmPassword: val})}
+                          onFocus={() => onFocus('confirmPassword')}
+                          onBlur={onBlur}
+                        />
                       </View>
                     </Animated.View>
 

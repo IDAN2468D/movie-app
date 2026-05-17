@@ -1,7 +1,3 @@
-/**
- * HeroSlider - Full-width auto-scrolling movie backdrop carousel
- * Migrated to NativeWind (Tailwind CSS)
- */
 import { useRef, useEffect, useState, useCallback } from 'react';
 import {
   View,
@@ -13,56 +9,35 @@ import {
   ViewToken,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 import { Star, Clock } from 'lucide-react-native';
 import MarkerHighlight from './MarkerHighlight';
-import { Colors, BACKDROP_SIZES } from '@/constants/Theme';
+import { Colors } from '@/constants/Theme';
 import type { TMDBMovie } from '@/lib/tmdb';
+import { getImageSource, handleImageError } from '@/utils/ImageUtils';
 
 interface HeroSliderProps {
   movies: TMDBMovie[];
 }
 
-export default function HeroSlider({ movies }: HeroSliderProps) {
-  const router = useRouter();
-  const flatListRef = useRef<FlatList>(null);
-  const [activeIndex, setActiveIndex] = useState(0);
+const HeroItem = ({ item }: { item: TMDBMovie }) => {
+  const [imgSource, setImgSource] = useState(getImageSource(item.backdrop_path, 'backdrop', 'large'));
 
-  const heroMovies = movies.slice(0, 5);
-
-  // Auto-scroll
   useEffect(() => {
-    if (heroMovies.length <= 1) return;
-    const timer = setInterval(() => {
-      const next = (activeIndex + 1) % heroMovies.length;
-      flatListRef.current?.scrollToIndex({ index: next, animated: true });
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [activeIndex, heroMovies.length]);
+    setImgSource(getImageSource(item.backdrop_path, 'backdrop', 'large'));
+  }, [item.backdrop_path]);
 
-  const onViewableItemsChanged = useCallback(
-    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
-      if (viewableItems.length > 0 && viewableItems[0].index != null) {
-        setActiveIndex(viewableItems[0].index);
-      }
-    },
-    []
-  );
-
-  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
-
-  const renderItem = ({ item }: { item: TMDBMovie }) => (
+  return (
     <Pressable
       className="w-screen h-[380px]"
       onPress={() => router.push(`/movie/${item.id}`)}
     >
-      {item.backdrop_path && (
-        <Image
-          source={{ uri: `${BACKDROP_SIZES.large}${item.backdrop_path}` }}
-          className="w-full h-full absolute"
-          resizeMode="cover"
-        />
-      )}
+      <Image
+        source={imgSource}
+        onError={handleImageError(setImgSource, 'backdrop')}
+        className="w-full h-full absolute"
+        resizeMode="cover"
+      />
       <LinearGradient
         colors={['transparent', 'rgba(9,9,11,0.6)', Colors.background]}
         locations={[0, 0.6, 1]}
@@ -92,6 +67,34 @@ export default function HeroSlider({ movies }: HeroSliderProps) {
       </View>
     </Pressable>
   );
+};
+
+export default function HeroSlider({ movies }: HeroSliderProps) {
+  const flatListRef = useRef<FlatList>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  const heroMovies = movies.slice(0, 5);
+
+  // Auto-scroll
+  useEffect(() => {
+    if (heroMovies.length <= 1) return;
+    const timer = setInterval(() => {
+      const next = (activeIndex + 1) % heroMovies.length;
+      flatListRef.current?.scrollToIndex({ index: next, animated: true });
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [activeIndex, heroMovies.length]);
+
+  const onViewableItemsChanged = useCallback(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      if (viewableItems.length > 0 && viewableItems[0].index != null) {
+        setActiveIndex(viewableItems[0].index);
+      }
+    },
+    []
+  );
+
+  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
   return (
     <View className="h-[380px] mb-2">
@@ -101,7 +104,7 @@ export default function HeroSlider({ movies }: HeroSliderProps) {
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        renderItem={renderItem}
+        renderItem={({ item }) => <HeroItem item={item} />}
         keyExtractor={(item) => item.id.toString()}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}

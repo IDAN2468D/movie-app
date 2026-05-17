@@ -1,21 +1,19 @@
 import { renderHook, act } from '@testing-library/react-native';
 import { useForgotPassword } from '../../hooks/useForgotPassword';
 import { Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 
 jest.mock('expo-router', () => ({
-  useRouter: jest.fn(),
+  router: {
+    back: jest.fn(),
+  },
 }));
 
 describe('useForgotPassword', () => {
-  const mockBack = jest.fn();
   const mockAlert = jest.spyOn(Alert, 'alert');
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (useRouter as jest.Mock).mockReturnValue({
-      back: mockBack,
-    });
     jest.useFakeTimers();
   });
 
@@ -71,6 +69,6 @@ describe('useForgotPassword', () => {
       result.current.navigateBack();
     });
 
-    expect(mockBack).toHaveBeenCalled();
+    expect(router.back).toHaveBeenCalled();
   });
 });

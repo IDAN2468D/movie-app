@@ -1,17 +1,24 @@
 import React from 'react';
 import { View, Text, Pressable, ScrollView, Switch, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 import { ChevronRight, Shield, Fingerprint, KeyRound, Smartphone } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Typography } from '@/constants/Theme';
 import { useAuthStore } from '@/store/useAuthStore';
+import { ChangePasswordModal, TwoFactorSetupModal } from '@/components/SecurityModals';
 
 export default function SecurityScreen() {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   
-  const { biometricsEnabled, setBiometricsEnabled } = useAuthStore();
-  const [twoFactor, setTwoFactor] = React.useState(false);
+  const { 
+    biometricsEnabled, 
+    setBiometricsEnabled, 
+    twoFactorEnabled, 
+    setTwoFactorEnabled 
+  } = useAuthStore();
+
+  const [passwordModalVisible, setPasswordModalVisible] = React.useState(false);
+  const [twoFactorModalVisible, setTwoFactorModalVisible] = React.useState(false);
 
   const handleBiometricsToggle = async (value: boolean) => {
     const success = await setBiometricsEnabled(value);
@@ -65,27 +72,50 @@ export default function SecurityScreen() {
                 <Smartphone size={20} color={Colors.secondary} />
               </View>
               <View className="ms-4 flex-1">
-                <Text style={{ fontFamily: 'Rubik-Bold', fontSize: 16, color: 'white' }}>אימות דו-שלבי</Text>
-                <Text style={{ fontFamily: 'Rubik-Regular', fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>שכבת הגנה נוספת בעת התחברות</Text>
+                <Text style={{ fontFamily: 'Rubik-Bold', fontSize: 16, color: 'white', textAlign: 'left', writingDirection: 'ltr' }}>אימות דו-שלבי</Text>
+                <Text style={{ fontFamily: 'Rubik-Regular', fontSize: 12, color: 'rgba(255,255,255,0.5)', textAlign: 'left', writingDirection: 'ltr' }}>שכבת הגנה נוספת בעת התחברות</Text>
               </View>
             </View>
-            <Switch value={twoFactor} onValueChange={setTwoFactor} trackColor={{ false: '#3f3f46', true: Colors.secondary }} />
+            <Switch 
+              value={twoFactorEnabled} 
+              onValueChange={(value) => {
+                if (value) {
+                  setTwoFactorModalVisible(true);
+                } else {
+                  setTwoFactorEnabled(false);
+                }
+              }} 
+              trackColor={{ false: '#3f3f46', true: Colors.secondary }} 
+            />
           </View>
 
-          <Pressable className="flex-row items-center justify-between p-5">
+          <Pressable 
+            onPress={() => setPasswordModalVisible(true)}
+            className="flex-row items-center justify-between p-5 active:bg-white/10"
+          >
             <View className="flex-row items-center flex-1">
               <View className="w-10 h-10 rounded-full bg-white/10 items-center justify-center">
                 <KeyRound size={20} color="white" />
               </View>
               <View className="ms-4 flex-1">
-                <Text style={{ fontFamily: 'Rubik-Bold', fontSize: 16, color: 'white' }}>החלפת סיסמה</Text>
-                <Text style={{ fontFamily: 'Rubik-Regular', fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>עדכון סיסמת ההתחברות שלך</Text>
+                <Text style={{ fontFamily: 'Rubik-Bold', fontSize: 16, color: 'white', textAlign: 'left', writingDirection: 'ltr' }}>החלפת סיסמה</Text>
+                <Text style={{ fontFamily: 'Rubik-Regular', fontSize: 12, color: 'rgba(255,255,255,0.5)', textAlign: 'left', writingDirection: 'ltr' }}>עדכון סיסמת ההתחברות שלך</Text>
               </View>
             </View>
             <ChevronRight size={16} color="rgba(255,255,255,0.3)" style={{ transform: [{ scaleX: -1 }] }} />
           </Pressable>
         </View>
       </ScrollView>
+
+      <ChangePasswordModal 
+        isVisible={passwordModalVisible} 
+        onClose={() => setPasswordModalVisible(false)} 
+      />
+      
+      <TwoFactorSetupModal 
+        isVisible={twoFactorModalVisible} 
+        onClose={() => setTwoFactorModalVisible(false)} 
+      />
     </View>
   );
 }

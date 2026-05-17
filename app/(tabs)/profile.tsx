@@ -1,19 +1,23 @@
 /**
  * Profile Screen - Premium Liquid Glass Redesign
  */
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, Pressable, ScrollView, TouchableOpacity, ImageBackground, StyleSheet, Dimensions, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { User, Bell, CreditCard, Shield, ChevronLeft, LogOut, Ticket, Heart, History } from 'lucide-react-native';
+import { User, Bell, CreditCard, Shield, ChevronLeft, LogOut, Ticket, Heart, History, TrendingUp, Moon, Trophy, Map as MapIcon } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import { router } from 'expo-router';
+import { usePremiumStore } from '@/store/usePremiumStore';
 import { Colors, Typography } from '@/constants/Theme';
 import { useProfile } from '@/hooks/useProfile';
+import { getImageSource, handleImageError } from '@/utils/ImageUtils';
 
 const { width } = Dimensions.get('window');
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
+  const { isInTheaterMode, toggleInTheaterMode } = usePremiumStore();
   const {
     user,
     isAuthenticated,
@@ -24,14 +28,18 @@ export default function ProfileScreen() {
     navigateToSettings,
   } = useProfile();
 
+  // state לתמונת הרקע הדיפולטיבית של הפרופיל
+  const [backdropSource, setBackdropSource] = useState(getImageSource('/8Y43POKjjKDGI9MH89NW0NAzzp8.jpg', 'backdrop', 'large'));
+
   return (
     <View className="flex-1 bg-black">
       {/* Cinematic Header Background */}
       <View style={{ height: 320, position: 'absolute', top: 0, width: '100%' }}>
         <ImageBackground 
-          source={{ uri: 'https://image.tmdb.org/t/p/w780/8Y43POKjjKDGI9MH89NW0NAzzp8.jpg' }} 
+          source={backdropSource} 
           style={StyleSheet.absoluteFill}
           resizeMode="cover"
+          onError={() => handleImageError(setBackdropSource, 'backdrop')}
         />
         <LinearGradient
           colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.8)', '#000000']}
@@ -79,6 +87,51 @@ export default function ProfileScreen() {
               </View>
             )}
           </View>
+        </Animated.View>
+
+        {/* Discovery Section */}
+        <Animated.View entering={FadeInUp.duration(1000).delay(100).springify()} className="px-5 mb-8 gap-4">
+          <Text style={{ fontFamily: 'Rubik-Bold', fontSize: 18, color: 'white', marginBottom: 4 }}>גילוי וחוויה</Text>
+          
+          <MenuItem 
+            icon={TrendingUp} 
+            title="סטטיסטיקות קולנוע" 
+            color="#E50914" 
+            onPress={() => router.push('/analytics')} 
+          />
+          
+
+          <MenuItem 
+            icon={Trophy} 
+            title="מועדון לקוחות CinePass" 
+            color={Colors.secondary} 
+            onPress={() => (router.push as any)('/loyalty')} 
+          />
+
+          <MenuItem 
+            icon={MapIcon} 
+            title="סניפים ומפה" 
+            color="#10B981" 
+            onPress={() => (router.push as any)('/map')} 
+          />
+          
+          <Pressable 
+            onPress={toggleInTheaterMode} 
+            className="flex-row items-center p-4 bg-white/5 rounded-2xl border border-white/10 overflow-hidden"
+          >
+            <View className="w-12 h-12 rounded-xl justify-center items-center shadow-sm" style={{ backgroundColor: (isInTheaterMode ? Colors.primary : '#666') + '15', marginStart: 4 }}>
+              <Moon size={22} color={isInTheaterMode ? Colors.primary : 'rgba(255,255,255,0.5)'} />
+            </View>
+            <View className="flex-1 ms-4">
+              <Text style={[Typography.body, { fontFamily: 'Rubik-Medium', fontSize: 16, textAlign: 'left' }]} className="text-white">מצב קולנוע</Text>
+              <Text className="text-white/40 text-xs text-left">{isInTheaterMode ? 'פעיל - חוויה חשוכה' : 'כבוי - תצוגה רגילה'}</Text>
+            </View>
+            <View className={`w-12 h-6 rounded-full px-1 justify-center ${isInTheaterMode ? 'bg-primary' : 'bg-white/20'}`}>
+              <View className={`w-4 h-4 rounded-full bg-white ${isInTheaterMode ? 'self-end' : 'self-start'}`} />
+            </View>
+          </Pressable>
+
+
         </Animated.View>
 
         {/* Menu Section */}

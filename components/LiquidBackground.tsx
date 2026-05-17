@@ -14,10 +14,14 @@ import { BlurView } from 'expo-blur';
 const { width, height } = Dimensions.get('window');
 
 interface LiquidBackgroundProps {
-  movieColor?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
 }
 
-const LiquidBackground: React.FC<LiquidBackgroundProps> = ({ movieColor = '#8E2DE2' }) => {
+const LiquidBackground: React.FC<LiquidBackgroundProps> = ({ 
+  primaryColor = '#E50914',
+  secondaryColor = '#4A00E0'
+}) => {
   const blob1X = useSharedValue(0);
   const blob1Y = useSharedValue(0);
   const blob2X = useSharedValue(0);
@@ -29,7 +33,7 @@ const LiquidBackground: React.FC<LiquidBackgroundProps> = ({ movieColor = '#8E2D
     
     blob2X.value = withDelay(1000, withRepeat(withTiming(-width * 0.2, { duration: 9000 }), -1, true));
     blob2Y.value = withDelay(1000, withRepeat(withTiming(height * 0.1, { duration: 11000 }), -1, true));
-  }, [blob1X, blob1Y, blob2X, blob2Y]);
+  }, []);
 
   const style1 = useAnimatedStyle(() => ({
     transform: [
@@ -37,7 +41,7 @@ const LiquidBackground: React.FC<LiquidBackgroundProps> = ({ movieColor = '#8E2D
       { translateY: blob1Y.value },
       { scale: interpolate(blob1X.value, [0, width * 0.3], [1, 1.2], Extrapolate.CLAMP) }
     ],
-    backgroundColor: movieColor,
+    backgroundColor: primaryColor,
   }));
 
   const style2 = useAnimatedStyle(() => ({
@@ -46,6 +50,7 @@ const LiquidBackground: React.FC<LiquidBackgroundProps> = ({ movieColor = '#8E2D
       { translateY: blob2Y.value },
       { scale: interpolate(blob2Y.value, [0, height * 0.1], [1, 1.3], Extrapolate.CLAMP) }
     ],
+    backgroundColor: secondaryColor,
   }));
 
   return (
@@ -70,7 +75,6 @@ const styles = StyleSheet.create({
     left: -50,
   },
   blob2: {
-    backgroundColor: '#4A00E0',
     bottom: 50,
     right: -50,
   },

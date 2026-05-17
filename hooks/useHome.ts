@@ -1,49 +1,53 @@
-import { useEffect, useState } from 'react';
-import { getNowPlaying, getPopular, getTopRated, type TMDBMovie } from '@/lib/tmdb';
-import { NotificationService } from '@/services/NotificationService';
+import { useState, useCallback, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { 
+  useNowPlaying, 
+  usePopular, 
+  useTopRated,
+  movieKeys 
+} from '@/hooks/useMovieQueries';
+import NotificationService from '@/services/NotificationService';
 
 export const useHome = () => {
-  const [nowPlaying, setNowPlaying] = useState<TMDBMovie[]>([]);
-  const [popular, setPopular] = useState<TMDBMovie[]>([]);
-  const [topRated, setTopRated] = useState<TMDBMovie[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const queryClient = useQueryClient();
+  
+  // 1. React Query Hooks
+  const { data: nowPlaying = [], isLoading: isNpLoading, isRefetching: isNpRefetching } = useNowPlaying();
+  const { data: popular = [], isLoading: isPopLoading, isRefetching: isPopRefetching } = usePopular();
+  const { data: topRated = [], isLoading: isTrLoading, isRefetching: isTrRefetching } = useTopRated();
+
+  // 2. Local UI State
   const [aiModalVisible, setAiModalVisible] = useState(false);
+  const [storiesVisible, setStoriesVisible] = useState(false);
+  const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
 
-  const fetchMovies = async () => {
-    try {
-      const [np, pop, tr] = await Promise.all([
-        getNowPlaying(),
-        getPopular(),
-        getTopRated(),
-      ]);
-      setNowPlaying(np);
-      setPopular(pop);
-      setTopRated(tr);
+  const loading = isNpLoading || isPopLoading || isTrLoading;
+  const refreshing = isNpRefetching || isPopRefetching || isTrRefetching;
 
-      // Simulate new movie notification if we have data
-      if (np.length > 0) {
-        NotificationService.notifyNewMovie(np[0].title);
-      }
-    } catch (error) {
-      console.error('[useHome] Failed to fetch movies:', error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
+  // 3. Side Effects
   useEffect(() => {
-    fetchMovies();
-  }, []);
+    if (nowPlaying.length > 0 && !loading) {
+      // Simulate new movie notification once when loaded
+      NotificationService.notifyNewMovie(nowPlaying[0].title);
+    }
+  }, [nowPlaying.length, loading]);
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchMovies();
-  };
+  // 4. Action Handlers
+  const onRefresh = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: movieKeys.lists() });
+  }, [queryClient]);
 
   const toggleAiModal = (visible: boolean) => {
     setAiModalVisible(visible);
+  };
+
+  const handleStoryPress = (index: number) => {
+    setSelectedStoryIndex(index);
+    setStoriesVisible(true);
+  };
+
+  const closeStories = () => {
+    setStoriesVisible(false);
   };
 
   return {
@@ -53,7 +57,11 @@ export const useHome = () => {
     loading,
     refreshing,
     aiModalVisible,
+    storiesVisible,
+    selectedStoryIndex,
     onRefresh,
     toggleAiModal,
+    handleStoryPress,
+    closeStories,
   };
 };

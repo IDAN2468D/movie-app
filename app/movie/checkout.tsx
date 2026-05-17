@@ -5,18 +5,17 @@ import * as React from 'react';
 import { View, Text, Image, Pressable, ScrollView, Modal } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ArrowLeft, CreditCard, ShieldCheck, Ticket, CheckCircle2, Sparkles } from 'lucide-react-native';
-import { useVideoPlayer, VideoView } from 'expo-video';
+import { ArrowLeft, CreditCard, ShieldCheck, Ticket, CheckCircle2, Sparkles, Popcorn } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
+import { useSnacksStore } from '@/store/useSnacksStore';
+import { useAuthStore } from '@/store/useAuthStore';
+import { Video } from '@/utils/SafeModules';
 import Animated, { 
   FadeInDown, 
   FadeIn, 
   ZoomIn, 
-  useAnimatedStyle, 
-  withRepeat, 
-  withTiming,
   FadeOut
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
 import { cssInterop } from 'react-native-css-interop';
 
 import { Colors, POSTER_SIZES } from '@/constants/Theme';
@@ -29,20 +28,6 @@ cssInterop(LinearGradient, { className: 'style' });
 export default function CheckoutScreen() {
   const insets = useSafeAreaInsets();
   
-  // Success animation styles - must be at top level, before any returns
-  const ticketAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateY: withRepeat(withTiming(15, { duration: 2000 }), -1, true) },
-      { rotateZ: withRepeat(withTiming('1deg', { duration: 2500 }), -1, true) }
-    ]
-  }));
-
-  // MGM Intro Video Player - must be at top level
-  const [isIntroFinished, setIsIntroFinished] = React.useState(false);
-  const mgmPlayer = useVideoPlayer('https://archive.org/download/mgm-1995/MGM%201995.mp4', (player) => {
-    player.loop = false;
-  });
-
   const {
     selectedMovieTitle,
     selectedMoviePoster,
@@ -55,53 +40,17 @@ export default function CheckoutScreen() {
     finalTotal,
     isProcessing,
     isSuccess,
+    showAnimation,
+    showModal,
+    isIntroFinished,
+    ticketAnimatedStyle,
+    mgmPlayer,
     handlePayment,
     handleFinish,
     goBack,
   } = useCheckout();
-
-  const [showAnimation, setShowAnimation] = React.useState(false);
-  const [showModal, setShowModal] = React.useState(false);
-
-  React.useEffect(() => {
-    if (isSuccess) {
-      setShowAnimation(true);
-      setIsIntroFinished(false);
-      
-      // Start MGM Intro
-      mgmPlayer.play();
-      
-      // Haptics for the roar
-      const hapticTimer = setTimeout(() => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      }, 1500);
-
-      // Transition to ticket after intro
-      const timer = setTimeout(() => {
-        setIsIntroFinished(true);
-      }, 4500);
-
-      // Final modal transition
-      const modalTimer = setTimeout(() => {
-        setShowAnimation(false);
-        setShowModal(true);
-      }, 9500); // Intro (4.5s) + Ticket animation (5s)
-
-      return () => {
-        clearTimeout(hapticTimer);
-        clearTimeout(timer);
-        clearTimeout(modalTimer);
-        try {
-          // Check if player is still valid before pausing to avoid "already released" error
-          if (mgmPlayer) {
-            mgmPlayer.pause();
-          }
-        } catch (e) {
-          // Silent catch for released objects
-        }
-      };
-    }
-  }, [isSuccess, mgmPlayer, setIsIntroFinished, setShowAnimation, setShowModal]);
+  const { items, addItem } = useSnacksStore();
+  const { user, addVirtualCard } = useAuthStore();
 
 
   if (!selectedShowtime) return null;
@@ -163,6 +112,46 @@ export default function CheckoutScreen() {
           </View>
         </View>
 
+        {/* Pre-Order Snacks Section */}
+        <View className="mt-10 items-start">
+          <View className="flex-row w-full justify-between items-center mb-4">
+            <Text className="text-h3 text-white font-display">נשנושים וכיבוד</Text>
+            <View className="bg-secondary/20 px-3 py-1 rounded-full border border-secondary/30">
+              <Text className="text-[10px] text-secondary font-bold uppercase tracking-widest">עוקף תור 🍿</Text>
+            </View>
+          </View>
+          
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row -mx-5 px-5" contentContainerStyle={{ gap: 24 }}>
+            {items.map((snack) => {
+              const count = snacksInCart.find(i => i.id === snack.id)?.quantity || 0;
+              return (
+                <Pressable 
+                  key={snack.id}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    addItem(snack.id);
+                  }}
+                  className="w-40 bg-surfaceLight rounded-3xl border border-white/5 p-4 items-center"
+                >
+                  <View className="w-20 h-20 bg-background/50 rounded-2xl items-center justify-center mb-3">
+                    <Popcorn color={Colors.primary} size={32} opacity={0.6} />
+                    {count > 0 && (
+                      <View className="absolute -top-2 -right-2 w-7 h-7 bg-primary rounded-full items-center justify-center border-2 border-surface">
+                        <Text className="text-white text-xs font-bold">{count}</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text className="text-body text-white font-bold text-center mb-1" numberOfLines={1}>{snack.name}</Text>
+                  <Text className="text-[10px] text-secondary font-display">₪{snack.price}</Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+          <Text className="text-caption text-textSecondary mt-4 font-body italic">
+            * ההזמנה תחכה לך בדלפק המהיר עם הצגת הכרטיס
+          </Text>
+        </View>
+
         {/* Price Breakdown */}
         <View className="mt-10 p-6 rounded-3xl bg-surface border border-white/5">
           <View className="flex-row-reverse justify-between mb-4">
@@ -187,9 +176,49 @@ export default function CheckoutScreen() {
         </View>
 
         {/* Security Note */}
-        <View className="mt-6 flex-row items-center justify-center gap-2 opacity-50 mb-10">
+        <View className="mt-6 flex-row items-center justify-center gap-2 opacity-50">
           <ShieldCheck size={16} color={Colors.textSecondary} />
           <Text className="text-caption text-textSecondary font-body">תשלום מאובטח באמצעות SSL</Text>
+        </View>
+
+        {/* Payment Method Section */}
+        <View className="mt-10 items-start mb-10">
+          <Text className="text-h3 text-white mb-4 font-display">אמצעי תשלום</Text>
+          
+          {user?.paymentMethods && user.paymentMethods.length > 0 ? (
+            user.paymentMethods.map((method) => (
+              <View 
+                key={method.id}
+                className="w-full bg-surfaceLight p-5 rounded-3xl border border-secondary/20 flex-row-reverse items-center justify-between"
+              >
+                <View className="flex-row-reverse items-center gap-4">
+                  <View className="w-12 h-8 bg-white/10 rounded-md items-center justify-center border border-white/10">
+                    <CreditCard size={20} color={Colors.secondary} />
+                  </View>
+                  <View className="items-end">
+                    <Text className="text-body text-white font-bold">{method.brand}</Text>
+                    <Text className="text-caption text-textMuted">•••• {method.last4}</Text>
+                  </View>
+                </View>
+                <View className="w-6 h-6 rounded-full bg-secondary items-center justify-center">
+                  <CheckCircle2 size={16} color={Colors.background} />
+                </View>
+              </View>
+            ))
+          ) : (
+            <Pressable 
+              onPress={async () => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                await addVirtualCard();
+              }}
+              className="w-full h-20 rounded-3xl border-2 border-dashed border-white/10 items-center justify-center bg-surfaceLight/30"
+            >
+              <View className="flex-row items-center gap-3">
+                <Sparkles size={20} color={Colors.secondary} />
+                <Text className="text-body text-white font-bold">הנפק כרטיס CineBook וירטואלי</Text>
+              </View>
+            </Pressable>
+          )}
         </View>
       </ScrollView>
 
@@ -233,12 +262,19 @@ export default function CheckoutScreen() {
               exiting={FadeOut.duration(500)}
               className="absolute inset-0 z-50 bg-black items-center justify-center"
             >
-              <VideoView 
-                player={mgmPlayer} 
-                style={{ width: '100%', height: '100%' }} 
-                contentFit="contain"
-                nativeControls={false}
-              />
+              {Video?.VideoView && mgmPlayer ? (
+                <Video.VideoView 
+                  player={mgmPlayer} 
+                  style={{ width: '100%', height: '100%' }} 
+                  contentFit="contain"
+                  nativeControls={false}
+                />
+              ) : (
+                <View className="items-center justify-center">
+                   <Sparkles size={64} color={Colors.secondary} />
+                   <Text className="text-white mt-4 font-display">Processing Cinematic Ticket...</Text>
+                </View>
+              )}
             </Animated.View>
           )}
           

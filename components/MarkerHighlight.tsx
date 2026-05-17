@@ -3,7 +3,7 @@
  * Renders text with a signature 'marker stroke' background.
  */
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, type TextStyle, I18nManager } from 'react-native';
+import { View, Text, StyleSheet, type TextStyle, type ViewStyle, I18nManager } from 'react-native';
 import Animated, { 
   useAnimatedStyle, 
   useSharedValue, 
@@ -16,6 +16,7 @@ interface MarkerHighlightProps {
   text: string;
   color?: string;
   style?: TextStyle;
+  containerStyle?: ViewStyle;
   className?: string;
   delay?: number;
   numberOfLines?: number;
@@ -25,6 +26,7 @@ export function MarkerHighlight({
   text, 
   color = Colors.secondary, 
   style,
+  containerStyle,
   className,
   delay = 300,
   numberOfLines
@@ -47,7 +49,7 @@ export function MarkerHighlight({
   const isRTL = I18nManager.isRTL;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, containerStyle]}>
       {/* The Marker Stroke */}
       <Animated.View 
         style={[

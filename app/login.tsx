@@ -1,8 +1,4 @@
-/**
- * Login Screen - Premium Cinematic Experience
- */
 import * as React from 'react';
-import { useState } from 'react';
 import { 
   View, 
   Text, 
@@ -22,51 +18,27 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { 
   FadeInDown, 
   FadeInUp, 
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring
 } from 'react-native-reanimated';
 import { useLogin } from '@/hooks/useLogin';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const {
     form,
     setForm,
     isLoading,
+    showPassword,
+    focusedField,
+    animatedEmailStyle,
+    animatedPassStyle,
+    onFocus,
+    onBlur,
+    togglePasswordVisibility,
     handleLogin,
     navigateToRegister,
     navigateToForgotPassword,
     handleGoogleLogin,
   } = useLogin();
-  
-  const [showPassword, setShowPassword] = useState(false);
-  const [focusedField, setFocusedField] = useState<string | null>(null);
-
-  // Animated focus styles
-  const emailScale = useSharedValue(1);
-  const passScale = useSharedValue(1);
-
-  const onFocus = (field: string) => {
-    setFocusedField(field);
-    if (field === 'email') emailScale.value = withSpring(1.02);
-    if (field === 'password') passScale.value = withSpring(1.02);
-  };
-
-  const onBlur = () => {
-    setFocusedField(null);
-    emailScale.value = withSpring(1);
-    passScale.value = withSpring(1);
-  };
-
-  const animatedEmailStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: emailScale.value }]
-  }));
-
-  const animatedPassStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: passScale.value }]
-  }));
 
   return (
     <View className="flex-1 bg-black">
@@ -187,7 +159,7 @@ export default function LoginScreen() {
                           onFocus={() => onFocus('password')}
                           onBlur={onBlur}
                         />
-                        <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                        <TouchableOpacity onPress={togglePasswordVisibility}>
                           {showPassword ? (
                             <EyeOff size={20} color={focusedField === 'password' ? '#DFFF1A' : 'rgba(255,255,255,0.5)'} />
                           ) : (

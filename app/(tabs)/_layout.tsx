@@ -1,7 +1,7 @@
 /**
  * Tab Layout - Premium Bottom Navigation
  */
-import { Tabs, useRouter } from 'expo-router';
+import { Tabs } from 'expo-router';
 import { StyleSheet, Platform, ActivityIndicator, View } from 'react-native';
 import { Home, Search, Ticket, User, Bookmark } from 'lucide-react-native';
 import { Colors, Typography } from '@/constants/Theme';

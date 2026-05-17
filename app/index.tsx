@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -8,7 +8,6 @@ import { Colors } from '@/constants/Theme';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function SplashScreen() {
-  const router = useRouter();
   const isLoading = useAuthStore(state => state.isLoading);
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const hasSeenOnboarding = useAuthStore(state => state.hasSeenOnboarding);

@@ -12,8 +12,9 @@ import {
   Modal,
   TouchableOpacity,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { TrendingUp } from 'lucide-react-native';
+import { router } from 'expo-router';
+import { TrendingUp, Moon, MapPin } from 'lucide-react-native';
+import { usePremiumStore } from '@/store/usePremiumStore';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Theme';
 import HeroSlider from '@/components/HeroSlider';
@@ -21,6 +22,7 @@ import MovieCard from '@/components/MovieCard';
 import SectionHeader from '@/components/SectionHeader';
 import AIConciergeModal from '@/components/AIConciergeModal';
 import { AIButton } from '@/components/AIButton';
+import ScannerButton from '@/components/ScannerButton';
 import { useHome } from '@/hooks/useHome';
 import StoriesRow from '@/components/StoriesRow';
 import MovieStories from '@/components/MovieStories';
@@ -34,18 +36,14 @@ export default function HomeScreen() {
     loading,
     refreshing,
     aiModalVisible,
+    storiesVisible,
+    selectedStoryIndex,
     onRefresh,
     toggleAiModal,
+    handleStoryPress,
+    closeStories,
   } = useHome();
-  const router = useRouter();
-
-  const [storiesVisible, setStoriesVisible] = React.useState(false);
-  const [selectedStoryIndex, setSelectedStoryIndex] = React.useState(0);
-
-  const handleStoryPress = (index: number) => {
-    setSelectedStoryIndex(index);
-    setStoriesVisible(true);
-  };
+  const { isInTheaterMode, toggleInTheaterMode } = usePremiumStore();
 
   if (loading) {
     return (
@@ -73,14 +71,8 @@ export default function HomeScreen() {
         }
       >
         {/* Custom Header (LTR) */}
-        <View className="flex-row items-center px-6 pt-4 mb-6">
-          <TouchableOpacity 
-            onPress={() => router.push('/analytics')}
-            className="bg-primary/20 p-3 rounded-2xl border border-primary/30 mr-4"
-          >
-            <TrendingUp size={24} color="#E50914" />
-          </TouchableOpacity>
-          <View>
+        <View className="px-6 pt-4 mb-6">
+          <View className="flex-1">
             <Text className="text-white/60 font-assistant text-sm text-left">שלום, חובב קולנוע 👋</Text>
             <Text className="text-white text-2xl font-bold font-assistant text-left">הסרטים של CineBook</Text>
           </View>
@@ -146,6 +138,16 @@ export default function HomeScreen() {
         <AIButton onPress={() => toggleAiModal(true)} />
       </View>
 
+      {/* Floating Scanner Button */}
+      <ScannerButton 
+        style={{ 
+          position: 'absolute', 
+          bottom: insets.bottom + 130, 
+          left: 20,
+          zIndex: 99
+        }}
+      />
+
       <AIConciergeModal 
         visible={aiModalVisible} 
         onClose={() => toggleAiModal(false)} 
@@ -155,7 +157,7 @@ export default function HomeScreen() {
         visible={storiesVisible}
         animationType="fade"
         transparent={false}
-        onRequestClose={() => setStoriesVisible(false)}
+        onRequestClose={closeStories}
       >
         <MovieStories 
           stories={nowPlaying.map(m => ({ 
@@ -165,7 +167,7 @@ export default function HomeScreen() {
             overview: m.overview 
           }))}
           initialIndex={selectedStoryIndex}
-          onClose={() => setStoriesVisible(false)}
+          onClose={closeStories}
         />
       </Modal>
     </View>

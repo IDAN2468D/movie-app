@@ -1,18 +1,53 @@
 import { useState, useCallback } from 'react';
 import { Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 import { useAuthStore } from '@/store/useAuthStore';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { GOOGLE_CONFIG } from '@/constants/Config';
+import { 
+  useAnimatedStyle, 
+  useSharedValue, 
+  withSpring 
+} from 'react-native-reanimated';
 
 export const useLogin = () => {
-  const router = useRouter();
   const { login, isLoading } = useAuthStore();
   
   const [form, setForm] = useState({
     email: '',
     password: '',
   });
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+
+  // Animated focus styles
+  const emailScale = useSharedValue(1);
+  const passScale = useSharedValue(1);
+
+  const onFocus = (field: string) => {
+    setFocusedField(field);
+    if (field === 'email') emailScale.value = withSpring(1.02);
+    if (field === 'password') passScale.value = withSpring(1.02);
+  };
+
+  const onBlur = () => {
+    setFocusedField(null);
+    emailScale.value = withSpring(1);
+    passScale.value = withSpring(1);
+  };
+
+  const animatedEmailStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: emailScale.value }]
+  }));
+
+  const animatedPassStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: passScale.value }]
+  }));
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
 
   const handleLogin = useCallback(async () => {
     if (!form.email || !form.password) {
@@ -26,7 +61,7 @@ export const useLogin = () => {
     } else {
       Alert.alert('שגיאת התחברות', result.message || 'אימייל או סיסמה שגויים');
     }
-  }, [form, login, router]);
+  }, [form, login]);
 
   const navigateToRegister = () => {
     router.push('/auth/register');
@@ -97,6 +132,13 @@ export const useLogin = () => {
     form,
     setForm,
     isLoading,
+    showPassword,
+    focusedField,
+    animatedEmailStyle,
+    animatedPassStyle,
+    onFocus,
+    onBlur,
+    togglePasswordVisibility,
     handleLogin,
     navigateToRegister,
     navigateToForgotPassword,

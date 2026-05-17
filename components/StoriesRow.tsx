@@ -1,7 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, Image } from 'react-native';
-import { Colors } from '@/constants/Theme';
-import { LinearGradient } from 'expo-linear-gradient';
+import { getImageSource, handleImageError } from '../utils/ImageUtils';
 
 interface StoryItem {
   id: number;
@@ -14,11 +13,37 @@ interface StoriesRowProps {
   onStoryPress: (index: number) => void;
 }
 
-const getTMDBImage = (path: string, size: 'original' | 'w500' | 'w200' = 'original') => {
-  if (!path) return '';
-  const cleanPath = path.startsWith('/') ? path : `/${path}`;
-  return `https://image.tmdb.org/t/p/${size}${cleanPath}`;
-};
+/**
+ * רכיב מעגל סיפור בודד לניהול מצב תמונה עצמאי
+ */
+function StoryCircle({ story, onPress }: { story: StoryItem, onPress: () => void }) {
+  const [source, setSource] = useState(getImageSource(story.poster, 'poster', 'small'));
+
+  return (
+    <Pressable 
+      onPress={onPress}
+      className="items-center gap-2"
+    >
+      <View className="p-[3px] rounded-full border-2 border-primary">
+        <View className="w-16 h-16 rounded-full overflow-hidden border border-white/10 bg-surface">
+          <Image 
+            source={source} 
+            className="w-full h-full"
+            resizeMode="cover"
+            onError={() => handleImageError(setSource, 'poster')}
+          />
+        </View>
+      </View>
+      <Text 
+        numberOfLines={1} 
+        className="text-white text-[10px] w-16 text-center font-medium"
+        style={{ writingDirection: 'rtl' }}
+      >
+        {story.title}
+      </Text>
+    </Pressable>
+  );
+}
 
 export default function StoriesRow({ stories, onStoryPress }: StoriesRowProps) {
   return (
@@ -29,28 +54,11 @@ export default function StoriesRow({ stories, onStoryPress }: StoriesRowProps) {
         contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
       >
         {stories.map((story, index) => (
-          <Pressable 
+          <StoryCircle 
             key={story.id} 
-            onPress={() => onStoryPress(index)}
-            className="items-center gap-2"
-          >
-            <View className="p-[3px] rounded-full border-2 border-primary">
-              <View className="w-16 h-16 rounded-full overflow-hidden border border-white/10 bg-surface">
-                <Image 
-                  source={{ uri: getTMDBImage(story.poster, 'w200') }} 
-                  className="w-full h-full"
-                  resizeMode="cover"
-                />
-              </View>
-            </View>
-            <Text 
-              numberOfLines={1} 
-              className="text-white text-[10px] w-16 text-center font-medium"
-              style={{ writingDirection: 'rtl' }}
-            >
-              {story.title}
-            </Text>
-          </Pressable>
+            story={story} 
+            onPress={() => onStoryPress(index)} 
+          />
         ))}
       </ScrollView>
     </View>

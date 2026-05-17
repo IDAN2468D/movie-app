@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useBookingStore } from '@/store/useBookingStore';
 import { useSnacksStore } from '@/store/useSnacksStore';
@@ -7,7 +7,6 @@ import { useSnacksStore } from '@/store/useSnacksStore';
 export type SnackCategory = 'All' | 'Popcorn' | 'Drinks' | 'Combos' | 'Candy';
 
 export const useSnacks = () => {
-  const router = useRouter();
   const { selectedMoviePoster, totalPrice: ticketsTotal } = useBookingStore();
   const { items, cart, addItem: addItemToStore, removeItem: removeItemFromStore, getTotalPrice } = useSnacksStore();
   

@@ -1,186 +1,172 @@
-import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
 import { Platform } from 'react-native';
-import Constants from 'expo-constants';
+import * as Device from 'expo-device';
+import { Notifications } from '../utils/SafeModules';
 
-// Configure how notifications should be handled when the app is in the foreground
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+/**
+ * Service to handle local and push notifications safely.
+ * Uses SafeModules to prevent crashes on environments without native notification support.
+ */
+class NotificationService {
+  private hasNativeSupport = !!Notifications;
 
-export class NotificationService {
-  /**
-   * Initialize the notification system
-   */
-  static async initHandler() {
-    if (!Device.isDevice) {
-      console.log('NotificationService: Must use physical device for Push Notifications');
-      return;
+  constructor() {
+    if (this.hasNativeSupport) {
+      this.configureNotifications();
+    } else {
+      console.warn('NotificationService: Native notifications not supported in this environment.');
     }
+  }
 
-    try {
+  private configureNotifications() {
+    if (!Notifications) return;
+
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowBanner: true,
+        shouldShowList: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+      }),
+    });
+  }
+
+  /**
+   * Backward compatibility alias for initialization
+   */
+  initHandler() {
+    this.configureNotifications();
+  }
+
+  /**
+   * Request permissions for notifications.
+   * Returns true if granted, false otherwise.
+   */
+  async requestPermissions(): Promise<boolean> {
+    if (!this.hasNativeSupport || !Notifications) return false;
+
+    if (Device.isDevice) {
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
-
+      
       if (existingStatus !== 'granted') {
         const { status } = await Notifications.requestPermissionsAsync();
         finalStatus = status;
       }
-
+      
       if (finalStatus !== 'granted') {
-        console.log('NotificationService: Failed to get push token for push notification!');
-        return;
+        console.log('Failed to get push token for push notification!');
+        return false;
       }
-
-      // Android specific channel configuration
-      if (Platform.OS === 'android') {
-        await Notifications.setNotificationChannelAsync('default', {
-          name: 'default',
-          importance: Notifications.AndroidImportance.MAX,
-          vibrationPattern: [0, 250, 250, 250],
-          lightColor: '#FF231F7C',
-        });
-      }
-
-      console.log('NotificationService: Initialized successfully');
-    } catch (error) {
-      console.error('NotificationService: Initialization error', error);
+      
+      return true;
+    } else {
+      console.log('Must use physical device for Push Notifications');
+      return false;
     }
   }
 
   /**
-   * Register for push notifications and get the token
+   * Get the Expo Push Token.
    */
-  static async registerForPushNotificationsAsync() {
-    if (!Device.isDevice) return null;
+  async getPushToken(): Promise<string | null> {
+    if (!this.hasNativeSupport || !Notifications) return null;
 
     try {
-      const projectId = Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
-      
-      if (!projectId) {
-        console.warn('NotificationService: Project ID not found in config');
+      if (Device.isDevice) {
+        const token = (await Notifications.getExpoPushTokenAsync()).data;
+        return token;
       }
-
-      const token = (await Notifications.getExpoPushTokenAsync({
-        projectId,
-      })).data;
-      
-      console.log('NotificationService: Push Token generated', token);
-      return token;
     } catch (error) {
-      console.error('NotificationService: Registration error', error);
+      console.warn('Error getting push token:', error);
+    }
+    return null;
+  }
+
+  /**
+   * Schedule a local notification.
+   */
+  async scheduleLocalNotification(title: string, body: string, data: any = {}) {
+    if (!this.hasNativeSupport || !Notifications) {
+      console.log('Mock Notification:', { title, body, data });
       return null;
     }
+
+    return await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        data,
+        sound: true,
+      },
+      trigger: null, // immediate
+    });
   }
 
   /**
-   * Send a local notification for a new movie release
+   * Schedule a reminder for a movie.
    */
-  static async notifyNewMovie(movieTitle: string) {
-    try {
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: "סרט חדש ב-CineBook! 🍿",
-          body: `הסרט "${movieTitle}" זמין כעת להזמנה.`,
-          data: { movieTitle },
-          sound: 'default',
-        },
-        trigger: null, // Send immediately
-      });
-    } catch (error) {
-      console.error('NotificationService: notifyNewMovie error', error);
-    }
+  async scheduleMovieReminder(movieTitle: string, showtime: Date) {
+    if (!this.hasNativeSupport || !Notifications) return null;
+
+    // Reminder 30 minutes before
+    const trigger = new Date(showtime.getTime() - 30 * 60000);
+    
+    if (trigger < new Date()) return null;
+
+    return await Notifications.scheduleNotificationAsync({
+      content: {
+        title: '🎬 Movie Starting Soon!',
+        body: `"${movieTitle}" starts in 30 minutes. Get your popcorn ready!`,
+        data: { movieTitle },
+      },
+      trigger,
+    });
   }
 
   /**
-   * Send a local notification after ticket purchase simulating email
+   * Notify about a new movie.
    */
-  static async notifyTicketPurchase(movieTitle: string, seatCount: number) {
-    try {
-      // General app notification
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: "ההזמנה בוצעה בהצלחה! 🎬",
-          body: `הזמנת ${seatCount} מושבים לסרט "${movieTitle}". הכרטיסים מחכים לך באפליקציה.`,
-          data: { type: 'purchase', movieTitle },
-          sound: 'default',
-        },
-        trigger: null,
-      });
-
-      // Simulated Email notification with barcode/QR mention
-      setTimeout(async () => {
-        await Notifications.scheduleNotificationAsync({
-          content: {
-            title: "📧 קבלה והכרטיס הדיגיטלי שלך",
-            body: `שלום! מצורף הכרטיס והברקוד/QR לסרט "${movieTitle}". ניתן לסרוק אותו ישירות מהמייל או מהאפליקציה.`,
-            data: { type: 'email', movieTitle, hasQR: true },
-            sound: 'default',
-          },
-          trigger: null,
-        });
-      }, 3000);
-    } catch (error) {
-      console.error('NotificationService: notifyTicketPurchase error', error);
-    }
+  async notifyNewMovie(movieTitle: string) {
+    return await this.scheduleLocalNotification(
+      '🎬 סרט חדש ב-CineBook!',
+      `הסרט "${movieTitle}" זמין כעת לצפייה. הזמן כרטיסים עכשיו!`
+    );
   }
 
   /**
-   * Schedule a reminder for an upcoming showtime
+   * Notify about a ticket purchase.
    */
-  static async scheduleShowtimeReminder(movieTitle: string, date: Date) {
-    try {
-      // Schedule 30 minutes before
-      const trigger = new Date(date);
-      trigger.setMinutes(trigger.getMinutes() - 30);
-
-      // If the reminder time is in the past, don't schedule
-      if (trigger <= new Date()) {
-        console.log('NotificationService: Showtime reminder skipped (time in past)');
-        return;
-      }
-
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: "מתחילים עוד מעט! 🍿",
-          body: `הסרט "${movieTitle}" יתחיל בעוד חצי שעה.`,
-          data: { type: 'reminder', movieTitle },
-          sound: 'default',
-        },
-        trigger: {
-          date: trigger,
-          type: 'date',
-        } as any,
-      });
-      
-      console.log('NotificationService: Showtime reminder scheduled');
-    } catch (error) {
-      console.error('NotificationService: scheduleShowtimeReminder error', error);
-    }
+  async notifyTicketPurchase(movieTitle: string, seatCount: number) {
+    return await this.scheduleLocalNotification(
+      '✅ הרכישה הושלמה!',
+      `רכשת ${seatCount} כרטיסים לסרט "${movieTitle}". תהנו!`
+    );
   }
 
   /**
-   * Send a local notification for special sales and discounts
+   * Notify about promo deals.
    */
-  static async notifyPromoDeals() {
-    try {
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: "מבצעים והנחות ב-CineBook! 🎟️",
-          body: "יש לנו כמה הטבות בלעדיות עבורך. בדוק את רשימת המבצעים עכשיו!",
-          data: { type: 'promo' },
-          sound: 'default',
-        },
-        trigger: null,
-      });
-    } catch (error) {
-      console.error('NotificationService: notifyPromoDeals error', error);
-    }
+  async notifyPromoDeals() {
+    return await this.scheduleLocalNotification(
+      '🎁 הטבה מיוחדת מחכה לך!',
+      'בדוק את המבצעים החדשים שלנו על פופקורן ושתייה!'
+    );
+  }
+
+  /**
+   * Compatibility alias for push registration
+   */
+  async registerForPushNotificationsAsync() {
+    return await this.requestPermissions();
+  }
+
+  /**
+   * Cancel all notifications.
+   */
+  async cancelAll() {
+    if (!this.hasNativeSupport || !Notifications) return;
+    await Notifications.cancelAllScheduledNotificationsAsync();
   }
 }
+
+export default new NotificationService();

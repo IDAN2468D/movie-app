@@ -1,15 +1,14 @@
-/**
- * MovieCard - Premium glassmorphic movie poster card
- */
+import React, { useState, useEffect } from 'react';
 import { View, Text, Pressable, Image, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Star, Bookmark } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { Colors, POSTER_SIZES } from '@/constants/Theme';
+import { Colors } from '@/constants/Theme';
 import type { TMDBMovie } from '@/lib/tmdb';
 import { useWatchlistStore } from '@/store/useWatchlistStore';
 import { useAuthStore } from '@/store/useAuthStore';
+import { getImageSource, handleImageError } from '@/utils/ImageUtils';
 
 const CARD_WIDTH = Dimensions.get('window').width * 0.38;
 const CARD_HEIGHT = CARD_WIDTH * 1.5;
@@ -19,13 +18,17 @@ interface MovieCardProps {
 }
 
 export default function MovieCard({ movie }: MovieCardProps) {
-  const router = useRouter();
-
   const { isInWatchlist, addToWatchlist, removeFromWatchlist } = useWatchlistStore();
   const toggleFavorite = useAuthStore(state => state.toggleFavorite);
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   
+  const [imgSource, setImgSource] = useState(getImageSource(movie.poster_path, 'poster', 'medium'));
   const isBookmarked = isInWatchlist(movie.id);
+
+  // Update image source when movie changes
+  useEffect(() => {
+    setImgSource(getImageSource(movie.poster_path, 'poster', 'medium'));
+  }, [movie.poster_path]);
 
   const handlePress = () => {
     router.push(`/movie/${movie.id}`);
@@ -35,14 +38,12 @@ export default function MovieCard({ movie }: MovieCardProps) {
     e.stopPropagation();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
-    // Local state update (Full movie object)
     if (isBookmarked) {
       removeFromWatchlist(movie.id);
     } else {
       addToWatchlist(movie);
     }
 
-    // Server state update (ID only)
     if (isAuthenticated) {
       toggleFavorite(movie.id);
     }
@@ -58,25 +59,17 @@ export default function MovieCard({ movie }: MovieCardProps) {
       ]}
     >
       <View className="rounded-2xl overflow-hidden bg-surfaceLight/10 border border-white/10" style={{ width: CARD_WIDTH, height: CARD_HEIGHT }}>
-        {movie.poster_path ? (
-          <Image
-            source={{ uri: `${POSTER_SIZES.medium}${movie.poster_path}` }}
-            className="w-full h-full"
-            resizeMode="cover"
-          />
-        ) : (
-          <Image
-            source={require('../assets/images/poster-placeholder.png')}
-            className="w-full h-full"
-            resizeMode="cover"
-          />
-        )}
+        <Image
+          source={imgSource}
+          onError={handleImageError(setImgSource, 'poster')}
+          className="w-full h-full"
+          resizeMode="cover"
+        />
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.7)']}
           className="absolute bottom-0 start-0 end-0 h-[50%]"
         />
         
-        {/* Rating Badge */}
         <View className="absolute top-2 start-2 flex-row items-center bg-black/40 px-2 py-1 rounded-lg border border-white/10">
           <Star size={10} color={Colors.secondary} fill={Colors.secondary} />
           <Text className="text-[11px] font-bold text-secondary ms-1" style={{ fontFamily: 'Rubik-Bold' }}>
@@ -84,7 +77,6 @@ export default function MovieCard({ movie }: MovieCardProps) {
           </Text>
         </View>
         
-        {/* Release Year */}
         <View className="absolute bottom-2 start-2 bg-black/40 px-2 py-1 rounded-lg border border-white/10">
           <Text className="text-[10px] text-white/80" style={{ fontFamily: 'Rubik-Regular' }}>
             {movie.release_date?.split('-')[0]}

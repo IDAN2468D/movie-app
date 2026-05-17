@@ -1,13 +1,12 @@
 import React from 'react';
 import { View, Text, Pressable, ScrollView, Switch } from 'react-native';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 import { ChevronRight, Bell, Calendar, Tag } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Typography } from '@/constants/Theme';
-import { NotificationService } from '@/services/NotificationService';
+import NotificationService from '@/services/NotificationService';
 
 export default function NotificationsScreen() {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const [reminders, setReminders] = React.useState(true);
   const [promos, setPromos] = React.useState(false);

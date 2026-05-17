@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, ScrollView, Image } from 'react-native';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 import { ChevronRight, Heart, Star } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
@@ -12,7 +12,6 @@ import { getMovieDetails, type TMDBMovieDetails } from '@/lib/tmdb';
 cssInterop(BlurView, { className: 'style' });
 
 export default function FavoritesScreen() {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
   const [movies, setMovies] = useState<TMDBMovieDetails[]>([]);

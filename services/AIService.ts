@@ -353,6 +353,73 @@ ${watchlistInfo}
     }
   }
 
+  /**
+   * Processes audio recording (base64) and extracts semantic filters using Gemini
+   */
+  static async processVoiceSearch(audioBase64: string): Promise<Record<string, string>> {
+    const model = this.getModel("אתה סוכן חיפוש קולי חכם. המשימה שלך היא להקשיב לקובץ השמע, להבין מה המשתמש מחפש ולתרגם זאת לפילטרים של TMDB.");
+    if (!model) return {};
+
+    try {
+      return await this.withRetry(async () => {
+        const result = await model.generateContent([
+          {
+            inlineData: {
+              mimeType: "audio/mp4",
+              data: audioBase64
+            }
+          },
+          `נתח את השמע המצורף. החזר אובייקט JSON בלבד עם הפרמטרים הבאים:
+          - with_genres: קודי ז'אנרים (28=אקשן, 35=קומדיה, 27=אימה, 10749=רומנטיקה, 878=מד"ב)
+          - query: מילות מפתח לחיפוש (עברית)
+          - primary_release_year: שנה (אם צוינה)
+          דוגמה: {"with_genres": "28,878", "query": "מלחמת הכוכבים"}`
+        ]);
+        
+        const text = result.response.text();
+        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        return JSON.parse(jsonStr);
+      });
+    } catch (error) {
+      console.error("AIService Error (Voice Search):", error);
+      return {};
+    }
+  }
+
+  /**
+   * Identifies a movie from a poster image (base64) using Gemini Vision
+   */
+  static async identifyMovieFromPoster(base64Image: string): Promise<string | null> {
+    const model = this.getModel("אתה עוזר זיהוי פוסטרים מומחה עבור סינבוק. תפקידך לזהות את שם הסרט מהתמונה.");
+    if (!model) return null;
+
+    try {
+      return await this.withRetry(async () => {
+        const result = await model.generateContent([
+          {
+            inlineData: {
+              mimeType: "image/jpeg",
+              data: base64Image
+            }
+          },
+          `נתח את התמונה הזו. זהו פוסטר של סרט שצולם על ידי המשתמש.
+          זהה את שם הסרט המדויק באנגלית או בעברית והחזר אותו באובייקט JSON בלבד בפורמט:
+          {"movieTitle": "שם הסרט"}
+          אם אינך מזהה שום סרט, החזר {"error": "לא מזוהה"}`
+        ]);
+        
+        const text = result.response.text();
+        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(jsonStr);
+        return parsed.movieTitle || null;
+      });
+    } catch (error) {
+      console.error("AIService Error (Poster Vision):", error);
+      return null;
+    }
+  }
+
+
   // ─── TTS ────────────────────────────────────────────────────────────────────
 
   /**

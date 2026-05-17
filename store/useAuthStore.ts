@@ -51,6 +51,11 @@ interface AuthState {
   fetchPaymentMethods: () => Promise<void>;
   addPaymentMethod: (data: Omit<IPaymentMethod, 'id'>) => Promise<{ success: boolean; data?: IPaymentMethod; message?: string }>;
   removePaymentMethod: (id: string) => Promise<{ success: boolean; message?: string }>;
+  addVirtualCard: () => Promise<{ success: boolean; data?: IPaymentMethod; message?: string }>;
+  // Security
+  twoFactorEnabled: boolean;
+  setTwoFactorEnabled: (enabled: boolean) => Promise<void>;
+  changePassword: (oldPassword: string, newPassword: string) => Promise<{ success: boolean; message?: string }>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -61,6 +66,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   error: null,
   hasSeenOnboarding: false,
   biometricsEnabled: false,
+  twoFactorEnabled: false,
 
   login: async (email, password) => {
     set({ isLoading: true, error: null });
@@ -163,10 +169,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const token = await SecureStore.getItemAsync(TOKEN_KEY);
       const hasSeen = await SecureStore.getItemAsync('cinebook_has_seen_onboarding');
       const biometricsPref = await SecureStore.getItemAsync('cinebook_biometrics_enabled');
+      const twoFactorPref = await SecureStore.getItemAsync('cinebook_2fa_enabled');
       
       set({ 
         hasSeenOnboarding: hasSeen === 'true',
-        biometricsEnabled: biometricsPref === 'true'
+        biometricsEnabled: biometricsPref === 'true',
+        twoFactorEnabled: twoFactorPref === 'true'
       });
 
       if (!token) {
@@ -342,7 +350,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
               set({ user: { ...currentUser, paymentMethods: freshData.data } });
             }
           }
-        } catch (_syncErr) {
+        } catch {
           console.warn('Post-add sync failed, using optimistic data');
         }
         
@@ -372,5 +380,43 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch {
       return { success: false, message: 'Connection error' };
     }
+  },
+
+  addVirtualCard: async () => {
+    const { user } = get();
+    if (!user) return { success: false, message: 'Not authenticated' };
+
+    const virtualCard: IPaymentMethod = {
+      id: `virtual_${Date.now()}`,
+      last4: '2024',
+      brand: 'CineBook Premium',
+      expiryDate: '12/29',
+      holderName: user.name || 'CineBook User',
+    };
+
+    set({ 
+      user: { 
+        ...user, 
+        paymentMethods: [...(user.paymentMethods || []), virtualCard] 
+      } 
+    });
+    
+    return { success: true, data: virtualCard };
+  },
+
+  setTwoFactorEnabled: async (enabled: boolean) => {
+    await SecureStore.setItemAsync('cinebook_2fa_enabled', enabled ? 'true' : 'false');
+    set({ twoFactorEnabled: enabled });
+  },
+
+  changePassword: async (oldPassword, newPassword) => {
+    // Simulated API call
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // In a real app, we would call safeFetch(`${API_URL}/auth/change-password`, ...)
+    if (oldPassword === '123456') { // Mock check
+      return { success: true, message: 'הסיסמה שונתה בהצלחה' };
+    }
+    return { success: false, message: 'הסיסמה הנוכחית שגויה' };
   },
 }));

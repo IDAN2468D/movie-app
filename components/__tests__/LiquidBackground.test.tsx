@@ -11,8 +11,8 @@ describe('LiquidBackground Component', () => {
     expect(toJSON()).toBeDefined();
   });
 
-  it('accepts movieColor prop', () => {
-    const { toJSON } = render(<LiquidBackground movieColor="#FF0000" />);
+  it('accepts custom color props', () => {
+    const { toJSON } = render(<LiquidBackground primaryColor="#FF0000" secondaryColor="#0000FF" />);
     expect(toJSON()).toBeDefined();
   });
 });

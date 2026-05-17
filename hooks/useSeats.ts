@@ -1,11 +1,10 @@
 import { useEffect, useCallback } from 'react';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useBookingStore } from '@/store/useBookingStore';
 import { useAnimatedStyle, withRepeat, withTiming, withSequence } from 'react-native-reanimated';
 
 export const useSeats = () => {
-  const router = useRouter();
   const {
     selectedMovieTitle,
     selectedMoviePoster,

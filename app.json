@@ -18,6 +18,11 @@
     },
     "android": {
       "package": "com.kazam11.cinebook",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyBEhKylM_JIAOG2UZvMOXp6xO6wMiccfVk"
+        }
+      },
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#09090B"
@@ -40,9 +45,16 @@
         {
           "cameraPermission": "אפשר לסינבוק גישה למצלמה כדי לסרוק כרטיסים."
         }
-      ]
+      ],
+      "react-native-maps",
+      [
+        "expo-location",
+        {
+          "locationAlwaysPermission": "Allow CineBook to access your location to find nearby theaters."
+        }
+      ],
+      "expo-sensors"
     ],
-
     "experiments": {
       "typedRoutes": true
     },

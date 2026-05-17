@@ -25,10 +25,13 @@ export default function ForgotPasswordScreen() {
     email,
     setEmail,
     isLoading,
+    focusedField,
     handleResetPassword,
     navigateBack,
+    handleFocus,
+    handleBlur,
+    animatedEmailStyle,
   } = useForgotPassword();
-  const [focusedField, setFocusedField] = useState<string | null>(null);
 
   return (
     <View className="flex-1 bg-black">
@@ -80,11 +83,11 @@ export default function ForgotPasswordScreen() {
                 ) : (
                   <View style={{ alignItems: 'flex-start' }}>
                     {/* Email */}
-                    <View 
-                      className={`flex-row items-center rounded-2xl px-4 py-4 mb-8 w-full border-2 transition-all duration-300 ${
+                    <Animated.View 
+                      style={[animatedEmailStyle]}
+                      className={`flex-row items-center rounded-2xl px-4 py-4 mb-8 w-full border-2 ${
                         focusedField === 'email' ? 'border-[#E50914] bg-[#E50914]/5' : 'border-white/10 bg-white/5'
                       }`}
-                      style={{ flexDirection: 'row' }}
                     >
                       <Mail 
                         size={20} 
@@ -99,10 +102,10 @@ export default function ForgotPasswordScreen() {
                         className="flex-1 text-white text-base"
                         value={email}
                         onChangeText={setEmail}
-                        onFocus={() => setFocusedField('email')}
-                        onBlur={() => setFocusedField(null)}
+                        onFocus={() => handleFocus('email')}
+                        onBlur={handleBlur}
                       />
-                    </View>
+                    </Animated.View>
 
                     <TouchableOpacity 
                       onPress={handleResetPassword}

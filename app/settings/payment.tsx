@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, Pressable, ScrollView, Modal, TextInput, Alert, ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 import { ChevronRight, CreditCard, Plus, CheckCircle2, X, Trash2, Shield, AlertCircle } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Typography } from '@/constants/Theme';
@@ -52,7 +52,6 @@ interface FieldError {
 }
 
 export default function PaymentScreen() {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user, fetchPaymentMethods, addPaymentMethod, removePaymentMethod } = useAuthStore();
 

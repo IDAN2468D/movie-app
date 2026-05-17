@@ -1,12 +1,11 @@
 import { useCallback, useEffect } from 'react';
 import { Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useBookingStore } from '@/store/useBookingStore';
 import { API_BASE_URL } from '@/constants/Config';
 
 export const useProfile = () => {
-  const router = useRouter();
   const { user, isAuthenticated, logout, token, resetOnboarding } = useAuthStore();
   const { myTickets, fetchMyTickets } = useBookingStore();
 

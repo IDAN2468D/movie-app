@@ -1,5 +1,5 @@
 import * as Notifications from 'expo-notifications';
-import { NotificationService } from '../../services/NotificationService';
+import NotificationService from '../../services/NotificationService';
 
 // Mock expo-notifications
 jest.mock('expo-notifications', () => ({
@@ -35,15 +35,10 @@ describe('NotificationService', () => {
     jest.clearAllMocks();
   });
 
-  it('should initialize the notification permissions', async () => {
-    await NotificationService.initHandler();
-    expect(Notifications.getPermissionsAsync).toHaveBeenCalled();
-  });
-
   it('should register for push notifications correctly', async () => {
-    const token = await NotificationService.registerForPushNotificationsAsync();
-    expect(Notifications.getExpoPushTokenAsync).toHaveBeenCalledWith({ projectId: 'test-project-id' });
-    expect(token).toBe('expo-token');
+    const success = await NotificationService.requestPermissions();
+    expect(Notifications.getPermissionsAsync).toHaveBeenCalled();
+    expect(success).toBe(true);
   });
 
   it('should schedule a new movie notification', async () => {
@@ -63,8 +58,8 @@ describe('NotificationService', () => {
     expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
       expect.objectContaining({
         content: expect.objectContaining({
-          title: expect.stringContaining('בהצלחה'),
-          body: expect.stringContaining('2 מושבים'),
+          title: expect.stringContaining('הרכישה הושלמה'),
+          body: expect.stringContaining('2 כרטיסים'),
         }),
       })
     );

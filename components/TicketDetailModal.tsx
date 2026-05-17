@@ -1,10 +1,12 @@
 import React from 'react';
-import { View, Text, Modal, Pressable, ScrollView, Image, Share } from 'react-native';
-import { BlurView } from 'expo-blur';
-import { X, QrCode, Download, CreditCard, Share2 } from 'lucide-react-native';
+import { View, Text, Modal, Pressable, ScrollView, Image, Share, Alert } from 'react-native';
+import { X, CreditCard, Share2 } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BookedTicket } from '@/store/useBookingStore';
 import { Colors } from '@/constants/Theme';
+import GyroLiquidTicket from './GyroLiquidTicket';
+import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
 
 interface TicketDetailModalProps {
   ticket: BookedTicket | null;
@@ -34,6 +36,21 @@ export default function TicketDetailModal({ ticket, isVisible, onClose }: Ticket
     }
   };
 
+  const handleAddToWallet = async () => {
+    if (!ticket) return;
+    try {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      
+      Alert.alert(
+        'נוסף לארנק הדיגיטלי',
+        `הכרטיס לסרט "${ticket.movieTitle}" נוסף בהצלחה לארנק שלך.`,
+        [{ text: 'מעולה', style: 'default' }]
+      );
+    } catch (error) {
+      console.error('Error adding to wallet:', error);
+    }
+  };
+
   return (
     <Modal
       animationType="slide"
@@ -42,88 +59,106 @@ export default function TicketDetailModal({ ticket, isVisible, onClose }: Ticket
       onRequestClose={onClose}
     >
       <View className="flex-1">
-        <BlurView intensity={80} tint="dark" className="flex-1">
+      <View className="flex-1 bg-background">
           <View 
             className="flex-1 px-6" 
             style={{ paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }}
           >
-            {/* Header - Swapped: X on right, Title on left (in flex-row-reverse) */}
-            <View className="flex-row-reverse justify-between items-center mb-8">
+            {/* Header */}
+            <View className="flex-row-reverse justify-between items-center mb-8 z-20">
               <Pressable 
                 onPress={onClose}
-                className="w-10 h-10 items-center justify-center bg-white/10 rounded-full border border-white/10"
+                className="w-12 h-12 items-center justify-center bg-white/10 rounded-2xl border border-white/20"
               >
                 <X color="white" size={24} />
               </Pressable>
-              <Text className="text-h2 text-white font-display">פרטי הכרטיס</Text>
+              <Text className="text-h2 text-white font-display">הכרטיס הדיגיטלי</Text>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
               {/* Ticket Body */}
-              <View className="bg-white rounded-[40px] overflow-hidden shadow-2xl">
+              <Animated.View 
+                entering={FadeInDown.springify()}
+                className="bg-surfaceLight rounded-[48px] overflow-hidden border border-white/10 shadow-2xl relative"
+              >
+                {/* Liquid Background Layer */}
+                <View className="absolute inset-0">
+                  <GyroLiquidTicket primaryColor={Colors.secondary} secondaryColor={Colors.primary} />
+                </View>
+
                 {/* Movie Header */}
-                <View className="bg-primary p-8 items-center">
-                  <Text 
-                    className="text-h2 text-white font-display text-center leading-tight mb-2"
+                <View className="p-8 items-center border-b border-white/10 bg-black/40">
+                  <Animated.Text 
+                    entering={FadeIn.delay(300)}
+                    className="text-h1 text-white font-display text-center leading-tight mb-2"
                     style={{ writingDirection: 'ltr' }}
                   >
                     {ticket.movieTitle}
-                  </Text>
-                  <View className="flex-row-reverse items-center opacity-80">
+                  </Animated.Text>
+                  <View className="flex-row-reverse items-center opacity-60">
                     <Text className="text-label text-white font-body">{ticket.showtime?.hall || 'אולם'}</Text>
-                    <View className="w-1 h-1 rounded-full bg-white mx-2" />
-                    <Text className="text-label text-white font-body uppercase">{ticket.showtime?.format || 'רגיל'}</Text>
+                    <View className="w-1 h-1 rounded-full bg-white mx-3" />
+                    <Text className="text-label text-white font-body uppercase tracking-widest">{ticket.showtime?.format || 'רגיל'}</Text>
                   </View>
                 </View>
 
                 {/* Main QR Code Section */}
-                <View className="p-8 items-center bg-white">
-                  <View className="p-6 bg-white border-2 border-black/5 rounded-[32px] shadow-sm">
+                <View className="p-10 items-center">
+                  <Animated.View 
+                    entering={ZoomIn.delay(500)}
+                    className="p-6 bg-white rounded-[40px] shadow-2xl border-8 border-white/10"
+                  >
                     <Image 
                       source={{ uri: qrUrl }}
-                      style={{ width: 200, height: 200 }}
+                      style={{ width: 180, height: 180 }}
                       resizeMode="contain"
                     />
-                  </View>
-                  <Text className="mt-6 text-caption text-background/40 font-mono tracking-[4px] uppercase">
-                    ID: {ticket.id.toUpperCase()}
-                  </Text>
+                  </Animated.View>
+                  <Animated.Text 
+                    entering={FadeIn.delay(700)}
+                    className="mt-8 text-caption text-white/30 font-mono tracking-[6px] uppercase"
+                  >
+                    REF: {ticket.id.split('-')[0].toUpperCase()}
+                  </Animated.Text>
                 </View>
 
-                {/* Perforation Line */}
-                <View className="flex-row items-center h-4 overflow-hidden">
-                  <View className="w-8 h-8 rounded-full bg-black/5 -ms-4 border border-black/10" />
-                  <View className="flex-1 border-dashed border-black/10 mx-1 border-t-2" />
-                  <View className="w-8 h-8 rounded-full bg-black/5 -me-4 border border-black/10" />
+                {/* Perforation Line - Custom Glass Effect */}
+                <View className="flex-row items-center h-6 overflow-hidden px-1">
+                  <View className="w-10 h-10 rounded-full bg-background -ms-6 border border-white/10" />
+                  <View className="flex-1 border-dashed border-white/20 mx-2 border-t-2" />
+                  <View className="w-10 h-10 rounded-full bg-background -me-6 border border-white/10" />
                 </View>
 
                 {/* Ticket Details Grid */}
-                <View className="p-8 pt-6">
-                  <View className="flex-row-reverse flex-wrap justify-between gap-y-6">
+                <View className="p-8 pt-6 bg-white/5">
+                  <View className="flex-row-reverse flex-wrap justify-between gap-y-8">
                     <DetailItem label="תאריך" value={ticket.date} />
                     <DetailItem label="שעה" value={ticket.showtime?.time || '--:--'} />
-                    <DetailItem label="מושבים" value={ticket.seats?.map(s => `${s.row}${s.number}`).join(', ') || 'N/A'} color={Colors.primary} />
-                    <DetailItem label="סוג כרטיס" value="מבוגר (דיגיטלי)" />
+                    <DetailItem label="מושבים" value={ticket.seats?.map(s => `${s.row}${s.number}`).join(', ') || 'N/A'} color={Colors.secondary} />
+                    <DetailItem label="סטטוס" value="מאושר" color="#22c55e" />
                   </View>
 
-                  <View className="h-[1px] bg-black/5 my-8" />
+                  <View className="h-[1px] bg-white/10 my-8" />
 
                   {/* Actions */}
                   <View className="gap-4">
-                    <Pressable className="flex-row-reverse items-center justify-center bg-black h-14 rounded-2xl gap-3">
-                      <CreditCard color="white" size={20} />
-                      <Text className="text-label text-white font-bold">Add to Apple Wallet</Text>
+                    <Pressable 
+                      onPress={handleAddToWallet}
+                      className="flex-row-reverse items-center justify-center bg-white h-16 rounded-[24px] gap-3 shadow-xl active:bg-gray-100"
+                    >
+                      <CreditCard color="black" size={20} />
+                      <Text className="text-label text-black font-bold font-display uppercase tracking-wider">הוסף לארנק</Text>
                     </Pressable>
                     <Pressable 
                       onPress={handleShare}
-                      className="flex-row-reverse items-center justify-center bg-white border border-black/10 h-14 rounded-2xl gap-3 active:bg-black/5"
+                      className="flex-row-reverse items-center justify-center bg-white/5 border border-white/10 h-16 rounded-[24px] gap-3 active:bg-white/10"
                     >
-                      <Share2 color="black" size={20} />
-                      <Text className="text-label text-black font-bold">שתף כרטיס</Text>
+                      <Share2 color="white" size={20} />
+                      <Text className="text-label text-white font-bold font-display">שתף עם חברים</Text>
                     </Pressable>
                   </View>
                 </View>
-              </View>
+              </Animated.View>
 
               {/* Safety Message */}
               <View className="mt-8 items-center opacity-60">
@@ -134,17 +169,17 @@ export default function TicketDetailModal({ ticket, isVisible, onClose }: Ticket
               </View>
             </ScrollView>
           </View>
-        </BlurView>
+      </View>
       </View>
     </Modal>
   );
 }
 
-function DetailItem({ label, value, color = '#1A1A1A' }: { label: string; value: string; color?: string }) {
+function DetailItem({ label, value, color = '#FFFFFF' }: { label: string; value: string; color?: string }) {
   return (
     <View className="w-[45%] items-start">
-      <Text className="text-[10px] text-black/40 mb-1 font-body uppercase tracking-wider">{label}</Text>
-      <Text className="text-label font-bold font-body text-right" style={{ color }}>{value}</Text>
+      <Text className="text-[10px] text-white/40 mb-1.5 font-label uppercase tracking-widest">{label}</Text>
+      <Text className="text-label font-bold font-body text-left" style={{ color }}>{value}</Text>
     </View>
   );
 }

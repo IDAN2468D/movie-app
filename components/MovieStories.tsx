@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, Pressable, Dimensions, ImageBackground, StyleSheet } from 'react-native';
+import { getImageSource, handleImageError } from '../utils/ImageUtils';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
@@ -14,7 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X } from 'lucide-react-native';
 import { cssInterop } from 'react-native-css-interop';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 import { useBookingStore } from '@/store/useBookingStore';
 
 // Required for NativeWind v4 compatibility with Expo components
@@ -40,12 +41,19 @@ interface MovieStoriesProps {
 export default function MovieStories({ stories, onClose, initialIndex = 0 }: MovieStoriesProps) {
   // --- ⚠️ CRITICAL: HOOKS AT TOP LEVEL ---
   const insets = useSafeAreaInsets();
-  const router = useRouter();
   const selectMovie = useBookingStore(state => state.selectMovie);
   
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
+  const [imageSource, setImageSource] = useState(getImageSource(stories[initialIndex]?.poster, 'poster', 'original'));
   const progress = useSharedValue(0);
   const isPaused = useSharedValue(false);
+
+  // עדכון מקור התמונה כאשר האינדקס משתנה
+  useEffect(() => {
+    if (stories[currentIndex]) {
+      setImageSource(getImageSource(stories[currentIndex].poster, 'poster', 'original'));
+    }
+  }, [currentIndex, stories]);
   
   const nextStory = useCallback(() => {
     if (currentIndex < stories.length - 1) {
@@ -138,9 +146,10 @@ export default function MovieStories({ stories, onClose, initialIndex = 0 }: Mov
       <GestureDetector gesture={combinedGesture}>
         <View className="flex-1 bg-black">
           <ImageBackground 
-            source={{ uri: `https://image.tmdb.org/t/p/original${currentStory.poster}` }}
+            source={imageSource}
             style={StyleSheet.absoluteFill}
             resizeMode="cover"
+            onError={() => handleImageError(setImageSource, 'backdrop')}
           >
             <LinearGradient
               colors={['rgba(0,0,0,0.6)', 'transparent', 'rgba(0,0,0,0.8)']}

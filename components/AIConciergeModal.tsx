@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { View, Text, Modal, Pressable, TextInput, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInRight, FadeInLeft, FadeInDown, withRepeat, withSequence, withTiming, withDelay, useAnimatedStyle, useSharedValue, interpolate } from 'react-native-reanimated';
 import { Send, X, User, Sparkles, Zap, Volume2, VolumeX, Mic, BookmarkCheck } from 'lucide-react-native';
@@ -296,7 +295,7 @@ export default function AIConciergeModal({ visible, onClose }: AIConciergeModalP
           className="absolute inset-0"
         />
         
-        <BlurView intensity={40} tint="dark" className="flex-1">
+        <View className="flex-1 bg-background">
           <KeyboardAvoidingView 
             behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
             className="flex-1"
@@ -482,7 +481,7 @@ export default function AIConciergeModal({ visible, onClose }: AIConciergeModalP
               </View>
             </View>
           </KeyboardAvoidingView>
-        </BlurView>
+        </View>
       </View>
     </Modal>
   );

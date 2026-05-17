@@ -1,19 +1,25 @@
 import { useEffect, useState, useMemo } from 'react';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import * as WebBrowser from 'expo-web-browser';
-import { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
+import { 
+  useSharedValue, 
+  useAnimatedScrollHandler, 
+  useAnimatedStyle, 
+  interpolate, 
+  Extrapolation 
+} from 'react-native-reanimated';
 import { useBookingStore, type Showtime } from '@/store/useBookingStore';
 import { useAuthStore } from '@/store/useAuthStore';
+import { usePremiumStore } from '@/store/usePremiumStore';
+import { useMovieTheme } from '@/hooks/useMovieTheme';
 import { AIService } from '@/services/AIService';
-import {
-  getMovieDetails,
-  getMovieCredits,
-  getMovieVideos,
-  type TMDBMovieDetails,
-  type TMDBCast,
-  type TMDBVideo,
-} from '@/lib/tmdb';
+import { Video } from '@/utils/SafeModules';
+import { 
+  useMovieDetails as useMovieQuery, 
+  useMovieCredits, 
+  useMovieVideos 
+} from '@/hooks/useMovieQueries';
 
 function getNext7Days(): { label: string; date: string; dayName: string }[] {
   const days = ['א\'', 'ב\'', 'ג\'', 'ד\'', 'ה\'', 'ו\'', 'ש\''];
@@ -31,8 +37,8 @@ function getNext7Days(): { label: string; date: string; dayName: string }[] {
 }
 
 export const useMovieDetails = (id: string | undefined) => {
-  const router = useRouter();
-  
+  const movieId = id ? parseInt(id, 10) : 0;
+
   // 1. Store State
   const selectMovie = useBookingStore(state => state.selectMovie);
   const selectDate = useBookingStore(state => state.selectDate);
@@ -40,64 +46,79 @@ export const useMovieDetails = (id: string | undefined) => {
   const selectedDate = useBookingStore(state => state.selectedDate);
   const selectedShowtime = useBookingStore(state => state.selectedShowtime);
   const { user, toggleFavorite } = useAuthStore();
+  const { isGroupWatchActive, startGroupWatch, stopGroupWatch, groupWatchRoomId } = usePremiumStore();
 
-  // 2. Local State
-  const [movie, setMovie] = useState<TMDBMovieDetails | null>(null);
-  const [cast, setCast] = useState<TMDBCast[]>([]);
-  const [videos, setVideos] = useState<TMDBVideo[]>([]);
-  const [loading, setLoading] = useState(true);
+  // 2. React Query Hooks
+  const { data: movie, isLoading: isMovieLoading } = useMovieQuery(movieId);
+  const { data: cast = [], isLoading: isCastLoading } = useMovieCredits(movieId);
+  const { data: rawVideos = [], isLoading: isVideosLoading } = useMovieVideos(movieId);
+
   const [insights, setInsights] = useState<{ pros: string[]; cons: string[]; verdict: string } | null>(null);
 
-  // 3. Animation State
+  // Filter and prioritize videos
+  const videos = useMemo(() => {
+    const movieVideos = rawVideos.filter(v => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser'));
+    return movieVideos.length > 0 ? movieVideos : rawVideos.filter(v => v.site === 'YouTube');
+  }, [rawVideos]);
+
+  const loading = isMovieLoading || isCastLoading || isVideosLoading;
+
+  // 3. UI Hooks integration
+  const themeColors = useMovieTheme(movie as any);
+
+  // Background Video Player
+  const player = Video?.useVideoPlayer('https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', (player: any) => {
+    player.loop = true;
+    player.muted = true;
+    player.play();
+  });
+
+  // 4. Animation State
   const scrollY = useSharedValue(0);
   const scrollHandler = useAnimatedScrollHandler((event) => {
     scrollY.value = event.contentOffset.y;
   });
 
-  // 4. Memoized Data
+  const headerAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        {
+          scale: interpolate(
+            scrollY.value,
+            [-200, 0],
+            [1.5, 1],
+            Extrapolation.CLAMP
+          ),
+        },
+        {
+          translateY: interpolate(
+            scrollY.value,
+            [-200, 0, 200],
+            [0, 0, 100],
+            Extrapolation.CLAMP
+          ),
+        },
+      ],
+    };
+  });
+
+  // 5. Memoized Data
   const dates = useMemo(() => getNext7Days(), []);
 
-  // 5. Fetching Logic
+  // 6. Side Effects (AI Insights, Store Sync)
   useEffect(() => {
-    if (!id) return;
-    const movieId = parseInt(id, 10);
-    let isMounted = true;
+    if (movie) {
+      selectMovie(movieId, movie.title, movie.poster_path || '');
+      if (!selectedDate) {
+        selectDate(dates[0].date);
+      }
+      
+      // Fetch AI Insights only once per movie
+      AIService.getMovieInsights(movie.title, movie.overview).then(setInsights);
+    }
+  }, [movie, movieId, selectMovie, selectDate, selectedDate, dates]);
 
-    Promise.all([
-      getMovieDetails(movieId), 
-      getMovieCredits(movieId),
-      getMovieVideos(movieId)
-    ])
-      .then(([details, credits, videoData]) => {
-        if (!isMounted) return;
-        setMovie(details);
-        setCast(credits);
-        
-        const movieVideos = videoData.filter(v => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser'));
-        setVideos(movieVideos.length > 0 ? movieVideos : videoData.filter(v => v.site === 'YouTube'));
-        console.log(`[useMovieDetails] Found ${videoData.length} videos, filtered to ${movieVideos.length} trailers/teasers`);
-
-        selectMovie(movieId, details.title, details.poster_path || '');
-        if (!selectedDate) {
-          selectDate(dates[0].date);
-        }
-
-        // Fetch AI Insights
-        AIService.getMovieInsights(details.title, details.overview).then(setInsights);
-      })
-      .catch(err => {
-        console.error('Failed to load movie details:', err);
-      })
-      .finally(() => {
-        if (isMounted) {
-          setTimeout(() => setLoading(false), 300);
-        }
-      });
-
-    return () => { isMounted = false; };
-  }, [id, selectMovie, selectDate, dates]);
-
-  // 6. Action Handlers
+  // 7. Action Handlers
   const handleSelectShowtime = (showtime: Showtime) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     selectShowtime(showtime);
@@ -112,7 +133,6 @@ export const useMovieDetails = (id: string | undefined) => {
   const handleTrailerPress = async () => {
     if (videos.length > 0 && videos[0]?.key) {
       try {
-        console.log('Trailer button pressed, key:', videos[0].key);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         const url = `https://www.youtube.com/watch?v=${videos[0].key}`;
         await WebBrowser.openBrowserAsync(url);
@@ -129,6 +149,15 @@ export const useMovieDetails = (id: string | undefined) => {
     }
   };
 
+  const handleGroupWatchPress = () => {
+    if (isGroupWatchActive) {
+      stopGroupWatch();
+    } else {
+      const roomId = Math.random().toString(36).substring(7).toUpperCase();
+      startGroupWatch(roomId);
+    }
+  };
+
   const handleBack = () => {
     router.back();
   };
@@ -141,15 +170,21 @@ export const useMovieDetails = (id: string | undefined) => {
     insights,
     scrollY,
     scrollHandler,
+    headerAnimatedStyle,
     dates,
     selectedDate,
     selectedShowtime,
     user,
+    themeColors,
+    player,
+    isGroupWatchActive,
+    groupWatchRoomId,
     selectDate,
     handleSelectShowtime,
     handleBookSeats,
     handleTrailerPress,
     handleToggleFavorite,
+    handleGroupWatchPress,
     handleBack,
   };
 };

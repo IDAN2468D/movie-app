@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 import { I18nManager, StatusBar, DevSettings } from 'react-native';
 import "../global.css";
 import { DarkTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack, router, useSegments, useRootNavigationState } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { Colors } from '@/constants/Theme';
 import { cssInterop } from 'react-native-css-interop';
@@ -19,7 +19,8 @@ import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } f
 import { Rubik_400Regular, Rubik_500Medium, Rubik_700Bold, Rubik_900Black } from '@expo-google-fonts/rubik';
 import { Assistant_400Regular, Assistant_500Medium, Assistant_600SemiBold, Assistant_700Bold } from '@expo-google-fonts/assistant';
 import { useAuthStore } from '@/store/useAuthStore';
-import { NotificationService } from '../services/NotificationService';
+import NotificationService from '../services/NotificationService';
+import InTheaterOverlay from '@/components/InTheaterOverlay';
 
 cssInterop(LinearGradient, { className: 'style' });
 
@@ -54,15 +55,82 @@ const CineDarkTheme = {
   },
 };
 
-export default function RootLayout() {
+function NavigationGuard() {
   const checkAuth = useAuthStore(state => state.checkAuth);
-  
   const isLoading = useAuthStore(state => state.isLoading);
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const hasSeenOnboarding = useAuthStore(state => state.hasSeenOnboarding);
   const segments = useSegments();
-  const router = useRouter();
-  
+  const navigationState = useRootNavigationState();
+
+  useEffect(() => {
+    checkAuth();
+    // Initialize notifications
+    NotificationService.initHandler();
+  }, [checkAuth]);
+
+  // Auth and Onboarding routing logic
+  useEffect(() => {
+    if (isLoading || !navigationState?.key) return;
+
+    const currentSegment = segments[0];
+
+    // 1. Initial State: Always allow root index (Splash) to run its animation
+    if (!currentSegment || currentSegment === '(tabs)' && segments.length === 1) {
+      return;
+    }
+
+    // 2. Onboarding Check: If not seen, force user to onboarding (unless they are at index/onboarding)
+    if (!hasSeenOnboarding) {
+      if (currentSegment !== 'onboarding') {
+        console.log('Redirecting to Onboarding (First time user)');
+        router.replace('/onboarding');
+      }
+      return;
+    }
+
+    // 3. Authentication Check: If seen onboarding but not logged in
+    if (!isAuthenticated) {
+      // Allow login, auth, and onboarding
+      const isPublicRoute = currentSegment === 'login' || currentSegment === 'auth' || currentSegment === 'onboarding';
+      
+      if (!isPublicRoute) {
+        console.log('Redirecting to Login (Unauthenticated)');
+        router.replace('/login');
+      }
+    } else {
+      // 4. Authenticated: Don't allow login or onboarding screens
+      if (currentSegment === 'login' || currentSegment === 'auth' || currentSegment === 'onboarding') {
+        console.log('Redirecting to Tabs (Already Authenticated)');
+        router.replace('/(tabs)');
+      }
+    }
+  }, [isAuthenticated, isLoading, segments, hasSeenOnboarding]);
+
+  return null;
+}
+
+import { AsyncStorage } from '@/utils/SafeModules';
+import { QueryClient } from '@tanstack/react-query';
+import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 60 * 24, // Keep in cache for 24 hours
+    },
+  },
+});
+
+const persister = createAsyncStoragePersister({
+  storage: AsyncStorage,
+  throttleTime: 1000,
+});
+
+export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
     'Anton-Regular': Anton_400Regular,
     'Inter-Regular': Inter_400Regular,
@@ -79,59 +147,7 @@ export default function RootLayout() {
     'Assistant-Bold': Assistant_700Bold,
   });
 
-  useEffect(() => {
-    checkAuth();
-    // Initialize notifications
-    NotificationService.initHandler();
-  }, [checkAuth]);
-
-  // Auth and Onboarding routing logic
-  useEffect(() => {
-    if (isLoading) return;
-
-    const currentSegment = segments[0];
-
-    console.log('Navigation Guard:', {
-      currentSegment,
-      hasSeenOnboarding,
-      isAuthenticated,
-      segments
-    });
-
-    // 1. Initial State: Always allow root index (Splash) to run its animation
-    if (!currentSegment) {
-      return;
-    }
-
-    // 2. Onboarding Check: If not seen, force user to onboarding (unless they are at index/onboarding)
-    if (!hasSeenOnboarding) {
-      if (currentSegment !== 'onboarding') {
-        console.log('Redirecting to Onboarding (First time user)');
-        router.replace('/onboarding');
-      }
-      return;
-    }
-
-    // 3. Authentication Check: If seen onboarding but not logged in
-    if (!isAuthenticated) {
-      // Allow login, auth, and onboarding (onboarding is technically unprotected but we handled it above)
-      const isPublicRoute = currentSegment === 'login' || currentSegment === 'auth' || currentSegment === 'onboarding';
-      
-      if (!isPublicRoute) {
-        console.log('Redirecting to Login (Unauthenticated)');
-        router.replace('/login');
-      }
-    } else {
-      // 4. Authenticated: Don't allow login or onboarding screens
-      if (currentSegment === 'login' || currentSegment === 'auth' || currentSegment === 'onboarding') {
-        console.log('Redirecting to Tabs (Already Authenticated)');
-        router.replace('/(tabs)');
-      }
-    }
-  }, [isAuthenticated, isLoading, segments, router, hasSeenOnboarding]);
-
   // Hide splash screen as soon as fonts are loaded
-  // This allows our custom app/index.tsx splash animation to take over
   useEffect(() => {
     if (fontsLoaded || fontError) {
       SplashScreen.hideAsync();
@@ -143,36 +159,53 @@ export default function RootLayout() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider value={CineDarkTheme}>
-        <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { 
-              backgroundColor: Colors.background,
-            },
-            animation: 'slide_from_bottom',
-          }}
-        >
-          <Stack.Screen name="login" />
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen
-            name="movie/[id]"
-            options={{
-              animation: 'slide_from_left',
-              presentation: 'card',
-            }}
-          />
-          <Stack.Screen
-            name="movie/seats"
-            options={{
-              animation: 'slide_from_bottom',
-              presentation: 'modal',
-            }}
-          />
-        </Stack>
-      </ThemeProvider>
-    </GestureHandlerRootView>
+    <PersistQueryClientProvider 
+      client={queryClient} 
+      persistOptions={{ persister, maxAge: 1000 * 60 * 60 * 24 }}
+    >
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <ThemeProvider value={CineDarkTheme}>
+          <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
+          <RootLayoutNav />
+        </ThemeProvider>
+      </GestureHandlerRootView>
+    </PersistQueryClientProvider>
   );
 }
+
+function RootLayoutNav() {
+  return (
+    <>
+      <NavigationGuard />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { 
+            backgroundColor: Colors.background,
+          },
+          animation: 'slide_from_bottom',
+        }}
+      >
+        <Stack.Screen name="login" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen
+          name="movie/[id]"
+          options={{
+            animation: 'slide_from_left',
+            presentation: 'card',
+          }}
+        />
+        <Stack.Screen
+          name="movie/seats"
+          options={{
+            animation: 'slide_from_bottom',
+            presentation: 'modal',
+          }}
+        />
+      </Stack>
+      <InTheaterOverlay />
+    </>
+  );
+}
+
+

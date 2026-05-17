@@ -3,53 +3,85 @@
  * Fetches movie data from TheMovieDB.
  */
 
+import { z } from 'zod';
+import { 
+  MovieResponseSchema,
+  MovieDetailsSchema,
+  CastResponseSchema,
+  VideoResponseSchema,
+  type Movie,
+  type MovieDetails,
+  type Cast,
+  type Video
+} from './apiSchemas';
+
+export { 
+  type Movie, 
+  type MovieDetails, 
+  type Cast, 
+  type Video,
+  type Movie as TMDBMovie,
+  type MovieDetails as TMDBMovieDetails,
+  type Cast as TMDBCast,
+  type Video as TMDBVideo,
+};
+
 const API_KEY = '01495650fdf4285e1dd890fb6717a935'; // Replace with your key or use env
 const BASE_URL = 'https://api.themoviedb.org/3';
 
-interface TMDBResponse<T> {
-  page: number;
-  results: T[];
-  total_pages: number;
-  total_results: number;
+async function fetchTMDB<T>(
+  endpoint: string, 
+  schema: z.ZodSchema<T>, 
+  params: Record<string, string> = {}
+): Promise<T> {
+  const url = new URL(`${BASE_URL}${endpoint}`);
+  url.searchParams.set('api_key', API_KEY);
+  url.searchParams.set('language', 'he-IL');
+  Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value));
+
+  const response = await fetch(url.toString());
+  if (!response.ok) {
+    throw new Error(`TMDB Error: ${response.status} ${response.statusText}`);
+  }
+  
+  const json = await response.json();
+  const result = schema.safeParse(json);
+  
+  if (!result.success) {
+    console.error(`Zod Validation Error for ${endpoint}:`, result.error);
+    // Return the json anyway if it's mostly correct, but log it. 
+    // In strict production, we might throw here.
+    return json as T; 
+  }
+  
+  return result.data;
 }
 
-export interface TMDBMovie {
-  id: number;
-  title: string;
-  overview: string;
-  poster_path: string | null;
-  backdrop_path: string | null;
-  release_date: string;
-  vote_average: number;
-  vote_count: number;
-  genre_ids: number[];
-  popularity: number;
-  original_language: string;
+export async function getNowPlaying(): Promise<Movie[]> {
+  const data = await fetchTMDB('/movie/now_playing', MovieResponseSchema, { region: 'IL' });
+  return data.results;
 }
 
-export interface TMDBMovieDetails extends TMDBMovie {
-  runtime: number;
-  genres: { id: number; name: string }[];
-  tagline: string;
-  budget: number;
-  revenue: number;
-  status: string;
-  production_companies: { id: number; name: string; logo_path: string | null }[];
+export async function getPopular(): Promise<Movie[]> {
+  const data = await fetchTMDB('/movie/popular', MovieResponseSchema);
+  return data.results;
 }
 
-export interface TMDBCast {
-  id: number;
-  name: string;
-  character: string;
-  profile_path: string | null;
-  order: number;
+export async function getUpcoming(): Promise<Movie[]> {
+  const data = await fetchTMDB('/movie/upcoming', MovieResponseSchema, { region: 'IL' });
+  return data.results;
 }
 
-interface TMDBCredits {
-  cast: TMDBCast[];
+export async function getTopRated(): Promise<Movie[]> {
+  const data = await fetchTMDB('/movie/top_rated', MovieResponseSchema);
+  return data.results;
 }
 
-const GENRE_MAP: Record<number, string> = {
+export async function getMovieDetails(id: number): Promise<MovieDetails> {
+  return fetchTMDB(`/movie/${id}`, MovieDetailsSchema);
+}
+
+export const GENRE_MAP: Record<number, string> = {
   28: 'אקשן',
   12: 'הרפתקאות',
   16: 'אנימציה',
@@ -74,85 +106,45 @@ export function getGenreName(id: number): string {
   return GENRE_MAP[id] || 'כללי';
 }
 
-async function fetchTMDB<T>(endpoint: string, params: Record<string, string> = {}): Promise<T> {
-  const url = new URL(`${BASE_URL}${endpoint}`);
-  url.searchParams.set('api_key', API_KEY);
-  url.searchParams.set('language', 'he-IL');
-  Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value));
-
-  const response = await fetch(url.toString());
-  if (!response.ok) {
-    throw new Error(`TMDB Error: ${response.status} ${response.statusText}`);
-  }
-  return response.json();
-}
-
-export async function getNowPlaying(): Promise<TMDBMovie[]> {
-  const data = await fetchTMDB<TMDBResponse<TMDBMovie>>('/movie/now_playing', { region: 'IL' });
-  return data.results;
-}
-
-export async function getPopular(): Promise<TMDBMovie[]> {
-  const data = await fetchTMDB<TMDBResponse<TMDBMovie>>('/movie/popular');
-  return data.results;
-}
-
-export async function getUpcoming(): Promise<TMDBMovie[]> {
-  const data = await fetchTMDB<TMDBResponse<TMDBMovie>>('/movie/upcoming', { region: 'IL' });
-  return data.results;
-}
-
-export async function getTopRated(): Promise<TMDBMovie[]> {
-  const data = await fetchTMDB<TMDBResponse<TMDBMovie>>('/movie/top_rated');
-  return data.results;
-}
-
-export async function getMovieDetails(id: number): Promise<TMDBMovieDetails> {
-  return fetchTMDB<TMDBMovieDetails>(`/movie/${id}`);
-}
-
-export async function getMovieCredits(id: number): Promise<TMDBCast[]> {
-  const data = await fetchTMDB<TMDBCredits>(`/movie/${id}/credits`);
+export async function getMovieCredits(id: number): Promise<Cast[]> {
+  const data = await fetchTMDB(`/movie/${id}/credits`, CastResponseSchema);
   return data.cast.slice(0, 10);
 }
 
-export async function searchMovies(query: string): Promise<TMDBMovie[]> {
-  const data = await fetchTMDB<TMDBResponse<TMDBMovie>>('/search/movie', { query });
+
+
+export async function searchMovies(query: string): Promise<Movie[]> {
+  const data = await fetchTMDB('/search/movie', MovieResponseSchema, { query });
   return data.results;
 }
 
-export interface TMDBVideo {
-  id: string;
-  key: string;
-  name: string;
-  site: string;
-  type: string;
-}
-
-export async function getMovieVideos(id: number): Promise<TMDBVideo[]> {
-  const data = await fetchTMDB<{ results: TMDBVideo[] }>(`/movie/${id}/videos`);
-  if (data.results.length === 0) {
-    // Fallback to English if no Hebrew results
-    const engData = await fetchTMDB<{ results: TMDBVideo[] }>(`/movie/${id}/videos`, { language: 'en-US' });
-    return engData.results;
+export async function getMovieVideos(id: number): Promise<Video[]> {
+  try {
+    const data = await fetchTMDB(`/movie/${id}/videos`, VideoResponseSchema);
+    if (data.results.length === 0) {
+      // Fallback to English if no Hebrew results
+      const engData = await fetchTMDB(`/movie/${id}/videos`, VideoResponseSchema, { language: 'en-US' });
+      return engData.results;
+    }
+    return data.results;
+  } catch (error) {
+    console.error('Error fetching videos:', error);
+    return [];
   }
+}
+
+export async function getMoviesByGenre(genreId: number): Promise<Movie[]> {
+  const data = await fetchTMDB('/discover/movie', MovieResponseSchema, { with_genres: genreId.toString() });
   return data.results;
 }
 
-export async function getMoviesByGenre(genreId: number): Promise<TMDBMovie[]> {
-  const data = await fetchTMDB<TMDBResponse<TMDBMovie>>('/discover/movie', { with_genres: genreId.toString() });
+export async function discoverMovies(params: Record<string, string>): Promise<Movie[]> {
+  const data = await fetchTMDB('/discover/movie', MovieResponseSchema, params);
   return data.results;
 }
 
-export async function discoverMovies(params: Record<string, string>): Promise<TMDBMovie[]> {
-  const data = await fetchTMDB<TMDBResponse<TMDBMovie>>('/discover/movie', params);
+export async function getSimilarMovies(movieId: number): Promise<Movie[]> {
+  const data = await fetchTMDB(`/movie/${movieId}/similar`, MovieResponseSchema);
   return data.results;
 }
-
-export async function getSimilarMovies(movieId: number): Promise<TMDBMovie[]> {
-  const data = await fetchTMDB<TMDBResponse<TMDBMovie>>(`/movie/${movieId}/similar`);
-  return data.results;
-}
-
-export { GENRE_MAP };
 

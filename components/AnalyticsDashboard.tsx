@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, ScrollView, Dimensions } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TrendingUp, Film, Ticket, Tv, Users, DollarSign } from 'lucide-react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -60,22 +59,22 @@ const AnalyticsDashboard: React.FC = () => {
 
         {/* Stats Grid */}
         <View className="flex-row flex-wrap justify-between mb-6">
-          <BlurView intensity={20} tint="dark" className="w-[48%] rounded-3xl border border-white/10 p-4 mb-4 overflow-hidden">
-            <Ticket size={20} color="#white" className="mb-2 opacity-60" />
+          <View className="w-[48%] rounded-3xl border border-white/10 p-4 mb-4 overflow-hidden bg-surfaceLight">
+            <Ticket size={20} color="white" className="mb-2 opacity-60" />
             <Text className="text-white/60 font-assistant text-xs">הזמנות</Text>
             <Text className="text-white text-xl font-bold">{totalTickets}</Text>
-          </BlurView>
+          </View>
           
-          <BlurView intensity={20} tint="dark" className="w-[48%] rounded-3xl border border-white/10 p-4 mb-4 overflow-hidden">
-            <Users size={20} color="#white" className="mb-2 opacity-60" />
+          <View className="w-[48%] rounded-3xl border border-white/10 p-4 mb-4 overflow-hidden bg-surfaceLight">
+            <Users size={20} color="white" className="mb-2 opacity-60" />
             <Text className="text-white/60 font-assistant text-xs">סה"כ מושבים</Text>
             <Text className="text-white text-xl font-bold">{standardSeats + vipSeats}</Text>
-          </BlurView>
+          </View>
         </View>
 
         {/* Top Movies Bar Chart */}
         <Text className="text-white text-lg font-bold font-assistant mb-4 text-left">ביצועי סרטים (₪)</Text>
-        <BlurView intensity={15} tint="dark" className="rounded-3xl border border-white/10 p-6 mb-6 overflow-hidden">
+        <View className="rounded-3xl border border-white/10 p-6 mb-6 overflow-hidden bg-surfaceLight">
           {MOVIE_STATS.map((movie, index) => (
             <View key={movie.title} className="mb-4">
               <View className="flex-row justify-between mb-2">
@@ -94,11 +93,11 @@ const AnalyticsDashboard: React.FC = () => {
               </View>
             </View>
           ))}
-        </BlurView>
+        </View>
 
         {/* Format Distribution & Seats */}
         <View className="flex-row justify-between">
-          <BlurView intensity={20} tint="dark" className="w-[48%] rounded-3xl border border-white/10 p-5 overflow-hidden">
+          <View className="w-[48%] rounded-3xl border border-white/10 p-5 overflow-hidden bg-surfaceLight">
             <Tv size={20} color="#E50914" className="mb-3" />
             <Text className="text-white font-bold mb-1 text-left">פורמטים</Text>
             <View className="flex-row justify-between items-center">
@@ -111,14 +110,14 @@ const AnalyticsDashboard: React.FC = () => {
                 <Text className="text-white font-bold">{regularCount}</Text>
               </View>
             </View>
-          </BlurView>
+          </View>
 
-          <BlurView intensity={20} tint="dark" className="w-[48%] rounded-3xl border border-white/10 p-5 overflow-hidden">
+          <View className="w-[48%] rounded-3xl border border-white/10 p-5 overflow-hidden bg-surfaceLight">
             <Users size={20} color="#E50914" className="mb-3" />
             <Text className="text-white font-bold mb-1 text-left">מושבים</Text>
             <View className="flex-row justify-between items-center">
               <View className="items-center">
-                <Text className="text-white/60 text-[10px]">Standard</Text>
+                <Text className="text-white/60 text-[10px]">סטנדרטי</Text>
                 <Text className="text-white font-bold">{standardSeats}</Text>
               </View>
               <View className="items-center">
@@ -126,7 +125,7 @@ const AnalyticsDashboard: React.FC = () => {
                 <Text className="text-white font-bold">{vipSeats}</Text>
               </View>
             </View>
-          </BlurView>
+          </View>
         </View>
 
       </Animated.View>
