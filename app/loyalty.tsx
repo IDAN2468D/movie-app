@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, Dimensions, Image, Modal, Alert } from 'react-native';
+import { View, Text, ScrollView, Pressable, Image, Modal, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -8,7 +8,6 @@ import {
   Star, 
   Gift, 
   Zap, 
-  ChevronRight, 
   X,
   CreditCard,
   History,
@@ -21,19 +20,11 @@ import { Colors } from '@/constants/Theme';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useHaptics } from '@/lib/useHaptics';
 
-const { width } = Dimensions.get('window');
-
 const REWARDS = [
   { id: '1', title: 'פופקורן חינם', points: 150, description: 'פופקורן בגודל רגיל בכל רכישת כרטיס', icon: Gift, color: '#FFD700' },
   { id: '2', title: 'כרטיס שני ב-50%', points: 300, description: 'הנחה על הכרטיס השני בהזמנה אחת', icon: Star, color: Colors.primary },
   { id: '3', title: 'שדרוג ל-VIP', points: 500, description: 'שדרוג חינם לאולם ה-VIP על בסיס מקום פנוי', icon: Trophy, color: Colors.secondary },
   { id: '4', title: 'מארז משפחתי', points: 800, description: '4 כרטיסים + 2 פופקורן + 4 שתייה', icon: Zap, color: '#00D1FF' },
-];
-
-const ACTIVITY = [
-  { id: 'a1', action: 'רכישת כרטיס: גלדיאטור 2', points: '+50', date: 'היום, 14:20' },
-  { id: 'a2', action: 'מימוש הטבה: פופקורן', points: '-150', date: '12 במאי, 20:15' },
-  { id: 'a3', action: 'בונוס הצטרפות', points: '+100', date: '1 במאי, 09:00' },
 ];
 
 const TROPHIES = [
@@ -51,7 +42,7 @@ export default function LoyaltyScreen() {
   const [showMemberCard, setShowMemberCard] = useState(false);
   const [showAllRewards, setShowAllRewards] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
-  const activityRef = useRef<View>(null);
+  const [activityY, setActivityY] = useState<number | null>(null);
 
   const points = user?.loyaltyPoints || 0;
   
@@ -111,7 +102,7 @@ export default function LoyaltyScreen() {
                 haptics.error();
                 Alert.alert('שגיאה', res.message || 'לא ניתן לממש את ההטבה כעת');
               }
-            } catch (error) {
+            } catch {
               haptics.error();
               Alert.alert('שגיאה', 'שגיאת חיבור לשרת');
             }
@@ -122,15 +113,8 @@ export default function LoyaltyScreen() {
   };
 
   const scrollToHistory = () => {
-    if (activityRef.current && scrollRef.current) {
-      activityRef.current.measureLayout(
-        // @ts-ignore
-        Dimensions.get('window').height, // Rough target to ensure it scrolls
-        (x, y) => {
-          scrollRef.current?.scrollTo({ y: y - 100, animated: true });
-        },
-        () => {}
-      );
+    if (scrollRef.current && activityY !== null) {
+      scrollRef.current.scrollTo({ y: activityY - 100, animated: true });
     }
   };
 
@@ -296,7 +280,13 @@ export default function LoyaltyScreen() {
         </View>
 
         {/* Recent Activity */}
-        <View className="mt-10 px-6" ref={activityRef} onLayout={() => {}}>
+        <View 
+          className="mt-10 px-6" 
+          onLayout={(event) => {
+            const layout = event.nativeEvent.layout;
+            setActivityY(layout.y);
+          }}
+        >
           <Text className="text-white text-h2 font-display mb-6 text-left">פעילות אחרונה</Text>
           <View className="bg-surfaceLight border border-white/5 rounded-[32px] overflow-hidden">
             {activities.map((item, index, arr) => (
@@ -304,16 +294,23 @@ export default function LoyaltyScreen() {
                 key={index.toString()} 
                 className={`p-5 flex-row items-center justify-between ${index !== arr.length - 1 ? 'border-b border-white/5' : ''}`}
               >
-                <View className="flex-row items-center gap-4">
-                  <View className="w-10 h-10 rounded-full bg-white/5 items-center justify-center">
+                <View className="flex-row items-center gap-4 flex-1">
+                  <View className="w-10 h-10 rounded-full bg-white/5 items-center justify-center shrink-0">
                     <Clock size={18} color={Colors.textMuted} />
                   </View>
-                  <View className="items-start">
-                    <Text className="text-white text-[14px] font-bold text-left" style={{ fontFamily: 'Rubik-Bold' }}>{item.action}</Text>
+                  <View className="items-start flex-1" style={{ marginHorizontal: 8 }}>
+                    <Text 
+                      className="text-white text-[14px] font-bold text-left" 
+                      style={{ fontFamily: 'Rubik-Bold' }}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                    >
+                      {item.action}
+                    </Text>
                     <Text className="text-textMuted text-[12px] text-left">{formatDate(item.date)}</Text>
                   </View>
                 </View>
-                <Text className={`font-bold ${item.points.startsWith('+') ? 'text-secondary' : 'text-primary'}`}>{item.points}</Text>
+                <Text className={`font-bold shrink-0 ${item.points.startsWith('+') ? 'text-secondary' : 'text-primary'}`}>{item.points}</Text>
               </View>
             ))}
           </View>

@@ -49,6 +49,7 @@ interface BookingState {
   selectDate: (date: string) => void;
   selectShowtime: (showtime: Showtime) => void;
   toggleSeat: (row: string, number: number) => void;
+  selectSeatCluster: (seatsToSelect: { row: string; number: number }[]) => void;
   bookCurrentSelection: (snacks?: SnackBookingItem[]) => Promise<void>;
   clearBooking: () => void;
   generateSeats: (rows: number, cols: number) => void;
@@ -147,6 +148,33 @@ export const useBookingStore = create<BookingState>()(
           };
         }
         return seat;
+      })
+    );
+
+    const selected = updated.flat().filter((s) => s.status === 'selected');
+    const price = selected.reduce((sum, s) => {
+      const base = selectedShowtime.price;
+      return sum + (s.type === 'vip' ? base * 1.5 : base);
+    }, 0);
+
+    set({ seats: updated, selectedSeats: selected, totalPrice: price });
+  },
+
+  selectSeatCluster: (seatsToSelect) => {
+    const { seats, selectedShowtime } = get();
+    if (!selectedShowtime) return;
+
+    const keysToSelect = new Set(seatsToSelect.map(s => `${s.row}-${s.number}`));
+
+    const updated = seats.map((seatRow) =>
+      seatRow.map((seat) => {
+        if (seat.status === 'taken') return seat;
+        
+        const isTarget = keysToSelect.has(`${seat.row}-${seat.number}`);
+        return {
+          ...seat,
+          status: isTarget ? ('selected' as const) : ('available' as const),
+        };
       })
     );
 

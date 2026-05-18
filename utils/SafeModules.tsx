@@ -26,20 +26,26 @@ try {
 }
 
 // --- VIDEO ---
+let isVideoSupported = false;
 let VideoView: any = ({ style }: any) => (
   <View style={[{ backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' }, style]}>
     <Text style={{ color: '#666' }}>Video Unavailable</Text>
   </View>
 );
 let useVideoPlayer: any = (url: string, callback?: (player: any) => void) => {
-  return {
+  const mockPlayer = {
     play: () => {},
     pause: () => {},
     loop: false,
     muted: false,
+    status: 'idle',
     addListener: () => ({ remove: () => {} }),
     removeListener: () => {},
   };
+  if (callback) {
+    callback(mockPlayer);
+  }
+  return mockPlayer;
 };
 
 try {
@@ -47,9 +53,13 @@ try {
     const VideoModule = require('expo-video');
     VideoView = VideoModule.VideoView;
     useVideoPlayer = VideoModule.useVideoPlayer;
+    isVideoSupported = true;
+    console.log('[SafeModules] ExpoVideo native module loaded successfully!');
+  } else {
+    console.log('[SafeModules] ExpoVideo loaded in web mock mode.');
   }
-} catch (e) {
-  console.warn('SafeModules: ExpoVideo not available');
+} catch (e: any) {
+  console.warn('[SafeModules] ExpoVideo native module not available. Details:', e?.message || e);
 }
 
 // --- NOTIFICATIONS ---
@@ -117,7 +127,7 @@ try {
 // Named exports
 export { 
   Location, 
-  VideoView, useVideoPlayer, 
+  VideoView, useVideoPlayer, isVideoSupported,
   Notifications, 
   Gyroscope,
   AsyncStorage

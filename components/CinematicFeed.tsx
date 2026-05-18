@@ -18,12 +18,20 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Play, Star, Bookmark, Film } from 'lucide-react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import Animated, { 
+  FadeIn, 
+  FadeOut,
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming
+} from 'react-native-reanimated';
 import { useWatchlistStore } from '@/store/useWatchlistStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useBookingStore } from '@/store/useBookingStore';
 import { getImageSource, handleImageError } from '@/utils/ImageUtils';
 import { getMovieVideos, getGenreName, type TMDBMovie, type TMDBVideo } from '@/lib/tmdb';
 import { cssInterop } from 'react-native-css-interop';
+import { VideoView, useVideoPlayer, isVideoSupported } from '../utils/SafeModules';
 
 // Required for NativeWind v4 compatibility with Expo components
 cssInterop(BlurView, { className: 'style' });
@@ -99,6 +107,32 @@ export default function CinematicFeed({ movies }: CinematicFeedProps) {
   );
 }
 
+// Helper to resolve optimized, direct MP4 video loops mapped by movie genre
+function getDirectTrailerUrl(movie: TMDBMovie): string {
+  // Using ultra-lightweight 2MB-3MB optimized loops for instant buffering on mobile networks
+  const videos = {
+    sciFi: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
+    animation: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+    action: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    adventure: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+    comedy: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+    drama: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+  };
+
+  if (!movie.genre_ids || movie.genre_ids.length === 0) {
+    return videos.drama;
+  }
+
+  const mainGenre = movie.genre_ids[0];
+  // TMDB Genres: 878 = Science Fiction, 16 = Animation, 28 = Action, 12 = Adventure, 35 = Comedy, 18 = Drama
+  if (mainGenre === 878) return videos.sciFi;
+  if (mainGenre === 16) return videos.animation;
+  if (mainGenre === 28) return videos.action; // Action genre mapped to ForBiggerBlazes
+  if (mainGenre === 12) return videos.adventure;
+  if (mainGenre === 35) return videos.comedy;
+  return videos.drama;
+}
+
 interface CinematicFeedItemProps {
   movie: TMDBMovie;
   isActive: boolean;
@@ -118,6 +152,135 @@ const CinematicFeedItem = React.memo(function CinematicFeedItem({ movie, isActiv
   // Background state & Video trailer fetching
   const [backdropSrc, setBackdropSrc] = useState(getImageSource(movie.backdrop_path, 'backdrop', 'original'));
   const [video, setVideo] = useState<TMDBVideo | null>(null);
+
+  // Direct cinematic trailer mapping
+  const directTrailerUrl = getDirectTrailerUrl(movie);
+
+  // Audio muting state (default true for silent autoplay)
+  const [isMuted, setIsMuted] = useState(true);
+  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
+
+  // Initialize expo-video player safely with null/active sources to prevent resource starvation
+  const player = useVideoPlayer(isActive ? directTrailerUrl : null, (p: any) => {
+    if (p) {
+      p.loop = true;
+      p.muted = isMuted;
+      if (isActive) {
+        p.play();
+      }
+    }
+  });
+
+  const videoOpacity = useSharedValue(0);
+
+  // Sync opacity with loaded state and ensure play command is sent
+  useEffect(() => {
+    videoOpacity.value = withTiming(isVideoLoaded ? 1 : 0, { duration: 600 });
+    if (isVideoLoaded && isActive && player) {
+      player.muted = isMuted;
+      player.play();
+    }
+  }, [isVideoLoaded, isActive, player, isMuted]);
+
+  const videoAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: videoOpacity.value,
+  }));
+
+  // Keep player sync'd with active state, muted preference, and source allocation
+  useEffect(() => {
+    if (player) {
+      if (isActive) {
+        const currentSource = typeof player.source === 'string' 
+          ? player.source 
+          : player.source?.uri;
+
+        if (currentSource !== directTrailerUrl) {
+          console.log(`[CinematicFeedItem] Hot-loading active trailer for "${movie.title}":`, directTrailerUrl);
+          player.source = directTrailerUrl;
+        }
+        player.muted = isMuted;
+        player.loop = true;
+        player.play();
+      } else {
+        if (player.source !== null) {
+          console.log(`[CinematicFeedItem] Releasing hardware decoder for "${movie.title}"`);
+          player.pause();
+          player.source = null;
+        }
+      }
+    }
+  }, [isActive, player, isMuted, directTrailerUrl, movie.title]);
+
+  // Handle smooth transition cross-fade timing with robust native-event listener
+  useEffect(() => {
+    if (!isActive || !isVideoSupported) {
+      setIsVideoLoaded(false);
+      return;
+    }
+
+    console.log(`[CinematicFeedItem] Listening to player events for "${movie.title}". Current status:`, player?.status);
+
+    let timer: NodeJS.Timeout;
+
+    // Fallback timer: force video fade-in after 1.5 seconds if native events don't fire
+    timer = setTimeout(() => {
+      console.log(`[CinematicFeedItem] Fallback timer fired for "${movie.title}". Setting isVideoLoaded = true`);
+      setIsVideoLoaded(true);
+      if (player && isActive) {
+        player.play();
+      }
+    }, 1500);
+
+    // If player status is already ready, set loaded immediately
+    if (player && (player.status === 'ready-to-play' || player.status === 'readyToPlay')) {
+      console.log(`[CinematicFeedItem] Player already ready for "${movie.title}"`);
+      setIsVideoLoaded(true);
+      clearTimeout(timer);
+      if (isActive) {
+        player.play();
+      }
+    }
+
+    // Subscribe to player status change events
+    let subscription: any;
+    let errorSubscription: any;
+    if (player && typeof player.addListener === 'function') {
+      subscription = player.addListener('statusChange', (event: any) => {
+        const status = event?.status || player.status;
+        console.log(`[CinematicFeedItem] Status change event for "${movie.title}":`, status);
+        if (status === 'ready-to-play' || status === 'readyToPlay') {
+          setIsVideoLoaded(true);
+          clearTimeout(timer);
+          if (isActive) {
+            player.play();
+          }
+        }
+      });
+
+      errorSubscription = player.addListener('error', (error: any) => {
+        console.error(`[CinematicFeedItem] Native Player Error for "${movie.title}":`, error);
+      });
+    }
+
+    return () => {
+      if (timer) clearTimeout(timer);
+      if (subscription && typeof subscription.remove === 'function') {
+        subscription.remove();
+      }
+      if (errorSubscription && typeof errorSubscription.remove === 'function') {
+        errorSubscription.remove();
+      }
+    };
+  }, [isActive, player]);
+
+  const handleToggleMute = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const newMuted = !isMuted;
+    setIsMuted(newMuted);
+    if (player) {
+      player.muted = newMuted;
+    }
+  };
 
   // Refresh image source if movie changes
   useEffect(() => {
@@ -181,17 +344,36 @@ const CinematicFeedItem = React.memo(function CinematicFeedItem({ movie, isActiv
 
   return (
     <View style={[styles.itemContainer, { height: SCREEN_HEIGHT }]}>
-      {/* Absolute Background Backdrop Image */}
-      <Image
-        source={backdropSrc}
-        style={StyleSheet.absoluteFill}
-        resizeMode="cover"
-        onError={handleImageError(setBackdropSrc, 'backdrop')}
-      />
+      {/* Absolute Background Video / Poster Backdrop with smooth cross-fade */}
+      <View style={StyleSheet.absoluteFill}>
+        {/* Base Poster Backdrop - Always rendered to ensure no black screens under any circumstance */}
+        <Image
+          source={backdropSrc}
+          style={StyleSheet.absoluteFill}
+          resizeMode="cover"
+          onError={handleImageError(setBackdropSrc, 'backdrop')}
+        />
+
+        {/* Video Overlay Layer - Fades in dynamically only when fully loaded */}
+        {isVideoSupported && (
+          <Animated.View
+            style={[StyleSheet.absoluteFill, videoAnimatedStyle]}
+          >
+            <VideoView
+              player={player}
+              style={StyleSheet.absoluteFill}
+              contentFit="cover"
+              nativeControls={false}
+              allowsFullscreen={false}
+              showsPlaybackControls={false}
+            />
+          </Animated.View>
+        )}
+      </View>
 
       {/* Glass Overlay Dark Gradients */}
       <LinearGradient
-        colors={['rgba(9,9,11,0.85)', 'rgba(9,9,11,0.2)', 'rgba(9,9,11,0.95)']}
+        colors={['rgba(9,9,11,0.8)', 'rgba(9,9,11,0.15)', 'rgba(9,9,11,0.92)']}
         style={StyleSheet.absoluteFill}
       />
 
@@ -213,6 +395,7 @@ const CinematicFeedItem = React.memo(function CinematicFeedItem({ movie, isActiv
           </Text>
         </View>
       )}
+
 
       {/* Bottom Panel anchored in Thumb Zone */}
       <View style={[styles.cardContainer, { bottom: bottomMargin }]}>
@@ -251,22 +434,22 @@ const CinematicFeedItem = React.memo(function CinematicFeedItem({ movie, isActiv
               )}
             </View>
 
-            {/* Hebrew Movie Title */}
+            {/* Movie Title (LTR Aligned) */}
             <Text
-              className="text-white text-2xl font-bold mb-2.5 text-right font-display"
+              className="text-white text-2xl font-bold mb-2.5 text-left font-display"
               numberOfLines={2}
-              style={{ writingDirection: 'rtl' }}
+              style={{ writingDirection: 'ltr', textAlign: 'left' }}
             >
               {movie.title}
             </Text>
 
-            {/* Movie Description */}
+            {/* Movie Description (LTR Aligned) */}
             <Text
-              className="text-textSecondary text-[14px] leading-5 text-right font-assistant mb-6"
+              className="text-textSecondary text-[14px] leading-5 text-left font-assistant mb-6"
               numberOfLines={3}
               style={{
-                writingDirection: 'rtl',
-                textAlign: movie.overview.match(/[a-z]/i) ? 'left' : 'right',
+                writingDirection: 'ltr',
+                textAlign: 'left',
               }}
             >
               {movie.overview || 'אין תיאור זמין עבור סרט זה בעברית.'}
@@ -347,4 +530,5 @@ const styles = StyleSheet.create({
     right: 20,
     zIndex: 20,
   },
+
 });

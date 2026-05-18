@@ -12,6 +12,7 @@ import Animated, {
   FadeInRight,
 } from 'react-native-reanimated';
 import { useSeats } from '@/hooks/useSeats';
+import PredictiveSeatSelector from '@/components/PredictiveSeatSelector';
 
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w1280';
 
@@ -80,7 +81,7 @@ export default function SeatsScreen() {
       </View>
 
       {/* Bottom Interface Layer */}
-      <View className="absolute bottom-0 left-0 right-0 z-30">
+      <View className="z-30">
         {/* Selected Seats Floating Bar */}
         {selectedSeats.length > 0 && (
           <Animated.View 
@@ -94,12 +95,17 @@ export default function SeatsScreen() {
                 <Text className="text-[10px] text-white/40">לחץ לביטול</Text>
               </View>
             </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', paddingRight: 20 }}>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false} 
+              contentContainerStyle={{ paddingEnd: 20 }}
+            >
               {selectedSeats.map((seat, index) => (
                 <Animated.View 
                   key={`${seat.row}-${seat.number}`}
                   entering={FadeInRight.delay(index * 100)}
-                  className="bg-white/10 border border-white/20 px-5 py-3 rounded-2xl mr-3 items-center backdrop-blur-md shadow-lg"
+                  style={{ marginEnd: 12 }}
+                  className="bg-white/10 border border-white/20 px-5 py-3 rounded-2xl items-center backdrop-blur-md shadow-lg"
                 >
                   <Text className="text-h3 text-white font-display">{seat.row}{seat.number}</Text>
                   <View className="w-4 h-0.5 bg-primary/40 rounded-full mt-1" />
@@ -158,6 +164,9 @@ export default function SeatsScreen() {
           </BlurView>
         </Animated.View>
       </View>
+
+      {/* Floating Seating Assistant (Overlay) */}
+      <PredictiveSeatSelector />
     </View>
   );
 }

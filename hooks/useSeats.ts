@@ -25,7 +25,7 @@ export const useSeats = () => {
     
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     router.push('/movie/snacks' as any);
-  }, [selectedSeats.length, router]);
+  }, [selectedSeats.length]);
 
   const pulseStyle = useAnimatedStyle(() => ({
     opacity: withRepeat(
