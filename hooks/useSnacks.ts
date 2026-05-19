@@ -8,7 +8,7 @@ export type SnackCategory = 'All' | 'Popcorn' | 'Drinks' | 'Combos' | 'Candy';
 
 export const useSnacks = () => {
   const { selectedMoviePoster, totalPrice: ticketsTotal } = useBookingStore();
-  const { items, cart, addItem: addItemToStore, removeItem: removeItemFromStore, getTotalPrice } = useSnacksStore();
+  const { items, cart, addItem: addItemToStore, removeItem: removeItemFromStore, getTotalPrice, clearCart: clearCartStore } = useSnacksStore();
   
   const [activeCategory, setActiveCategory] = useState<SnackCategory>('All');
   
@@ -42,6 +42,11 @@ export const useSnacks = () => {
     removeItemFromStore(id);
   }, [removeItemFromStore]);
 
+  const clearCart = useCallback(() => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    clearCartStore();
+  }, [clearCartStore]);
+
   const goBack = () => {
     router.back();
   };
@@ -58,6 +63,7 @@ export const useSnacks = () => {
     setCategory,
     addItem,
     removeItem,
+    clearCart,
     goBack,
   };
 };

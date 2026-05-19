@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,6 +13,9 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSeats } from '@/hooks/useSeats';
 import PredictiveSeatSelector from '@/components/PredictiveSeatSelector';
+import VipSeatConfiguratorModal from '@/components/VipSeatConfiguratorModal';
+import { useVipCustomStore } from '@/store/useVipCustomStore';
+import { Seat } from '@/store/useBookingStore';
 
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w1280';
 
@@ -29,6 +32,9 @@ export default function SeatsScreen() {
     pulseStyle,
     goBack,
   } = useSeats();
+
+  const { hasCustomization } = useVipCustomStore();
+  const [configuratorSeat, setConfiguratorSeat] = useState<Seat | null>(null);
 
   return (
     <View className="flex-1 bg-background">
@@ -100,17 +106,57 @@ export default function SeatsScreen() {
               showsHorizontalScrollIndicator={false} 
               contentContainerStyle={{ paddingEnd: 20 }}
             >
-              {selectedSeats.map((seat, index) => (
-                <Animated.View 
-                  key={`${seat.row}-${seat.number}`}
-                  entering={FadeInRight.delay(index * 100)}
-                  style={{ marginEnd: 12 }}
-                  className="bg-white/10 border border-white/20 px-5 py-3 rounded-2xl items-center backdrop-blur-md shadow-lg"
-                >
-                  <Text className="text-h3 text-white font-display">{seat.row}{seat.number}</Text>
-                  <View className="w-4 h-0.5 bg-primary/40 rounded-full mt-1" />
-                </Animated.View>
-              ))}
+              {selectedSeats.map((seat, index) => {
+                const isVip = seat.type === 'vip';
+                const isCustomized = isVip && hasCustomization(seat.row, seat.number);
+                return (
+                  <Animated.View
+                    key={`${seat.row}-${seat.number}`}
+                    entering={FadeInRight.delay(index * 100)}
+                    style={{ marginEnd: 12 }}
+                  >
+                    <Pressable
+                      onPress={() => isVip ? setConfiguratorSeat(seat) : undefined}
+                      style={({ pressed }) => ({
+                        opacity: pressed ? 0.8 : 1,
+                        transform: [{ scale: pressed ? 0.95 : 1 }],
+                      })}
+                    >
+                      <View
+                        style={{
+                          borderWidth: 1,
+                          borderColor: isVip ? 'rgba(255,20,100,0.5)' : 'rgba(255,255,255,0.2)',
+                          backgroundColor: isVip ? 'rgba(255,20,100,0.12)' : 'rgba(255,255,255,0.1)',
+                          paddingHorizontal: 20,
+                          paddingVertical: 12,
+                          borderRadius: 16,
+                          alignItems: 'center',
+                          minWidth: 64,
+                        }}
+                      >
+                        {isVip && (
+                          <Text style={{ fontSize: 11, marginBottom: 2 }}>
+                            {isCustomized ? '⚙️' : '👑'}
+                          </Text>
+                        )}
+                        <Text className="text-h3 text-white font-display">{seat.row}{seat.number}</Text>
+                        <View
+                          style={{
+                            width: 16, height: 2,
+                            backgroundColor: isVip ? Colors.seatVIP : 'rgba(255,20,100,0.4)',
+                            borderRadius: 1, marginTop: 4,
+                          }}
+                        />
+                        {isVip && (
+                          <Text style={{ fontSize: 9, color: Colors.seatVIP, fontFamily: 'Assistant', marginTop: 3, fontWeight: '600' }}>
+                            {isCustomized ? 'מותאם' : 'הגדר VIP'}
+                          </Text>
+                        )}
+                      </View>
+                    </Pressable>
+                  </Animated.View>
+                );
+              })}
             </ScrollView>
           </Animated.View>
         )}
@@ -167,6 +213,13 @@ export default function SeatsScreen() {
 
       {/* Floating Seating Assistant (Overlay) */}
       <PredictiveSeatSelector />
+
+      {/* VIP Seat Configurator Modal */}
+      <VipSeatConfiguratorModal
+        visible={configuratorSeat !== null}
+        seat={configuratorSeat}
+        onClose={() => setConfiguratorSeat(null)}
+      />
     </View>
   );
 }

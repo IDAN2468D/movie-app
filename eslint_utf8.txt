@@ -1,0 +1,221 @@
+﻿
+C:\Users\Lenovo\Desktop\project-movie\movie-app\__tests__\screens\LoungeScreen.test.tsx
+  43:9   warning  'React' is assigned a value but never used         @typescript-eslint/no-unused-vars
+  43:17  warning  A `require()` style import is forbidden            @typescript-eslint/no-require-imports
+  44:20  warning  A `require()` style import is forbidden            @typescript-eslint/no-require-imports
+  58:9   warning  'React' is assigned a value but never used         @typescript-eslint/no-unused-vars
+  58:17  warning  A `require()` style import is forbidden            @typescript-eslint/no-require-imports
+  59:20  warning  A `require()` style import is forbidden            @typescript-eslint/no-require-imports
+  79:24  warning  'getAllByText' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\app\(tabs)\_layout.tsx
+   5:10  warning  'StyleSheet' is defined but never used         @typescript-eslint/no-unused-vars
+   5:22  warning  'Platform' is defined but never used           @typescript-eslint/no-unused-vars
+   5:32  warning  'ActivityIndicator' is defined but never used  @typescript-eslint/no-unused-vars
+   5:51  warning  'View' is defined but never used               @typescript-eslint/no-unused-vars
+   7:18  warning  'Typography' is defined but never used         @typescript-eslint/no-unused-vars
+   8:10  warning  'useEffect' is defined but never used          @typescript-eslint/no-unused-vars
+  11:10  warning  'useAuthStore' is defined but never used       @typescript-eslint/no-unused-vars
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\app\(tabs)\profile.tsx
+  16:9  warning  'width' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\app\(tabs)\search.tsx
+   1:27  warning  'useEffect' is defined but never used       @typescript-eslint/no-unused-vars
+   1:38  warning  'useCallback' is defined but never used     @typescript-eslint/no-unused-vars
+   1:51  warning  'useMemo' is defined but never used         @typescript-eslint/no-unused-vars
+   1:60  warning  'useRef' is defined but never used          @typescript-eslint/no-unused-vars
+  19:3   warning  'useSharedValue' is defined but never used  @typescript-eslint/no-unused-vars
+  20:3   warning  'withRepeat' is defined but never used      @typescript-eslint/no-unused-vars
+  21:3   warning  'withSequence' is defined but never used    @typescript-eslint/no-unused-vars
+  22:3   warning  'withTiming' is defined but never used      @typescript-eslint/no-unused-vars
+  31:3   warning  'Clock' is defined but never used           @typescript-eslint/no-unused-vars
+  35:3   warning  'ChevronRight' is defined but never used    @typescript-eslint/no-unused-vars
+  44:32  warning  'BACKDROP_SIZES' is defined but never used  @typescript-eslint/no-unused-vars
+  44:48  warning  'Typography' is defined but never used      @typescript-eslint/no-unused-vars
+  51:9   warning  'width' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\app\(tabs)\watchlist.tsx
+   2:22  warning  'FlatList' is defined but never used        @typescript-eslint/no-unused-vars
+   4:34  warning  'Play' is defined but never used            @typescript-eslint/no-unused-vars
+  11:32  warning  'Typography' is defined but never used      @typescript-eslint/no-unused-vars
+  11:44  warning  'Radius' is defined but never used          @typescript-eslint/no-unused-vars
+  15:9   warning  'width' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\app\_layout.tsx
+  109:6  warning  React Hook useEffect has a missing dependency: 'navigationState?.key'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  114:1  warning  Import in body of module; reorder to top                                                                                 import/first
+  115:1  warning  Import in body of module; reorder to top                                                                                 import/first
+  116:1  warning  Import in body of module; reorder to top                                                                                 import/first
+  117:1  warning  Import in body of module; reorder to top                                                                                 import/first
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\app\analytics.tsx
+  2:22  warning  'TouchableOpacity' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\app\auth\forgot-password.tsx
+  4:17  warning  'useState' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\app\cinematch.tsx
+  1:35  warning  'useEffect' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\app\index.tsx
+  48:6  warning  React Hook useEffect has an unnecessary dependency: 'router'. Either exclude it or remove the dependency array. Outer scope values like 'router' aren't valid dependencies because mutating them doesn't re-render the component  react-hooks/exhaustive-deps
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\app\movie\[id].tsx
+  25:3   warning  'ChevronRight' is defined but never used           @typescript-eslint/no-unused-vars
+  52:16  warning  'SCREEN_WIDTH' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  72:5   warning  'scrollY' is assigned a value but never used       @typescript-eslint/no-unused-vars
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\app\movie\checkout.tsx
+  42:5  warning  'isSuccess' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\app\movie\lounge.tsx
+   25:3   warning  'interpolateColor' is defined but never used                                                                     @typescript-eslint/no-unused-vars
+   26:3   warning  'useAnimatedStyle' is defined but never used                                                                     @typescript-eslint/no-unused-vars
+   33:16  warning  'SCREEN_WIDTH' is assigned a value but never used                                                                @typescript-eslint/no-unused-vars
+  115:6   warning  React Hook useEffect has a missing dependency: 'phase'. Either include it or remove the dependency array         react-hooks/exhaustive-deps
+  120:6   warning  React Hook useEffect has a missing dependency: 'musicPlaying'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  124:6   warning  React Hook useEffect has a missing dependency: 'aiSpeaking'. Either include it or remove the dependency array    react-hooks/exhaustive-deps
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\app\movie\scanner.tsx
+  12:9  warning  'width' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\app\movie\snacks.tsx
+   26:39  warning  'SCREEN_WIDTH' is assigned a value but never used                                                                                           @typescript-eslint/no-unused-vars
+   40:6   warning  React Hook useEffect has missing dependencies: 'bubble1Y', 'bubble2Y', and 'fillLevel'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  223:6   warning  React Hook React.useCallback has a missing dependency: 'triggerTraySplash'. Either include it or remove the dependency array                react-hooks/exhaustive-deps
+  276:6   warning  React Hook useEffect has a missing dependency: 'pulse'. Either include it or remove the dependency array                                    react-hooks/exhaustive-deps
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\app\onboarding.tsx
+  2:40  warning  'Dimensions' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\app\settings\history.tsx
+  16:6  warning  React Hook useEffect has a missing dependency: 'fetchMyTickets'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\app\settings\payment.tsx
+   67:47  warning  React Hook useEffect has a missing dependency: 'fetchPaymentMethods'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  151:14  warning  'e' is defined but never used                                                                                           @typescript-eslint/no-unused-vars
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\components\AIConciergeModal.tsx
+  200:6  warning  React Hook useEffect has a missing dependency: 'stopRecording'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\components\AIOrb.tsx
+  49:6  warning  React Hook useEffect has missing dependencies: 'float' and 'rotation'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  67:6  warning  React Hook useEffect has a missing dependency: 'pulse'. Either include it or remove the dependency array                   react-hooks/exhaustive-deps
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\components\AnalyticsDashboard.tsx
+   4:22  warning  'Film' is defined but never used                                                                                   @typescript-eslint/no-unused-vars
+   8:9   warning  'width' is assigned a value but never used                                                                         @typescript-eslint/no-unused-vars
+  33:6   warning  React Hook useEffect has a missing dependency: 'fetchMyTickets'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  74:9   warning  'displayTickets' is assigned a value but never used                                                                @typescript-eslint/no-unused-vars
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\components\CinematicFeed.tsx
+   22:3  warning  'FadeIn' is defined but never used                                                                               @typescript-eslint/no-unused-vars
+   23:3  warning  'FadeOut' is defined but never used                                                                              @typescript-eslint/no-unused-vars
+  183:6  warning  React Hook useEffect has a missing dependency: 'videoOpacity'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  274:6  warning  React Hook useEffect has a missing dependency: 'movie.title'. Either include it or remove the dependency array   react-hooks/exhaustive-deps
+  276:9  warning  'handleToggleMute' is assigned a value but never used                                                            @typescript-eslint/no-unused-vars
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\components\HeroSlider.tsx
+  5:3  warning  'Dimensions' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\components\InTheaterOverlay.tsx
+   3:48  warning  'SlideOutDown' is defined but never used     @typescript-eslint/no-unused-vars
+  10:9   warning  'width' is assigned a value but never used   @typescript-eslint/no-unused-vars
+  10:16  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\components\LiquidBackground.tsx
+  36:6  warning  React Hook useEffect has missing dependencies: 'blob1X', 'blob1Y', 'blob2X', and 'blob2Y'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\components\MarkerHighlight.tsx
+  40:6  warning  React Hook useEffect has a missing dependency: 'widthScale'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\components\ScannerOverlay.tsx
+  11:3  warning  'withDelay' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\components\TicketCard.tsx
+  4:56  warning  'QrCode' is defined but never used          @typescript-eslint/no-unused-vars
+  4:64  warning  'ArrowRightLeft' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\components\TicketScannerModal.tsx
+   7:28  warning  'FadeOut' is defined but never used                                                                             @typescript-eslint/no-unused-vars
+   9:18  warning  'Radius' is defined but never used                                                                              @typescript-eslint/no-unused-vars
+   9:26  warning  'Typography' is defined but never used                                                                          @typescript-eslint/no-unused-vars
+  17:16  warning  'height' is assigned a value but never used                                                                     @typescript-eslint/no-unused-vars
+  40:6   warning  React Hook useEffect has a missing dependency: 'scanLinePos'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\e2e\starter.test.js
+   1:1   error  'describe' is not defined   no-undef
+   2:3   error  'beforeAll' is not defined  no-undef
+   3:11  error  'device' is not defined     no-undef
+   6:3   error  'it' is not defined         no-undef
+   8:11  error  'expect' is not defined     no-undef
+   8:18  error  'element' is not defined    no-undef
+   8:26  error  'by' is not defined         no-undef
+  12:11  error  'waitFor' is not defined    no-undef
+  12:19  error  'element' is not defined    no-undef
+  12:27  error  'by' is not defined         no-undef
+  17:11  error  'expect' is not defined     no-undef
+  17:18  error  'element' is not defined    no-undef
+  17:26  error  'by' is not defined         no-undef
+  18:11  error  'expect' is not defined     no-undef
+  18:18  error  'element' is not defined    no-undef
+  18:26  error  'by' is not defined         no-undef
+  21:11  error  'element' is not defined    no-undef
+  21:19  error  'by' is not defined         no-undef
+  24:11  error  'element' is not defined    no-undef
+  24:19  error  'by' is not defined         no-undef
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\hooks\useCheckout.ts
+   95:18  warning  'e' is defined but never used                                                                                      @typescript-eslint/no-unused-vars
+  129:6   warning  React Hook useCallback has a missing dependency: 'snacksInCart'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\hooks\useHome.ts
+  33:6  warning  React Hook useEffect has a missing dependency: 'nowPlaying'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\hooks\useMovieTheme.ts
+  49:6  warning  React Hook useMemo has a missing dependency: 'movie'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\hooks\useNetworkStatus.ts
+  56:17  warning  'fbTimeout' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  71:16  warning  'err' is defined but never used                 @typescript-eslint/no-unused-vars
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\hooks\useProfile.ts
+  22:14  warning  'error' is defined but never used                                                                                                                                                                                                   @typescript-eslint/no-unused-vars
+  25:6   warning  React Hook useCallback has an unnecessary dependency: 'router'. Either exclude it or remove the dependency array. Outer scope values like 'router' aren't valid dependencies because mutating them doesn't re-render the component  react-hooks/exhaustive-deps
+  39:14  warning  'e' is defined but never used                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\hooks\useSearch.ts
+  31:6  warning  React Hook useEffect has a missing dependency: 'focusAnim'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  94:6  warning  React Hook useEffect has a missing dependency: 'fadeAnim'. Either include it or remove the dependency array   react-hooks/exhaustive-deps
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\hooks\useSnacks.ts
+  28:6  warning  React Hook useCallback has an unnecessary dependency: 'router'. Either exclude it or remove the dependency array. Outer scope values like 'router' aren't valid dependencies because mutating them doesn't re-render the component  react-hooks/exhaustive-deps
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\hooks\useTickets.ts
+  25:6  warning  React Hook useEffect has missing dependencies: 'authenticateBiometrics' and 'isUnlocked'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\jest-setup.js
+   32:9  warning  'React' is assigned a value but never used  no-unused-vars
+  157:9  warning  'React' is assigned a value but never used  no-unused-vars
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\services\NotificationService.ts
+  1:10  warning  'Platform' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\store\useAuthStore.ts
+  27:21  warning  Array type using 'Array<T>' is forbidden. Use 'T[]' instead  @typescript-eslint/array-type
+
+C:\Users\Lenovo\Desktop\project-movie\movie-app\utils\SafeModules.tsx
+   22:16  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+   24:10  warning  'e' is defined but never used            @typescript-eslint/no-unused-vars
+   53:25  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+   79:21  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+   81:10  warning  'e' is defined but never used            @typescript-eslint/no-unused-vars
+   94:27  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+   97:10  warning  'e' is defined but never used            @typescript-eslint/no-unused-vars
+  116:14  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  123:10  warning  'e' is defined but never used            @typescript-eslint/no-unused-vars
+
+✖ 133 problems (20 errors, 113 warnings)
+  0 errors and 5 warnings potentially fixable with the `--fix` option.
+

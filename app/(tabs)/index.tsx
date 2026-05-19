@@ -10,6 +10,7 @@ import {
   Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { Colors } from '@/constants/Theme';
 import HeroSlider from '@/components/HeroSlider';
 import MovieCard from '@/components/MovieCard';
@@ -148,6 +149,8 @@ export default function HomeScreen() {
               <Text className="text-white text-2xl font-bold font-assistant text-left">הסרטים של CineBook</Text>
             </View>
           </View>
+
+
 
           {/* Stories */}
           {storiesData.length > 0 && (

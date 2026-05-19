@@ -746,49 +746,43 @@ export default function CinemaMapScreen() {
           )}
 
           {userLocation && selectedBranch && routeCoords.length > 0 && (
-            <>
-              {/* Geodesic curved path background glow */}
-              <Polyline
-                coordinates={routeCoords}
-                strokeColor="rgba(229, 9, 20, 0.25)"
-                strokeWidth={5}
-                lineDashPattern={Platform.OS === 'android' ? [10, 10] : undefined}
-              />
-              {/* Main curved route line */}
-              <Polyline
-                coordinates={routeCoords}
-                strokeColor={Colors.primary}
-                strokeWidth={2.5}
-              />
-              {/* Liquid flowing pulse traveling along the geodesic route */}
-              {(() => {
-                if (routeCoords.length > 0 && routeCoords[pulseIndex]) {
-                  return (
-                    <Marker
-                      coordinate={routeCoords[pulseIndex]}
-                      anchor={{ x: 0.5, y: 0.5 }}
-                      tracksViewChanges={false}
-                    >
-                      <View 
-                        className="w-4 h-4 rounded-full bg-white justify-center items-center"
-                        style={{
-                          shadowColor: Colors.primary,
-                          shadowOffset: { width: 0, height: 0 },
-                          shadowOpacity: 0.8,
-                          shadowRadius: 6,
-                          elevation: 5,
-                          borderWidth: 2,
-                          borderColor: Colors.primary,
-                        }}
-                      >
-                        <View className="w-1.5 h-1.5 rounded-full bg-primary" />
-                      </View>
-                    </Marker>
-                  );
-                }
-                return null;
-              })()}
-            </>
+            <Polyline
+              coordinates={routeCoords}
+              strokeColor="rgba(229, 9, 20, 0.25)"
+              strokeWidth={5}
+              lineDashPattern={Platform.OS === 'android' ? [10, 10] : undefined}
+            />
+          )}
+
+          {userLocation && selectedBranch && routeCoords.length > 0 && (
+            <Polyline
+              coordinates={routeCoords}
+              strokeColor={Colors.primary}
+              strokeWidth={2.5}
+            />
+          )}
+
+          {userLocation && selectedBranch && routeCoords.length > 0 && routeCoords[pulseIndex] && (
+            <Marker
+              coordinate={routeCoords[pulseIndex]}
+              anchor={{ x: 0.5, y: 0.5 }}
+              tracksViewChanges={false}
+            >
+              <View 
+                className="w-4 h-4 rounded-full bg-white justify-center items-center"
+                style={{
+                  shadowColor: Colors.primary,
+                  shadowOffset: { width: 0, height: 0 },
+                  shadowOpacity: 0.8,
+                  shadowRadius: 6,
+                  elevation: 5,
+                  borderWidth: 2,
+                  borderColor: Colors.primary,
+                }}
+              >
+                <View className="w-1.5 h-1.5 rounded-full bg-primary" />
+              </View>
+            </Marker>
           )}
         </MapView>
       ) : (

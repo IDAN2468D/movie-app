@@ -4,10 +4,11 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, ScrollView, TouchableOpacity, ImageBackground, StyleSheet, Dimensions, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { User, Bell, CreditCard, Shield, ChevronLeft, LogOut, Ticket, Heart, History, TrendingUp, Moon, Trophy, Map as MapIcon } from 'lucide-react-native';
+import { User, Bell, CreditCard, Shield, ChevronLeft, LogOut, Ticket, Heart, History, TrendingUp, Moon, Trophy, Map as MapIcon, Sparkles, Headphones } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { router } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { usePremiumStore } from '@/store/usePremiumStore';
 import { Colors, Typography } from '@/constants/Theme';
 import { useProfile } from '@/hooks/useProfile';
@@ -115,6 +116,22 @@ export default function ProfileScreen() {
             onPress={() => (router.push as any)('/map')} 
           />
           
+          <MenuItem 
+            icon={Sparkles} 
+            title="סיינמאץ' AI — CineMatch" 
+            description="החליקו יחד עם חברים למציאת הסרט המושלם לערב קולנוע!"
+            color={Colors.primary} 
+            onPress={() => router.push('/cinematch' as any)} 
+          />
+
+          <MenuItem 
+            icon={Headphones} 
+            title="טרקלין סאונד מרחבי — Spatial Lounge" 
+            description="התנסו בסאונד תלת-ממדי קולנועי ובאווירה אינטראקטיבית עם קריינות AI!"
+            color="#8B5CF6" 
+            onPress={() => router.push('/movie/lounge' as any)} 
+          />
+          
           <Pressable 
             onPress={toggleInTheaterMode} 
             className="flex-row items-center p-4 bg-white/5 rounded-2xl border border-white/10 overflow-hidden"
@@ -192,13 +209,24 @@ function StatItem({ title, value, icon: Icon, color, onPress }: { title: string;
   );
 }
 
-function MenuItem({ icon: Icon, title, color, onPress }: { icon: any; title: string; color: string; onPress?: () => void }) {
+function MenuItem({ icon: Icon, title, description, color, onPress }: { icon: any; title: string; description?: string; color: string; onPress?: () => void }) {
   return (
-    <Pressable onPress={onPress} className="flex-row items-center p-4 bg-white/5 rounded-2xl border border-white/10 overflow-hidden relative">
+    <Pressable 
+      onPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        if (onPress) onPress();
+      }} 
+      className="flex-row items-center p-4 bg-white/5 rounded-2xl border border-white/10 overflow-hidden relative"
+    >
       <View className="w-12 h-12 rounded-xl justify-center items-center shadow-sm" style={{ backgroundColor: color + '15', marginStart: 4 }}>
         <Icon size={22} color={color} />
       </View>
-      <Text style={[Typography.body, { fontFamily: 'Rubik-Medium', fontSize: 16, textAlign: 'left' }]} className="flex-1 text-white ms-4">{title}</Text>
+      <View className="flex-1 ms-4">
+        <Text style={[Typography.body, { fontFamily: 'Rubik-Medium', fontSize: 16, textAlign: 'left' }]} className="text-white">{title}</Text>
+        {!!description ? (
+          <Text className="text-white/40 text-xs text-left mt-0.5" style={{ fontFamily: 'Assistant-Regular' }}>{description}</Text>
+        ) : null}
+      </View>
       <View className="w-8 h-8 rounded-full bg-white/5 items-center justify-center">
         <ChevronLeft size={16} color="rgba(255,255,255,0.5)" />
       </View>

@@ -51,6 +51,14 @@ jest.mock('react-native-reanimated', () => {
     withDelay: (delay, toValue) => toValue,
     interpolate: (val, input, output) => output[0],
     Extrapolate: { CLAMP: 'clamp', BEZIER: 'bezier' },
+    Easing: {
+      linear: (x) => x,
+      ease: (x) => x,
+      bezier: () => ({ factory: () => {} }),
+      in: (f) => f,
+      out: (f) => f,
+      inOut: (f) => f,
+    },
     FadeIn: { duration: () => ({ delay: () => ({ springify: () => ({}) }) }) },
     FadeOut: { duration: () => ({ delay: () => ({ springify: () => ({}) }) }) },
     FadeInUp: { duration: () => ({ delay: () => ({ springify: () => ({}) }) }) },
@@ -132,5 +140,27 @@ jest.mock('expo-router', () => {
     }),
   };
 });
+
+// Mock react-native-safe-area-context
+jest.mock('react-native-safe-area-context', () => {
+  const insets = { top: 44, right: 0, bottom: 34, left: 0 };
+  return {
+    SafeAreaProvider: ({ children }) => children,
+    SafeAreaView: ({ children }) => children,
+    useSafeAreaInsets: () => insets,
+    useSafeAreaFrame: () => ({ x: 0, y: 0, width: 390, height: 844 }),
+  };
+});
+
+// Mock @expo/vector-icons
+jest.mock('@expo/vector-icons', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    Ionicons: View,
+  };
+});
+
+
 
 

@@ -550,6 +550,58 @@ ${watchlistInfo}
     }
   }
 
+  /**
+   * Generates a 2-3 sentence highly cinematic atmosphere narrative script in Hebrew based on a genre or custom prompt
+   */
+  static async generateAtmosphereNarrative(genre: string, customPrompt?: string): Promise<string> {
+    const model = this.getModel("אתה סופר ועורך קולנועי מומחה המדריך את המאזין לתוך אווירה קולנועית עוצרת נשימה. מטרתך היא לכתוב פתיח קריינות קצר, עמוק ומלא השראה.");
+    
+    const targetPrompt = customPrompt ? `טקסט חופשי של המשתמש: "${customPrompt}"` : `ז'אנר קולנועי: "${genre}"`;
+    
+    if (!model) {
+      return this.simulateAtmosphereNarrative(genre, customPrompt);
+    }
+
+    try {
+      return await this.withRetry(async () => {
+        const prompt = `כתוב קטע קריינות דרמטי, קולנועי וסוחף בעברית המבוסס על: ${targetPrompt}.
+        הקטע חייב:
+        1. להיות קצר ותמציתי (בין 2 ל-3 משפטים בלבד).
+        2. להכניס את המאזין לאווירה המדויקת של הסוגה (למשל פחד עמוק לאימה, פליאה קוסמית למד"ב, התרגשות ואפיות לאקשן).
+        3. להישמע מדהים בהקראה קולית (רדיופוני, עמוק ומלא מסתורין).
+        4. להיות בעברית תקינה ומרגשת. אל תצרף שום הערות או כותרות, החזר רק את טקסט הקריינות עצמו.`;
+
+        const result = await model.generateContent(prompt);
+        const resText = await result.response;
+        return resText.text().trim();
+      });
+    } catch (error) {
+      console.error("AIService Error (Atmosphere Narrative):", error);
+      return this.simulateAtmosphereNarrative(genre, customPrompt);
+    }
+  }
+
+  /**
+   * Offline simulation fallback for atmosphere narratives
+   */
+  private static simulateAtmosphereNarrative(genre: string, customPrompt?: string): string {
+    const promptText = (customPrompt || genre || '').toLowerCase();
+    
+    if (promptText.includes('חלל') || promptText.includes('מד״ב') || promptText.includes('sci-fi') || promptText.includes('space')) {
+      return "הנכם מרחפים אל מעמקי החלל האינסופי. בין כוכבים רחוקים וערפיליות זוהרות, סודות עתיקים של היקום עומדים להתגלות. התכוננו למסע קוסמי יוצא דופן.";
+    }
+    if (promptText.includes('אימה') || promptText.includes('horror') || promptText.includes('מפחיד') || promptText.includes('מתח')) {
+      return "הצללים בחדר מתארכים, והשקט הופך כבד ומאיים. משהו נסתר מביט בכם מתוך האפלה, ממתין לרגע הנכון. האם תעזו לפקוח את העיניים?";
+    }
+    if (promptText.includes('דרמה') || promptText.includes('drama') || promptText.includes('רגש')) {
+      return "לכל לב יש סיפור שטרם סופר, מנגינה שקטה של זיכרונות ואהבות אבודות. ברגע זה, גורלות נפגשים ורגשות עמוקים נחשפים אל האור. זהו רגע של אמת קולנועית.";
+    }
+    if (promptText.includes('פנטזיה') || promptText.includes('fantasy') || promptText.includes('קסם')) {
+      return "ארצות אבודות של קסם ויצורים אגדיים מתעוררות לחיים סביבכם. חרבות עתיקות מנצנצות לאור הירח, והרפתקה אפית שאיש לא ישכח מתחילה כעת.";
+    }
+    return `ברוכים הבאים לטרקלין הסאונד המרחבי של סינבוק. עצמו את העיניים, נשמו עמוק, ותנו לצלילים לקחת אתכם למסע קולנועי מופלא מעבר לדמיון.`;
+  }
+
   // ─── PRIVATE FALLBACKS ──────────────────────────────────────────────────────
 
 

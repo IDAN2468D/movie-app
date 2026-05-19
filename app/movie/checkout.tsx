@@ -112,6 +112,36 @@ export default function CheckoutScreen() {
           </View>
         </View>
 
+        {/* Ordered Snacks List */}
+        {snacksInCart.length > 0 && (
+          <View className="mt-8 items-start w-full">
+            <Text className="text-h3 text-white mb-4 font-display">הכיבוד שהזמנת</Text>
+            <View className="w-full bg-surfaceLight rounded-3xl border border-white/5 p-4 gap-3">
+              {snacksInCart.map((item) => (
+                <View key={item.id} className="flex-row items-center justify-between py-2 border-b border-white/5 last:border-b-0 w-full">
+                  <View className="flex-row items-center gap-3">
+                    <View className="w-12 h-12 bg-background/50 rounded-xl items-center justify-center border border-white/5 overflow-hidden">
+                      {item.image ? (
+                        <Image source={item.image} className="w-10 h-10" resizeMode="contain" />
+                      ) : (
+                        <Popcorn color={Colors.primary} size={20} opacity={0.6} />
+                      )}
+                    </View>
+                    <View className="items-start">
+                      <Text className="text-body text-white font-bold text-right" style={{ writingDirection: 'rtl' }}>{item.name}</Text>
+                      <Text className="text-caption text-textSecondary text-right" style={{ writingDirection: 'rtl' }}>{item.description}</Text>
+                    </View>
+                  </View>
+                  <View className="items-end">
+                    <Text className="text-body text-secondary font-display font-semibold">₪{((item.price || 0) * item.quantity).toFixed(2)}</Text>
+                    <Text className="text-caption text-textSecondary">כמות: {item.quantity}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
         {/* Pre-Order Snacks Section */}
         <View className="mt-10 items-start">
           <View className="flex-row w-full justify-between items-center mb-4">
@@ -133,8 +163,16 @@ export default function CheckoutScreen() {
                   }}
                   className="w-40 bg-surfaceLight rounded-3xl border border-white/5 p-4 items-center"
                 >
-                  <View className="w-20 h-20 bg-background/50 rounded-2xl items-center justify-center mb-3">
-                    <Popcorn color={Colors.primary} size={32} opacity={0.6} />
+                  <View className="w-20 h-20 bg-background/50 rounded-2xl items-center justify-center mb-3 overflow-visible">
+                    {snack.image ? (
+                      <Image 
+                        source={snack.image} 
+                        className="w-16 h-16" 
+                        resizeMode="contain" 
+                      />
+                    ) : (
+                      <Popcorn color={Colors.primary} size={32} opacity={0.6} />
+                    )}
                     {count > 0 && (
                       <View className="absolute -top-2 -right-2 w-7 h-7 bg-primary rounded-full items-center justify-center border-2 border-surface">
                         <Text className="text-white text-xs font-bold">{count}</Text>
@@ -280,7 +318,7 @@ export default function CheckoutScreen() {
           
           {/* Animated Background Glows */}
           {isIntroFinished && (
-            <>
+            <View className="absolute inset-0 overflow-hidden pointer-events-none">
               <Animated.View 
                 entering={FadeIn.delay(200)}
                 className="absolute w-[500px] h-[500px] rounded-full bg-primary/20 blur-[100px]"
@@ -291,7 +329,7 @@ export default function CheckoutScreen() {
                 className="absolute w-[400px] h-[400px] rounded-full bg-secondary/15 blur-[80px]"
                 style={{ bottom: '10%', right: '-10%' }}
               />
-            </>
+            </View>
           )}
 
           {isIntroFinished && (
