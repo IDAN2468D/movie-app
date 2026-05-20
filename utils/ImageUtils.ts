@@ -25,6 +25,11 @@ export const getImageSource = (
     return getFallback(type);
   }
 
+  // If path is an absolute HTTP/HTTPS URL, return it directly
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return { uri: path };
+  }
+
   // Ensure path starts with /
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
   

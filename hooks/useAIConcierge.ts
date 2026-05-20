@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { ScrollView } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useSharedValue, withRepeat, withSequence, withTiming, useAnimatedStyle } from 'react-native-reanimated';
-import { AIService } from '@/services/AIService';
+import { AIService, type VoiceCommand } from '@/services/AIService';
 import { useWatchlistStore } from '@/store/useWatchlistStore';
 import { getGenreName } from '@/lib/tmdb';
 import { useVoiceRecording } from '@/hooks/useVoiceRecording';
@@ -13,7 +13,12 @@ interface Message {
   content: string;
 }
 
-export const useAIConcierge = (visible: boolean) => {
+interface UseAIConciergeOptions {
+  visible: boolean;
+  onNavigate?: (screen: string) => void;
+}
+
+export const useAIConcierge = ({ visible, onNavigate }: UseAIConciergeOptions) => {
   const watchlistMovies = useWatchlistStore(state => state.movies);
 
   const [messages, setMessages] = useState<Message[]>([
@@ -23,6 +28,7 @@ export const useAIConcierge = (visible: boolean) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isTTSEnabled, setIsTTSEnabled] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [isExecutingCommand, setIsExecutingCommand] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const pulseValue = useSharedValue(0.6);
 
@@ -46,6 +52,14 @@ export const useAIConcierge = (visible: boolean) => {
     return base;
   }, [watchlistMovies.length]);
 
+  // Voice command suggestion chips
+  const voiceCommandHints = useMemo(() => [
+    { text: '🔍 "חפש סרט אקשן"', emoji: '🔍' },
+    { text: '📍 "לך לפרופיל"', emoji: '📍' },
+    { text: '🎭 "אני במצב רוח לקומדיה"', emoji: '🎭' },
+    { text: '📊 "נתח את הרשימה שלי"', emoji: '📊' },
+  ], []);
+
   useEffect(() => {
     pulseValue.value = withRepeat(withSequence(withTiming(1, { duration: 1200 }), withTiming(0.6, { duration: 1200 })), -1, true);
   }, [pulseValue]);
@@ -57,12 +71,124 @@ export const useAIConcierge = (visible: boolean) => {
       AIService.stopSpeaking();
       if (isRecording) stopRecording();
     }
-  }, [visible, isRecording]);
+  }, [visible, isRecording, stopRecording]);
 
   const animatedPulseStyle = useAnimatedStyle(() => ({
     opacity: pulseValue.value,
     transform: [{ scale: pulseValue.value }],
   }));
+
+  /**
+   * Executes a detected voice command by dispatching the appropriate action
+   */
+  const executeVoiceCommand = useCallback(async (command: VoiceCommand) => {
+    setIsExecutingCommand(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+
+    // Show the command confirmation message in chat
+    const confirmMsg: Message = {
+      id: Date.now().toString(),
+      role: 'model',
+      content: `⚡ ${command.displayText}`,
+    };
+    setMessages(prev => [...prev, confirmMsg]);
+
+    // Brief delay for the user to see the confirmation
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    try {
+      switch (command.type) {
+        case 'search': {
+          // Navigate to search with the query/genre context
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          if (onNavigate) {
+            onNavigate(`search`);
+          }
+          break;
+        }
+
+        case 'navigate': {
+          const screen = command.params?.screen || 'home';
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          if (onNavigate) {
+            onNavigate(screen);
+          }
+          break;
+        }
+
+        case 'watchlist_analyze': {
+          // Execute watchlist analysis in-chat
+          const analysis = await AIService.analyzeWatchlist(
+            watchlistMovies.map(m => ({
+              title: m.title,
+              vote_average: m.vote_average,
+              genre_ids: m.genre_ids,
+            }))
+          );
+          const analysisMsg: Message = {
+            id: (Date.now() + 1).toString(),
+            role: 'model',
+            content: `📊 **ניתוח רשימת הצפייה שלך:**\n\n` +
+              `🎬 סה"כ סרטים: ${analysis.stats.totalMovies}\n` +
+              `⭐ ציון ממוצע: ${analysis.stats.avgRating.toFixed(1)}\n` +
+              `🏆 ז'אנר מוביל: ${analysis.stats.topGenre}\n` +
+              `❤️ ז'אנרים אהובים: ${analysis.favoriteGenres.join(', ')}\n\n` +
+              `💡 ${analysis.recommendation}`,
+          };
+          setMessages(prev => [...prev, analysisMsg]);
+          if (isTTSEnabled) AIService.speak(analysisMsg.content);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          break;
+        }
+
+        case 'mood': {
+          // Get mood-based recommendation and display in chat
+          const moodResult = await AIService.getMoodRecommendations(command.params?.mood || '');
+          const moodMsg: Message = {
+            id: (Date.now() + 1).toString(),
+            role: 'model',
+            content: `🎭 **מצב רוח: ${moodResult.mood}**\n\n${moodResult.description}\n\n🎬 בוא נמצא סרטים שמתאימים!`,
+          };
+          setMessages(prev => [...prev, moodMsg]);
+          if (isTTSEnabled) AIService.speak(moodMsg.content);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+          // Navigate to search with genre filter after showing the result
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          if (onNavigate) {
+            onNavigate('search');
+          }
+          break;
+        }
+
+        case 'info': {
+          // Use the concierge to answer the info question
+          const infoResponse = await AIService.chatWithConcierge(
+            [{ role: 'user', content: 'מה מוקרן עכשיו בקולנוע? מה הסרטים הפופולריים?' }],
+            watchlistContext
+          );
+          const infoMsg: Message = {
+            id: (Date.now() + 1).toString(),
+            role: 'model',
+            content: infoResponse,
+          };
+          setMessages(prev => [...prev, infoMsg]);
+          if (isTTSEnabled) AIService.speak(infoResponse);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          break;
+        }
+      }
+    } catch (error) {
+      console.error('Voice command execution error:', error);
+      setMessages(prev => [...prev, {
+        id: (Date.now() + 2).toString(),
+        role: 'model',
+        content: '😅 סליחה, נתקלתי בבעיה בביצוע הפקודה. נסה שוב!'
+      }]);
+    } finally {
+      setIsExecutingCommand(false);
+    }
+  }, [watchlistMovies, watchlistContext, isTTSEnabled, onNavigate]);
 
   const handleSend = useCallback(async (customInput?: string) => {
     const textToSend = customInput || input;
@@ -106,17 +232,49 @@ export const useAIConcierge = (visible: boolean) => {
       if (base64) {
         setIsLoading(true);
         try {
+          // Step 1: Transcribe voice to text
           const transcription = await AIService.transcribeVoice(base64);
-          if (transcription?.trim()) { setInput(transcription); Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); }
-        } catch (error) { console.error('Voice transcription error:', error); }
-        finally { setIsLoading(false); }
+          if (transcription?.trim()) {
+            // Step 2: Detect if it's a voice command
+            const command = await AIService.detectVoiceCommand(transcription);
+
+            if (command.type !== 'chat') {
+              // It's a command — show the user's spoken text and execute
+              const userMsg: Message = {
+                id: Date.now().toString(),
+                role: 'user',
+                content: `🎙️ ${transcription}`,
+              };
+              setMessages(prev => [...prev, userMsg]);
+              setIsLoading(false);
+
+              // Execute the detected command
+              await executeVoiceCommand(command);
+            } else {
+              // Regular chat — set the input and auto-send
+              setInput(transcription);
+              setIsLoading(false);
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+              // Auto-send the transcribed text as a chat message
+              setTimeout(() => {
+                handleSend(transcription);
+              }, 300);
+            }
+          } else {
+            setIsLoading(false);
+          }
+        } catch (error) {
+          console.error('Voice transcription error:', error);
+          setIsLoading(false);
+        }
       }
     } else {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
       setIsListening(true);
       await startRecording();
     }
-  }, [isRecording, startRecording, stopRecording]);
+  }, [isRecording, startRecording, stopRecording, executeVoiceCommand, handleSend]);
 
   useEffect(() => {
     setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
@@ -124,7 +282,8 @@ export const useAIConcierge = (visible: boolean) => {
 
   return {
     messages, input, setInput, isLoading, isTTSEnabled, isListening,
-    scrollViewRef, watchlistMovies, watchlistContext, suggestions,
-    animatedPulseStyle, handleSend, toggleTTS, handleVoicePress,
+    isExecutingCommand, scrollViewRef, watchlistMovies, watchlistContext,
+    suggestions, voiceCommandHints, animatedPulseStyle,
+    handleSend, toggleTTS, handleVoicePress,
   };
 };

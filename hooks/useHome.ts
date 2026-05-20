@@ -26,11 +26,17 @@ export const useHome = () => {
 
   // 3. Side Effects
   useEffect(() => {
+    // Force invalidate movie lists once on mount to evict any corrupted
+    // or empty persistence cache from AsyncStorage and trigger fresh fetches.
+    queryClient.invalidateQueries({ queryKey: movieKeys.lists() });
+  }, [queryClient]);
+
+  useEffect(() => {
     if (nowPlaying.length > 0 && !loading) {
       // Simulate new movie notification once when loaded
       NotificationService.notifyNewMovie(nowPlaying[0].title);
     }
-  }, [nowPlaying.length, loading]);
+  }, [nowPlaying, loading]);
 
   // 4. Action Handlers
   const onRefresh = useCallback(async () => {

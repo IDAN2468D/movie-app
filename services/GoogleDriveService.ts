@@ -3,7 +3,7 @@ import { GOOGLE_CONFIG } from '@/constants/Config';
 import type { BookedTicket } from '@/store/useBookingStore';
 import { Colors } from '@/constants/Theme';
 import * as Print from 'expo-print';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 export class GoogleDriveService {
   /**
@@ -28,12 +28,8 @@ export class GoogleDriveService {
   /**
    * Generates an elegant, CSS-styled HTML document for the digital ticket.
    */
-  private static generateTicketHTML(ticket: BookedTicket): string {
+  private static generateTicketHTML(ticket: BookedTicket, posterDataUri: string, qrDataUri: string): string {
     const seats = ticket.seats?.map(s => `${s.row}${s.number}`).join(', ') || 'N/A';
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${ticket.id}&color=${Colors.background.replace('#', '')}&bgcolor=FFFFFF`;
-    const posterUrl = ticket.moviePoster 
-      ? `https://image.tmdb.org/t/p/w500${ticket.moviePoster}`
-      : 'https://images.unsplash.com/photo-1542204113-e93a434de541?w=500';
 
     return `<!DOCTYPE html>
 <html lang="he" dir="rtl">
@@ -198,7 +194,7 @@ export class GoogleDriveService {
   <div class="ticket-container">
     <div class="glow-header">
       <div class="poster-wrapper">
-        <img class="poster-image" src="${posterUrl}" alt="${ticket.movieTitle}">
+        <img class="poster-image" src="${posterDataUri}" alt="${ticket.movieTitle}">
       </div>
       <div><span class="badge">CineBook Platinum</span></div>
       <h1>${ticket.movieTitle}</h1>
@@ -211,7 +207,7 @@ export class GoogleDriveService {
 
     <div class="qr-section">
       <div class="qr-wrapper">
-        <img class="qr-image" src="${qrUrl}" alt="Ticket QR Code">
+        <img class="qr-image" src="${qrDataUri}" alt="Ticket QR Code">
       </div>
       <div class="ref-code">REF: ${ticket.id.split('-')[0].toUpperCase()}</div>
     </div>
@@ -300,9 +296,28 @@ export class GoogleDriveService {
 
       let pdfUri = '';
       try {
+        // Pre-download and base64 encode ticket images to avoid missing images due to fast print rendering
+        console.log('[GoogleDriveService] Downloading and encoding ticket images to Base64...');
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${ticket.id}&color=${Colors.background.replace('#', '')}&bgcolor=FFFFFF`;
+        const posterUrl = ticket.moviePoster 
+          ? `https://image.tmdb.org/t/p/w500${ticket.moviePoster}`
+          : 'https://images.unsplash.com/photo-1542204113-e93a434de541?w=500';
+
+        let qrDataUri = qrUrl;
+        const base64Qr = await this.getBase64FromUrl(qrUrl);
+        if (base64Qr) {
+          qrDataUri = base64Qr;
+        }
+
+        let posterDataUri = posterUrl;
+        const base64Poster = await this.getBase64FromUrl(posterUrl);
+        if (base64Poster) {
+          posterDataUri = base64Poster;
+        }
+
         // Build the file metadata and media content
         const fileName = `CineBook_Ticket_${ticket.movieTitle.replace(/\s+/g, '_')}.pdf`;
-        const htmlContent = this.generateTicketHTML(ticket);
+        const htmlContent = this.generateTicketHTML(ticket, posterDataUri, qrDataUri);
 
         console.log('[GoogleDriveService] Generating PDF from HTML design using expo-print...');
         const pdfFile = await Print.printToFileAsync({ html: htmlContent });
@@ -381,6 +396,33 @@ export class GoogleDriveService {
         success: false, 
         message: error.message || 'שגיאת חיבור לשרתי גוגל' 
       };
+    }
+  }
+
+  /**
+   * Downloads a remote image and converts it to a Base64 Data URI
+   */
+  private static async getBase64FromUrl(url: string): Promise<string | null> {
+    try {
+      const filename = url.split('/').pop()?.split('?')[0] || 'temp_img';
+      const localUri = `${FileSystem.cacheDirectory}${Date.now()}_${filename}`;
+      const downloadResult = await FileSystem.downloadAsync(url, localUri);
+      if (downloadResult.status === 200) {
+        const base64 = await FileSystem.readAsStringAsync(downloadResult.uri, {
+          encoding: 'base64',
+        });
+        // Delete the temporary downloaded file
+        try {
+          await FileSystem.deleteAsync(downloadResult.uri, { idempotent: true });
+        } catch {}
+        
+        const mimeType = url.includes('.png') || url.includes('qrserver') ? 'image/png' : 'image/jpeg';
+        return `data:${mimeType};base64,${base64}`;
+      }
+      return null;
+    } catch (err) {
+      console.warn('[GoogleDriveService] Failed to download and encode image:', url, err);
+      return null;
     }
   }
 }

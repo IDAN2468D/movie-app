@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Platform } from 'react-native';
 import { onlineManager } from '@tanstack/react-query';
-import { API_BASE_URL } from '@/constants/Config';
 
 /**
  * Custom Hook to monitor network status across Native and Web platforms,
@@ -42,23 +41,31 @@ export const useNetworkStatus = () => {
 
     const checkConnectivity = async () => {
       try {
-        // Fast HEAD request to public DNS or API server to verify internet route
+        // Fast HEAD request to public, highly reliable endpoints to verify internet route
+        // directly. Bypasses Render.com backend cold-start spin-up delays (which take up to 60s).
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 3000);
 
-        const response = await fetch(`${API_BASE_URL.replace(/\/$/, '')}/auth/me`, {
+        const response = await fetch('https://www.google.com', {
           method: 'HEAD',
           signal: controller.signal,
           headers: { 'Cache-Control': 'no-cache' }
         }).catch(async () => {
-          // If server is down but internet is active, try fallback check
+          // Fallback to TMDB API server if google.com fails
           const fbController = new AbortController();
           const fbTimeout = setTimeout(() => fbController.abort(), 2000);
-          return fetch('https://www.google.com', {
-            method: 'HEAD',
-            signal: fbController.signal,
-            headers: { 'Cache-Control': 'no-cache' }
-          });
+          try {
+            const res = await fetch('https://api.themoviedb.org', {
+              method: 'HEAD',
+              signal: fbController.signal,
+              headers: { 'Cache-Control': 'no-cache' }
+            });
+            clearTimeout(fbTimeout);
+            return res;
+          } catch (e) {
+            clearTimeout(fbTimeout);
+            throw e;
+          }
         });
 
         clearTimeout(timeoutId);
@@ -68,7 +75,7 @@ export const useNetworkStatus = () => {
           setIsOnline(online);
           onlineManager.setOnline(online);
         }
-      } catch (err) {
+      } catch {
         if (isMounted) {
           setIsOnline(false);
           onlineManager.setOnline(false);

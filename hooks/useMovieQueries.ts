@@ -16,6 +16,8 @@ export function useNowPlaying() {
   return useQuery({
     queryKey: movieKeys.list('now_playing'),
     queryFn: tmdb.getNowPlaying,
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 }
 
@@ -23,6 +25,8 @@ export function usePopular() {
   return useQuery({
     queryKey: movieKeys.list('popular'),
     queryFn: tmdb.getPopular,
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 }
 
@@ -30,6 +34,8 @@ export function useUpcoming() {
   return useQuery({
     queryKey: movieKeys.list('upcoming'),
     queryFn: tmdb.getUpcoming,
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 }
 
@@ -37,6 +43,8 @@ export function useTopRated() {
   return useQuery({
     queryKey: movieKeys.list('top_rated'),
     queryFn: tmdb.getTopRated,
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 }
 

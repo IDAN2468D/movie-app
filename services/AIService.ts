@@ -36,6 +36,17 @@ interface WatchlistAnalysis {
   };
 }
 
+export interface VoiceCommand {
+  type: 'search' | 'navigate' | 'watchlist_analyze' | 'mood' | 'info' | 'chat';
+  params?: {
+    query?: string;
+    genre?: string;
+    screen?: string;
+    mood?: string;
+  };
+  displayText: string;
+}
+
 // ─── Service ──────────────────────────────────────────────────────────────────
 export class AIService {
   private static API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
@@ -411,6 +422,132 @@ ${watchlistInfo}
       console.error("AIService Error (Voice Transcription):", error);
       return "";
     }
+  }
+
+  // ─── FEATURE 9: Voice Command Detection ──────────────────────────────────────
+
+  /**
+   * Detects actionable voice commands from transcribed text using Gemini AI.
+   * Returns a structured VoiceCommand with type, params, and display text.
+   */
+  static async detectVoiceCommand(transcribedText: string): Promise<VoiceCommand> {
+    const model = this.getModel(`אתה מערכת זיהוי פקודות קוליות עבור אפליקציית הקולנוע סינבוק.
+תפקידך לנתח טקסט שהמשתמש אמר ולזהות אם מדובר בפקודה פעילה או בשיחה רגילה.
+
+סוגי הפקודות הנתמכות:
+1. search - חיפוש סרט ("חפש סרט אקשן", "מצא לי קומדיה", "אני רוצה לראות סרט מתח")
+2. navigate - ניווט למסך ("קח אותי לפרופיל", "פתח כרטיסים", "לך לחיפוש", "הראה לי את הרשימה")
+   מסכים: profile, search, tickets, watchlist, home
+3. watchlist_analyze - ניתוח רשימת צפייה ("נתח את הרשימה שלי", "מה ברשימה שלי?")
+4. mood - המלצה לפי מצב רוח ("אני עצוב", "משהו מצחיק", "מצב רוח רומנטי")
+5. info - מידע כללי ("מה מוקרן עכשיו?", "מה פופולרי?")
+6. chat - שיחה רגילה שאינה פקודה
+
+קודי ז'אנרים: 28=אקשן, 35=קומדיה, 27=אימה, 10749=רומנטיקה, 878=מד"ב, 18=דרמה, 53=מתח, 16=אנימציה, 10751=משפחה, 12=הרפתקאות`);
+
+    if (!model) {
+      return this.detectVoiceCommandLocal(transcribedText);
+    }
+
+    try {
+      return await this.withRetry(async () => {
+        const prompt = `נתח את הטקסט הבא שהמשתמש אמר: "${transcribedText}"
+
+החזר JSON בלבד בפורמט הבא:
+{
+  "type": "search" | "navigate" | "watchlist_analyze" | "mood" | "info" | "chat",
+  "params": {
+    "query": "מילות חיפוש (רק עבור search)",
+    "genre": "קודי ז'אנרים מופרדים בפסיק (רק עבור search)",
+    "screen": "שם המסך (רק עבור navigate): profile / search / tickets / watchlist / home",
+    "mood": "תיאור מצב הרוח (רק עבור mood)"
+  },
+  "displayText": "הודעה קצרה ומלהיבה בעברית שתוצג למשתמש שמסבירה מה אתה הולך לעשות (עד 12 מילים, עם אימוג'י מתאים)"
+}
+
+דוגמאות:
+- "חפש לי סרט אקשן" → {"type":"search","params":{"genre":"28"},"displayText":"🔍 מחפש סרטי אקשן מומלצים בשבילך..."}
+- "לך לפרופיל" → {"type":"navigate","params":{"screen":"profile"},"displayText":"📍 מנווט אותך לפרופיל שלך..."}
+- "מה דעתך על הסרט הזה" → {"type":"chat","params":{},"displayText":"💬 בוא נדבר על זה!"}` ;
+
+        const result = await model.generateContent(prompt);
+        const text = result.response.text();
+        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(jsonStr) as VoiceCommand;
+
+        // Validate the returned type
+        const validTypes = ['search', 'navigate', 'watchlist_analyze', 'mood', 'info', 'chat'];
+        if (!validTypes.includes(parsed.type)) {
+          parsed.type = 'chat';
+        }
+
+        return parsed;
+      });
+    } catch (error) {
+      console.error('AIService Error (Voice Command Detection):', error);
+      return this.detectVoiceCommandLocal(transcribedText);
+    }
+  }
+
+  /**
+   * Local keyword-based fallback for voice command detection (no API required)
+   */
+  private static detectVoiceCommandLocal(text: string): VoiceCommand {
+    const lower = text.toLowerCase();
+
+    // Search commands
+    if (lower.includes('חפש') || lower.includes('מצא') || lower.includes('חיפוש')) {
+      let genre = '';
+      if (lower.includes('אקשן') || lower.includes('פעולה')) genre = '28';
+      else if (lower.includes('קומדיה') || lower.includes('מצחיק')) genre = '35';
+      else if (lower.includes('אימה') || lower.includes('מפחיד')) genre = '27';
+      else if (lower.includes('רומנטי') || lower.includes('אהבה')) genre = '10749';
+      else if (lower.includes('מתח') || lower.includes('ריגוש')) genre = '53';
+      else if (lower.includes('דרמה')) genre = '18';
+      else if (lower.includes('מד"ב') || lower.includes('חלל')) genre = '878';
+      else if (lower.includes('אנימציה') || lower.includes('ילדים') || lower.includes('משפחה')) genre = '16,10751';
+
+      return {
+        type: 'search',
+        params: { query: text, genre },
+        displayText: genre ? '🔍 מחפש סרטים מתאימים בשבילך...' : `🔍 מחפש "${text}"...`,
+      };
+    }
+
+    // Navigation commands
+    if (lower.includes('פרופיל') || lower.includes('הגדרות')) {
+      return { type: 'navigate', params: { screen: 'profile' }, displayText: '📍 מנווט לפרופיל שלך...' };
+    }
+    if (lower.includes('כרטיס') || lower.includes('הזמנ')) {
+      return { type: 'navigate', params: { screen: 'tickets' }, displayText: '🎫 פותח את הכרטיסים שלך...' };
+    }
+    if (lower.includes('חיפוש') || lower.includes('גלה') || lower.includes('גילוי')) {
+      return { type: 'navigate', params: { screen: 'search' }, displayText: '🔎 פותח את מסך החיפוש...' };
+    }
+    if (lower.includes('רשימ') && (lower.includes('פתח') || lower.includes('הראה') || lower.includes('לך'))) {
+      return { type: 'navigate', params: { screen: 'watchlist' }, displayText: '📋 פותח את רשימת הצפייה...' };
+    }
+
+    // Watchlist analysis
+    if (lower.includes('נתח') && lower.includes('רשימ')) {
+      return { type: 'watchlist_analyze', params: {}, displayText: '📊 מנתח את רשימת הצפייה שלך...' };
+    }
+    if (lower.includes('מה ברשימה') || lower.includes('מה יש ברשימ')) {
+      return { type: 'watchlist_analyze', params: {}, displayText: '📊 בודק מה ברשימת הצפייה שלך...' };
+    }
+
+    // Mood commands
+    if (lower.includes('מצב רוח') || lower.includes('עצוב') || lower.includes('שמח') || lower.includes('לחוץ') || lower.includes('הרפתקני')) {
+      return { type: 'mood', params: { mood: text }, displayText: '🎭 מחפש סרטים שמתאימים למצב הרוח שלך...' };
+    }
+
+    // Info commands
+    if (lower.includes('מוקרן') || lower.includes('עכשיו') || lower.includes('חדש') || lower.includes('פופולרי')) {
+      return { type: 'info', params: {}, displayText: '🍿 בודק מה חם בקולנוע עכשיו...' };
+    }
+
+    // Fallback to chat
+    return { type: 'chat', params: {}, displayText: '' };
   }
 
   /**

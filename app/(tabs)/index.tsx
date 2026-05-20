@@ -173,10 +173,10 @@ export default function HomeScreen() {
             keyExtractor={(item) => `np-${item.id}`}
             contentContainerStyle={{ paddingHorizontal: 16 }}
             scrollEnabled
-            initialNumToRender={4}
-            maxToRenderPerBatch={4}
-            windowSize={3}
-            removeClippedSubviews={true}
+            nestedScrollEnabled={true}
+            initialNumToRender={6}
+            maxToRenderPerBatch={6}
+            windowSize={5}
           />
 
           {/* Popular */}
@@ -189,10 +189,10 @@ export default function HomeScreen() {
             keyExtractor={(item) => `pop-${item.id}`}
             contentContainerStyle={{ paddingHorizontal: 16 }}
             scrollEnabled
-            initialNumToRender={4}
-            maxToRenderPerBatch={4}
-            windowSize={3}
-            removeClippedSubviews={true}
+            nestedScrollEnabled={true}
+            initialNumToRender={6}
+            maxToRenderPerBatch={6}
+            windowSize={5}
           />
 
           {/* Top Rated */}
@@ -205,10 +205,10 @@ export default function HomeScreen() {
             keyExtractor={(item) => `tr-${item.id}`}
             contentContainerStyle={{ paddingHorizontal: 16 }}
             scrollEnabled
-            initialNumToRender={4}
-            maxToRenderPerBatch={4}
-            windowSize={3}
-            removeClippedSubviews={true}
+            nestedScrollEnabled={true}
+            initialNumToRender={6}
+            maxToRenderPerBatch={6}
+            windowSize={5}
           />
         </ScrollView>
       )}
@@ -241,7 +241,18 @@ export default function HomeScreen() {
 
       <AIConciergeModal 
         visible={aiModalVisible} 
-        onClose={() => toggleAiModal(false)} 
+        onClose={() => toggleAiModal(false)}
+        onNavigate={(screen) => {
+          const screenMap: Record<string, string> = {
+            home: '/(tabs)',
+            search: '/(tabs)/search',
+            tickets: '/(tabs)/tickets',
+            watchlist: '/(tabs)/watchlist',
+            profile: '/(tabs)/profile',
+          };
+          const route = screenMap[screen] || '/(tabs)';
+          router.push(route as any);
+        }}
       />
 
       <Modal

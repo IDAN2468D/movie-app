@@ -1,25 +1,16 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { View, Text, Modal, Pressable, TextInput, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { FadeInRight, FadeInLeft, FadeInDown, withRepeat, withSequence, withTiming, withDelay, useAnimatedStyle, useSharedValue, interpolate } from 'react-native-reanimated';
-import { Send, X, User, Sparkles, Zap, Volume2, VolumeX, Mic, BookmarkCheck } from 'lucide-react-native';
-import * as Haptics from 'expo-haptics';
+import Animated, { FadeInRight, FadeInLeft, FadeInDown, FadeInUp, withRepeat, withSequence, withTiming, withDelay, useAnimatedStyle, useSharedValue, interpolate } from 'react-native-reanimated';
+import { Send, X, User, Sparkles, Zap, Volume2, VolumeX, Mic, BookmarkCheck, Command } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AIService } from '@/services/AIService';
 import { Colors } from '@/constants/Theme';
-import { useWatchlistStore } from '@/store/useWatchlistStore';
-import { getGenreName } from '@/lib/tmdb';
-import { useVoiceRecording } from '@/hooks/useVoiceRecording';
-
-interface Message {
-  id: string;
-  role: 'user' | 'model';
-  content: string;
-}
+import { useAIConcierge } from '@/hooks/useAIConcierge';
 
 interface AIConciergeModalProps {
   visible: boolean;
   onClose: () => void;
+  onNavigate?: (screen: string) => void;
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -114,193 +105,43 @@ const WaveBar = ({ index }: { index: number }) => {
   );
 };
 
+// ─── Command Execution Banner ─────────────────────────────────────────────────
+
+const CommandBanner = () => (
+  <Animated.View
+    entering={FadeInUp.springify().damping(15)}
+    className="mx-4 mb-3 p-3 rounded-2xl border flex-row items-center justify-center gap-2"
+    style={{
+      backgroundColor: 'rgba(255, 20, 100, 0.08)',
+      borderColor: 'rgba(255, 20, 100, 0.2)',
+    }}
+  >
+    <Command size={14} color={Colors.primary} />
+    <Text className="text-[12px] font-bold font-body" style={{ color: Colors.primary }}>
+      ⚡ מבצע פקודה קולית...
+    </Text>
+  </Animated.View>
+);
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function AIConciergeModal({ visible, onClose }: AIConciergeModalProps) {
+export default function AIConciergeModal({ visible, onClose, onNavigate: parentNavigate }: AIConciergeModalProps) {
   const insets = useSafeAreaInsets();
-  const watchlistMovies = useWatchlistStore(state => state.movies);
 
-  const [messages, setMessages] = useState<Message[]>([
-    { id: '1', role: 'model', content: '👋 שלום! אני סייען ה-AI של סינבוק. אני מכיר את רשימת הצפייה שלך ויכול להמליץ על סרטים שיתאימו בדיוק לטעם שלך. איך אפשר לעזור?' }
-  ]);
-  const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isTTSEnabled, setIsTTSEnabled] = useState(false);
-  const [isListening, setIsListening] = useState(false);
-  const scrollViewRef = useRef<ScrollView>(null);
-  
-  // Shared values for animations
-  const pulseValue = useSharedValue(0.6);
-
-  // ─── Watchlist Context for AI ───────────────────────────────────────────────
-  const watchlistContext = useMemo(() => {
-    if (watchlistMovies.length === 0) return undefined;
-
-    const allGenreIds = watchlistMovies.flatMap(m => m.genre_ids);
-    const genreCounts: Record<number, number> = {};
-    for (const gid of allGenreIds) {
-      genreCounts[gid] = (genreCounts[gid] || 0) + 1;
+  // Navigation handler — closes the modal, then delegates to the parent's router
+  const handleNavigate = useCallback((screen: string) => {
+    onClose();
+    if (parentNavigate) {
+      setTimeout(() => parentNavigate(screen), 400);
     }
-    const topGenres = Object.entries(genreCounts)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 3)
-      .map(([gid]) => getGenreName(Number(gid)));
+  }, [onClose, parentNavigate]);
 
-    const avgRating = watchlistMovies.reduce((sum, m) => sum + m.vote_average, 0) / watchlistMovies.length;
-
-    return {
-      titles: watchlistMovies.map(m => m.title),
-      genres: topGenres,
-      avgRating,
-    };
-  }, [watchlistMovies]);
-
-  // ─── Dynamic Suggestions ────────────────────────────────────────────────────
-  const suggestions = useMemo(() => {
-    const base = [
-      { text: '🎬 סרט מתח', emoji: '🎬' },
-      { text: '🍿 מה חדש?', emoji: '🍿' },
-    ];
-
-    if (watchlistMovies.length > 0) {
-      base.push(
-        { text: '📊 נתח את הרשימה שלי', emoji: '📊' },
-        { text: '🎯 מה מתאים לי?', emoji: '🎯' },
-      );
-    } else {
-      base.push(
-        { text: '🎥 לכל המשפחה', emoji: '🎥' },
-        { text: '🎭 דרמות מומלצות', emoji: '🎭' },
-      );
-    }
-
-    return base;
-  }, [watchlistMovies.length]);
-
-  useEffect(() => {
-    pulseValue.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: 1200 }),
-        withTiming(0.6, { duration: 1200 })
-      ),
-      -1,
-      true
-    );
-  }, [pulseValue]);
-
-  const { isRecording, startRecording, stopRecording } = useVoiceRecording();
-
-  useEffect(() => {
-    if (!visible) {
-      AIService.stopSpeaking();
-      if (isRecording) {
-        stopRecording();
-      }
-    }
-  }, [visible, isRecording]);
-
-  const animatedPulseStyle = useAnimatedStyle(() => ({
-    opacity: pulseValue.value,
-    transform: [{ scale: pulseValue.value }],
-  }));
-
-  const handleSend = async (customInput?: string) => {
-    const textToSend = customInput || input;
-    if (!textToSend.trim() || isLoading) return;
-
-    const userMsg: Message = { id: Date.now().toString(), role: 'user', content: textToSend };
-    setMessages(prev => [...prev, userMsg]);
-    if (!customInput) setInput('');
-    setIsLoading(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-    try {
-      // Check for special watchlist analysis request
-      const lowerText = textToSend.toLowerCase();
-      let response: string;
-
-      if (lowerText.includes('נתח') && lowerText.includes('רשימ')) {
-        // Watchlist analysis mode
-        const analysis = await AIService.analyzeWatchlist(
-          watchlistMovies.map(m => ({
-            title: m.title,
-            vote_average: m.vote_average,
-            genre_ids: m.genre_ids,
-          }))
-        );
-        response = `📊 **ניתוח רשימת הצפייה שלך:**\n\n` +
-          `🎬 סה"כ סרטים: ${analysis.stats.totalMovies}\n` +
-          `⭐ ציון ממוצע: ${analysis.stats.avgRating.toFixed(1)}\n` +
-          `🏆 ז'אנר מוביל: ${analysis.stats.topGenre}\n` +
-          `❤️ ז'אנרים אהובים: ${analysis.favoriteGenres.join(', ')}\n\n` +
-          `💡 ${analysis.recommendation}`;
-      } else {
-        // Regular chat — pass watchlist context
-        response = await AIService.chatWithConcierge(
-          messages.concat(userMsg).map(m => ({ role: m.role, content: m.content })),
-          watchlistContext
-        );
-      }
-      
-      const aiMsg: Message = { id: (Date.now() + 1).toString(), role: 'model', content: response };
-      setMessages(prev => [...prev, aiMsg]);
-      
-      if (isTTSEnabled) {
-        AIService.speak(response);
-      }
-
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (error) {
-      console.error('AI Chat Error:', error);
-      const errorMsg: Message = { 
-        id: (Date.now() + 1).toString(), 
-        role: 'model', 
-        content: '😅 סליחה, נתקלתי בבעיה. נסה שוב בבקשה!' 
-      };
-      setMessages(prev => [...prev, errorMsg]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const toggleTTS = () => {
-    Haptics.selectionAsync();
-    const nextState = !isTTSEnabled;
-    setIsTTSEnabled(nextState);
-    if (!nextState) {
-      AIService.stopSpeaking();
-    }
-  };
-
-  const handleVoicePress = async () => {
-    if (isRecording) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      setIsListening(false);
-      const base64 = await stopRecording();
-      if (base64) {
-        setIsLoading(true);
-        try {
-          const transcription = await AIService.transcribeVoice(base64);
-          if (transcription && transcription.trim()) {
-            setInput(transcription);
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          }
-        } catch (error) {
-          console.error('AI Concierge voice transcription error:', error);
-        } finally {
-          setIsLoading(false);
-        }
-      }
-    } else {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      setIsListening(true);
-      await startRecording();
-    }
-  };
-
-  useEffect(() => {
-    setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
-  }, [messages, isLoading]);
+  const {
+    messages, input, setInput, isLoading, isTTSEnabled, isListening,
+    isExecutingCommand, scrollViewRef, watchlistMovies, watchlistContext,
+    suggestions, voiceCommandHints, animatedPulseStyle,
+    handleSend, toggleTTS, handleVoicePress,
+  } = useAIConcierge({ visible, onNavigate: handleNavigate });
 
   return (
     <Modal visible={visible} animationType="slide" transparent statusBarTranslucent>
@@ -337,7 +178,9 @@ export default function AIConciergeModal({ visible, onClose }: AIConciergeModalP
                     <Text className="text-h2 text-white font-display text-start">סייען AI אישי</Text>
                     <View className="flex-row items-center">
                       <View className="w-1.5 h-1.5 rounded-full bg-green-500 me-1.5" />
-                      <Text className="text-caption text-white/50 font-body text-start">פעיל במערכת</Text>
+                      <Text className="text-caption text-white/50 font-body text-start">
+                        {isExecutingCommand ? '⚡ מבצע פקודה...' : 'פעיל במערכת • תומך פקודות קוליות'}
+                      </Text>
                     </View>
                   </View>
                 </View>
@@ -370,6 +213,9 @@ export default function AIConciergeModal({ visible, onClose }: AIConciergeModalP
               )}
             </View>
 
+            {/* Command Execution Banner */}
+            {isExecutingCommand && <CommandBanner />}
+
             {/* Chat Messages */}
             <ScrollView 
               ref={scrollViewRef}
@@ -379,6 +225,7 @@ export default function AIConciergeModal({ visible, onClose }: AIConciergeModalP
             >
               {messages.map((msg) => {
                 const isUser = msg.role === 'user';
+                const isCommandMsg = msg.content.startsWith('⚡');
                 return (
                   <Animated.View 
                     key={msg.id}
@@ -423,7 +270,7 @@ export default function AIConciergeModal({ visible, onClose }: AIConciergeModalP
                       <>
                         <View 
                           style={{
-                            backgroundColor: 'rgba(255,255,255,0.06)',
+                            backgroundColor: isCommandMsg ? 'rgba(255, 20, 100, 0.1)' : 'rgba(255,255,255,0.06)',
                             borderTopLeftRadius: 20,
                             borderTopRightRadius: 20,
                             borderBottomLeftRadius: 4,
@@ -431,7 +278,7 @@ export default function AIConciergeModal({ visible, onClose }: AIConciergeModalP
                             padding: 14,
                             maxWidth: '80%',
                             borderWidth: 1,
-                            borderColor: 'rgba(255,255,255,0.1)',
+                            borderColor: isCommandMsg ? 'rgba(255, 20, 100, 0.25)' : 'rgba(255,255,255,0.1)',
                             shadowColor: '#000',
                             shadowOffset: { width: 0, height: 4 },
                             shadowOpacity: 0.2,
@@ -450,7 +297,11 @@ export default function AIConciergeModal({ visible, onClose }: AIConciergeModalP
                           </Text>
                         </View>
                         <View className="w-8 h-8 rounded-full bg-white/5 border border-white/10 items-center justify-center">
-                          <Zap size={14} color={Colors.primary} />
+                          {isCommandMsg ? (
+                            <Command size={14} color={Colors.primary} />
+                          ) : (
+                            <Zap size={14} color={Colors.primary} />
+                          )}
                         </View>
                       </>
                     )}
@@ -469,8 +320,34 @@ export default function AIConciergeModal({ visible, onClose }: AIConciergeModalP
               className="px-4 pt-2 bg-black/40 border-t border-white/5"
               style={{ paddingBottom: Math.max(insets.bottom, 24) + 12 }}
             >
-              {/* Quick Suggestions */}
-              {!isLoading && (
+              {/* Voice Command Hints (shown when listening) */}
+              {isListening && (
+                <Animated.View entering={FadeInDown.duration(300)}>
+                  <ScrollView 
+                    horizontal 
+                    showsHorizontalScrollIndicator={false} 
+                    className="mb-3"
+                  >
+                    {voiceCommandHints.map((hint, i) => (
+                      <View
+                        key={i}
+                        className="border px-3 py-2 rounded-full me-2"
+                        style={{
+                          backgroundColor: 'rgba(255, 20, 100, 0.06)',
+                          borderColor: 'rgba(255, 20, 100, 0.15)',
+                        }}
+                      >
+                        <Text className="text-[11px] font-body" style={{ color: 'rgba(255, 20, 100, 0.7)' }}>
+                          {hint.text}
+                        </Text>
+                      </View>
+                    ))}
+                  </ScrollView>
+                </Animated.View>
+              )}
+
+              {/* Quick Suggestions (shown when not listening) */}
+              {!isLoading && !isListening && (
                 <ScrollView 
                   horizontal 
                   showsHorizontalScrollIndicator={false} 
@@ -503,7 +380,7 @@ export default function AIConciergeModal({ visible, onClose }: AIConciergeModalP
 
                 <TextInput
                   className="flex-1 h-11 text-white font-body text-start text-[15px]"
-                  placeholder={isListening ? "מקשיב לך..." : "איזה סרט כדאי לי לראות?"}
+                  placeholder={isListening ? "מקשיב לפקודה שלך..." : "הקלד או דבר פקודה..."}
                   placeholderTextColor="rgba(255,255,255,0.3)"
                   value={input}
                   onChangeText={setInput}

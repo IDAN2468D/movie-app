@@ -85,7 +85,7 @@ function NavigationGuard() {
     if (!hasSeenOnboarding) {
       if (currentSegment !== 'onboarding') {
         console.log('Redirecting to Onboarding (First time user)');
-        router.replace('/onboarding');
+        setTimeout(() => router.replace('/onboarding'), 0);
       }
       return;
     }
@@ -97,13 +97,13 @@ function NavigationGuard() {
       
       if (!isPublicRoute) {
         console.log('Redirecting to Login (Unauthenticated)');
-        router.replace('/login');
+        setTimeout(() => router.replace('/login'), 0);
       }
     } else {
       // 4. Authenticated: Don't allow login or onboarding screens
       if (currentSegment === 'login' || currentSegment === 'auth' || currentSegment === 'onboarding') {
         console.log('Redirecting to Tabs (Already Authenticated)');
-        router.replace('/(tabs)');
+        setTimeout(() => router.replace('/(tabs)'), 0);
       }
     }
   }, [isAuthenticated, isLoading, segments, hasSeenOnboarding]);
