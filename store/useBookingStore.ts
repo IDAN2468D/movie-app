@@ -68,6 +68,7 @@ export interface BookedTicket {
   id: string;
   movieId: number;
   movieTitle: string;
+  moviePoster?: string;
   date: string;
   showtime: Showtime;
   seats: Seat[];
@@ -188,7 +189,7 @@ export const useBookingStore = create<BookingState>()(
   },
 
   bookCurrentSelection: async (snacks) => {
-    const { selectedMovieId, selectedMovieTitle, selectedDate, selectedShowtime, selectedSeats, totalPrice } = get();
+    const { selectedMovieId, selectedMovieTitle, selectedMoviePoster, selectedDate, selectedShowtime, selectedSeats, totalPrice } = get();
     if (!selectedMovieId || !selectedShowtime || selectedSeats.length === 0) return;
 
     try {
@@ -208,6 +209,7 @@ export const useBookingStore = create<BookingState>()(
         body: JSON.stringify({
           movieId: selectedMovieId,
           movieTitle: selectedMovieTitle,
+          moviePoster: selectedMoviePoster,
           date: selectedDate,
           showtime: selectedShowtime,
           seats: selectedSeats,

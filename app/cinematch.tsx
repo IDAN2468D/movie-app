@@ -1,11 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   Image,
   Dimensions,
   Animated,
-  PanResponder,
   Pressable,
   ActivityIndicator,
   Modal,
@@ -13,194 +12,27 @@ import {
   TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Colors } from '@/constants/Theme';
-import { usePopular } from '@/hooks/useMovieQueries';
-import { useCineMatchStore } from '@/store/useCineMatchStore';
-import { useWatchlistStore } from '@/store/useWatchlistStore';
-import { type TMDBMovie } from '@/lib/tmdb';
+import { useCineMatchScreen } from '@/hooks/useCineMatchScreen';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH * 0.9;
 const CARD_HEIGHT = SCREEN_HEIGHT * 0.55;
-const SWIPE_THRESHOLD = 0.25 * SCREEN_WIDTH;
 
 export default function CineMatchScreen() {
   const insets = useSafeAreaInsets();
-  const { data: popularMovies = [], isLoading } = usePopular();
-
-  // Zustand stores
   const {
-    likedMovieIds,
-    skippedMovieIds,
-    isGroupMode,
-    roomId,
-    setGroupMode,
-    createRoom,
-    joinRoom,
-    leaveRoom,
-    swipeMovie,
-    resetCineMatch,
-  } = useCineMatchStore();
-
-  const { addToWatchlist } = useWatchlistStore();
-
-  // State
-  const [roomInput, setRoomInput] = useState('');
-  const [errorText, setErrorText] = useState('');
-  const [showMatchModal, setShowMatchModal] = useState(false);
-  const [lastMatchMovie, setLastMatchMovie] = useState<TMDBMovie | null>(null);
-
-  // Constants
-  const participants = 2; // Simulating active group session
-  const inRoom = !!roomId;
-
-  // Filter movies that have not been swiped in this session
-  const remainingMovies = popularMovies.filter(
-    (movie) => !likedMovieIds.includes(movie.id) && !skippedMovieIds.includes(movie.id)
-  );
-
-  // Swipe Animation Values
-  const position = useRef(new Animated.ValueXY()).current;
-  const nextCardOpacity = useRef(new Animated.Value(0.9)).current;
-  const nextCardScale = useRef(new Animated.Value(0.95)).current;
-
-  // PanResponder logic
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onPanResponderMove: (_, gestureState) => {
-        position.setValue({ x: gestureState.dx, y: gestureState.dy });
-        // Dynamic animation values for background card
-        const dragDistance = Math.abs(gestureState.dx);
-        const progress = Math.min(dragDistance / SWIPE_THRESHOLD, 1);
-        nextCardOpacity.setValue(0.9 + progress * 0.1);
-        nextCardScale.setValue(0.95 + progress * 0.05);
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dx > SWIPE_THRESHOLD) {
-          swipeRight();
-        } else if (gestureState.dx < -SWIPE_THRESHOLD) {
-          swipeLeft();
-        } else {
-          resetPosition();
-        }
-      },
-    })
-  ).current;
-
-  const swipeRight = () => {
-    const currentMovie = remainingMovies[0];
-    if (!currentMovie) return;
-
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-    Animated.timing(position, {
-      toValue: { x: SCREEN_WIDTH + 100, y: 0 },
-      duration: 250,
-      useNativeDriver: false,
-    }).start(() => {
-      // Add to watchlist and store
-      addToWatchlist(currentMovie);
-      const { isMatch } = swipeMovie(currentMovie, true);
-      
-      if (isMatch) {
-        setLastMatchMovie(currentMovie);
-        setShowMatchModal(true);
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }
-
-      position.setValue({ x: 0, y: 0 });
-      nextCardOpacity.setValue(0.9);
-      nextCardScale.setValue(0.95);
-    });
-  };
-
-  const swipeLeft = () => {
-    const currentMovie = remainingMovies[0];
-    if (!currentMovie) return;
-
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-    Animated.timing(position, {
-      toValue: { x: -SCREEN_WIDTH - 100, y: 0 },
-      duration: 250,
-      useNativeDriver: false,
-    }).start(() => {
-      swipeMovie(currentMovie, false);
-      position.setValue({ x: 0, y: 0 });
-      nextCardOpacity.setValue(0.9);
-      nextCardScale.setValue(0.95);
-    });
-  };
-
-  const resetPosition = () => {
-    Animated.spring(position, {
-      toValue: { x: 0, y: 0 },
-      friction: 4,
-      useNativeDriver: false,
-    }).start();
-  };
-
-  const getCardStyle = () => {
-    const rotate = position.x.interpolate({
-      inputRange: [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2],
-      outputRange: ['-10deg', '0deg', '10deg'],
-      extrapolate: 'clamp',
-    });
-
-    return {
-      transform: [
-        { translateX: position.x },
-        { translateY: position.y },
-        { rotate },
-      ],
-    };
-  };
-
-  // Overlay text opacity
-  const likeOpacity = position.x.interpolate({
-    inputRange: [0, SWIPE_THRESHOLD],
-    outputRange: [0, 1],
-    extrapolate: 'clamp',
-  });
-
-  const dislikeOpacity = position.x.interpolate({
-    inputRange: [-SWIPE_THRESHOLD, 0],
-    outputRange: [1, 0],
-    extrapolate: 'clamp',
-  });
-
-  // Action room buttons
-  const handleCreateRoom = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    createRoom();
-  };
-
-  const handleJoinRoom = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    if (roomInput.trim().length === 0) {
-      setErrorText('נא להזין קוד חדר תקין');
-      return;
-    }
-    const success = joinRoom(roomInput.trim());
-    if (!success) {
-      setErrorText('חדר לא נמצא, נסה שוב');
-    } else {
-      setErrorText('');
-      setRoomInput('');
-    }
-  };
-
-  const handleResetSession = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    resetCineMatch();
-  };
+    isLoading, remainingMovies, isGroupMode, inRoom, roomId, participants, lastMatchMovie,
+    roomInput, setRoomInput, errorText, showMatchModal,
+    panResponder, nextCardOpacity, nextCardScale, getCardStyle, likeOpacity, dislikeOpacity,
+    swipeRight, swipeLeft, setGroupMode, handleCreateRoom, handleJoinRoom, handleResetSession,
+    handleLeaveRoom, handleCloseMatchModal, handleBookMatch, goBack,
+  } = useCineMatchScreen();
 
   return (
     <View className="flex-1 bg-background">
@@ -218,10 +50,7 @@ export default function CineMatchScreen() {
         className="px-6 pb-4 flex-row items-center justify-between z-10"
       >
         <Pressable
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            router.back();
-          }}
+          onPress={goBack}
           className="w-10 h-10 rounded-full border border-white/10 bg-surfaceLight/40 items-center justify-center"
         >
           <Ionicons name="chevron-back" size={20} color="white" />
@@ -362,10 +191,7 @@ export default function CineMatchScreen() {
               </Text>
             </View>
             <Pressable
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                leaveRoom();
-              }}
+              onPress={handleLeaveRoom}
               className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 z-10"
             >
               <Text className="text-white/60 font-assistant text-[10px]">
@@ -511,7 +337,7 @@ export default function CineMatchScreen() {
               </Pressable>
 
               <Pressable
-                onPress={() => router.back()}
+                onPress={goBack}
                 className="w-full py-4 rounded-2xl bg-primary items-center justify-center"
               >
                 <Text className="text-white font-bold font-assistant text-sm">
@@ -528,7 +354,7 @@ export default function CineMatchScreen() {
         visible={showMatchModal}
         transparent
         animationType="fade"
-        onRequestClose={() => setShowMatchModal(false)}
+        onRequestClose={handleCloseMatchModal}
       >
         <View className="flex-1 bg-black/85 items-center justify-center">
           <View
@@ -576,16 +402,7 @@ export default function CineMatchScreen() {
 
               {/* Book Ticket CTA */}
               <Pressable
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  setShowMatchModal(false);
-                  if (lastMatchMovie) {
-                    router.push({
-                      pathname: '/movie-detail' as any,
-                      params: { id: lastMatchMovie.id },
-                    });
-                  }
-                }}
+                onPress={handleBookMatch}
                 className="w-full rounded-2xl overflow-hidden mb-3"
               >
                 <LinearGradient
@@ -602,10 +419,7 @@ export default function CineMatchScreen() {
 
               {/* Continue Swiping Button */}
               <Pressable
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setShowMatchModal(false);
-                }}
+                onPress={handleCloseMatchModal}
                 className="w-full py-4 rounded-2xl bg-white/10 border border-white/10 items-center justify-center"
               >
                 <Text className="text-white/80 font-bold font-assistant text-sm">

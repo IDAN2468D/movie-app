@@ -3,14 +3,13 @@ import { View, Text, FlatList, StyleSheet, Pressable, Image, Dimensions } from '
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Bookmark, Trash2, Star, Play, Calendar } from 'lucide-react-native';
 import { router } from 'expo-router';
-import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 import Animated, { FadeInRight, Layout } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { Colors, POSTER_SIZES, Typography, Radius } from '@/constants/Theme';
-import { useWatchlistStore } from '@/store/useWatchlistStore';
 import { TMDBMovie } from '@/lib/tmdb';
+import { useWatchlistScreen } from '@/hooks/useWatchlistScreen';
 
 const { width } = Dimensions.get('window');
 const ITEM_HEIGHT = 170;
@@ -19,12 +18,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function WatchlistScreen() {
   const insets = useSafeAreaInsets();
-  const { movies, removeFromWatchlist } = useWatchlistStore();
-
-  const handleRemove = (id: number) => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    removeFromWatchlist(id);
-  };
+  const { movies, handleRemove } = useWatchlistScreen();
 
   const renderItem = ({ item, index }: { item: TMDBMovie; index: number }) => (
     <AnimatedPressable

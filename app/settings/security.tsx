@@ -1,37 +1,25 @@
 import React from 'react';
-import { View, Text, Pressable, ScrollView, Switch, Alert } from 'react-native';
-import { router } from 'expo-router';
+import { View, Text, Pressable, ScrollView, Switch } from 'react-native';
 import { ChevronRight, Shield, Fingerprint, KeyRound, Smartphone } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Typography } from '@/constants/Theme';
-import { useAuthStore } from '@/store/useAuthStore';
 import { ChangePasswordModal, TwoFactorSetupModal } from '@/components/SecurityModals';
+import { useSecurity } from '@/hooks/useSecurity';
 
 export default function SecurityScreen() {
   const insets = useSafeAreaInsets();
-  
-  const { 
-    biometricsEnabled, 
-    setBiometricsEnabled, 
-    twoFactorEnabled, 
-    setTwoFactorEnabled 
-  } = useAuthStore();
-
-  const [passwordModalVisible, setPasswordModalVisible] = React.useState(false);
-  const [twoFactorModalVisible, setTwoFactorModalVisible] = React.useState(false);
-
-  const handleBiometricsToggle = async (value: boolean) => {
-    const success = await setBiometricsEnabled(value);
-    if (!success && value) {
-      Alert.alert('שגיאה', 'לא ניתן להפעיל זיהוי ביומטרי. ודא שהמכשיר תומך ומוגדר כראוי.');
-    }
-  };
+  const {
+    biometricsEnabled, twoFactorEnabled,
+    passwordModalVisible, twoFactorModalVisible,
+    handleBiometricsToggle, handleTwoFactorToggle,
+    openPasswordModal, closePasswordModal, closeTwoFactorModal, goBack,
+  } = useSecurity();
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       {/* Header */}
       <View className="flex-row items-center px-4 py-4 border-b border-white/10 relative">
-        <Pressable onPress={() => router.back()} className="w-10 h-10 rounded-full bg-white/5 justify-center items-center z-10">
+        <Pressable onPress={goBack} className="w-10 h-10 rounded-full bg-white/5 justify-center items-center z-10">
           <ChevronRight size={24} color={Colors.text} />
         </Pressable>
         <View className="absolute inset-0 justify-center items-center">
@@ -78,19 +66,13 @@ export default function SecurityScreen() {
             </View>
             <Switch 
               value={twoFactorEnabled} 
-              onValueChange={(value) => {
-                if (value) {
-                  setTwoFactorModalVisible(true);
-                } else {
-                  setTwoFactorEnabled(false);
-                }
-              }} 
+              onValueChange={handleTwoFactorToggle} 
               trackColor={{ false: '#3f3f46', true: Colors.secondary }} 
             />
           </View>
 
           <Pressable 
-            onPress={() => setPasswordModalVisible(true)}
+            onPress={openPasswordModal}
             className="flex-row items-center justify-between p-5 active:bg-white/10"
           >
             <View className="flex-row items-center flex-1">
@@ -109,12 +91,12 @@ export default function SecurityScreen() {
 
       <ChangePasswordModal 
         isVisible={passwordModalVisible} 
-        onClose={() => setPasswordModalVisible(false)} 
+        onClose={closePasswordModal} 
       />
       
       <TwoFactorSetupModal 
         isVisible={twoFactorModalVisible} 
-        onClose={() => setTwoFactorModalVisible(false)} 
+        onClose={closeTwoFactorModal} 
       />
     </View>
   );

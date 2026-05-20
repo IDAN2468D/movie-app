@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -12,362 +12,27 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
-import { Audio } from 'expo-av';
-import * as Speech from 'expo-speech';
 import Svg, { Path, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
-import Animated, {
-  useSharedValue,
-  useAnimatedProps,
-  withRepeat,
-  withTiming,
-  Easing,
-  interpolateColor,
-  useAnimatedStyle,
-} from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import { Colors } from '@/constants/Theme';
-import { AIService } from '@/services/AIService';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import * as Haptics from 'expo-haptics';
+import { useLounge, MOOD_CAPSULES, SOUNDTRACKS } from '@/hooks/useLounge';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
-// Atmosphere Preset Moods
-interface MoodCapsule {
-  id: string;
-  label: string;
-  emoji: string;
-}
-
-const MOOD_CAPSULES: MoodCapsule[] = [
-  { id: 'sci-fi', label: 'מד״ב עתידני', emoji: '🌌' },
-  { id: 'suspense', label: 'מתח עוצר נשימה', emoji: '⏳' },
-  { id: 'drama', label: 'דרמה מרגשת', emoji: '🎭' },
-  { id: 'fantasy', label: 'פנטזיה אפית', emoji: '⚔️' },
-  { id: 'horror', label: 'אימה בחלל', emoji: '💀' },
-  { id: 'comedy', label: 'קומדיה קורעת', emoji: '😂' },
-  { id: 'romance', label: 'הרפתקה רומנטית', emoji: '💖' },
-];
-
-// Soundtrack Audio Tracks
-interface SoundTrack {
-  id: string;
-  title: string;
-  description: string;
-  url: string;
-}
-
-const SOUNDTRACKS: SoundTrack[] = [
-  {
-    id: 'overture',
-    title: 'פתיח דרמטי (Overture)',
-    description: 'מנגינה תזמורתית עוצמתית המכניסה לאקשן סוחף',
-    url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-  },
-  {
-    id: 'synths',
-    title: 'סינתסייזר חללי (Spatial Synths)',
-    description: 'צלילים אלקטרוניים עמוקים למסע בין כוכבים',
-    url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
-  },
-  {
-    id: 'ambience',
-    title: 'רחש אולם קולנוע (Ambient Room)',
-    description: 'אווירה סביבתית חמימה המדמה ישיבה באולם האפל',
-    url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3',
-  },
-];
-
 export default function LoungeScreen() {
   const insets = useSafeAreaInsets();
+  const {
+    selectedTrack, isPlaying, isSurround, volume,
+    selectedMood, setSelectedMood, customPrompt, setCustomPrompt,
+    narrativeText, isGenerating, isSpeaking,
+    togglePlay, handleTrackChange, handleVolumeAdjust, toggleSurround,
+    generateAtmosphere, speakNarrative, goBack,
+    primaryWaveProps, secondaryWaveProps, voiceWaveProps,
+  } = useLounge();
 
-  // Audio state
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
-  const [selectedTrack, setSelectedTrack] = useState<string>('overture');
-  const [isPlaying, setIsPlaying] = useState<boolean>(false);
-  const [isSurround, setIsSurround] = useState<boolean>(false);
-  const [volume, setVolume] = useState<number>(0.8);
-
-  // AI atmosphere generator state
-  const [selectedMood, setSelectedMood] = useState<string>('sci-fi');
-  const [customPrompt, setCustomPrompt] = useState<string>('');
-  const [narrativeText, setNarrativeText] = useState<string>('ברוכים הבאים לטרקלין הסאונד המרחבי של CineBook. עצמו עיניים והתכוננו לחוויה קולנועית יוצאת דופן...');
-  const [isGenerating, setIsGenerating] = useState<boolean>(false);
-  const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
-
-  // Reanimated Waveform shared values
-  const phase = useSharedValue(0);
-  const musicPlaying = useSharedValue(0); // 0 or 1
-  const aiSpeaking = useSharedValue(0); // 0 or 1
-  const isDucked = useSharedValue(0); // 0 or 1
-
-  // Keep tracks of sound loading to prevent race conditions
-  const loadingTrackRef = useRef<string | null>(null);
-
-  // Start sine wave phase animation
-  useEffect(() => {
-    phase.value = withRepeat(
-      withTiming(2 * Math.PI, { duration: 2500, easing: Easing.linear }),
-      -1,
-      false
-    );
-  }, []);
-
-  // Update animated variables on state changes
-  useEffect(() => {
-    musicPlaying.value = withTiming(isPlaying ? 1 : 0, { duration: 400 });
-  }, [isPlaying]);
-
-  useEffect(() => {
-    aiSpeaking.value = withTiming(isSpeaking ? 1 : 0, { duration: 400 });
-  }, [isSpeaking]);
-
-  // Clean up sound and speech on unmount
-  useEffect(() => {
-    return () => {
-      if (sound) {
-        sound.unloadAsync();
-      }
-      Speech.stop();
-    };
-  }, [sound]);
-
-  // Stop sound if tracking has changed
-  const stopCurrentSound = async () => {
-    if (sound) {
-      try {
-        await sound.stopAsync();
-        await sound.unloadAsync();
-      } catch (err) {
-        console.error("Error stopping sound:", err);
-      }
-      setSound(null);
-      setIsPlaying(false);
-    }
-  };
-
-  // Sound play/pause handler
-  const togglePlay = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-    if (sound) {
-      try {
-        if (isPlaying) {
-          await sound.pauseAsync();
-          setIsPlaying(false);
-        } else {
-          // Keep ducking state synced
-          const currentVolume = isSpeaking ? volume * 0.3 : volume;
-          await sound.setVolumeAsync(currentVolume);
-          await sound.playAsync();
-          setIsPlaying(true);
-        }
-      } catch (err) {
-        console.error("Play/Pause sound error:", err);
-      }
-    } else {
-      await loadAndPlayTrack(selectedTrack);
-    }
-  };
-
-  // Load and play a specific soundtrack
-  const loadAndPlayTrack = async (trackId: string) => {
-    if (loadingTrackRef.current === trackId) return;
-    loadingTrackRef.current = trackId;
-
-    try {
-      await stopCurrentSound();
-
-      const track = SOUNDTRACKS.find(t => t.id === trackId);
-      if (!track) return;
-
-      const { sound: newSound } = await Audio.Sound.createAsync(
-        { uri: track.url },
-        {
-          shouldPlay: true,
-          isLooping: true,
-          volume: isSpeaking ? volume * 0.3 : volume
-        }
-      );
-
-      setSound(newSound);
-      setIsPlaying(true);
-    } catch (err) {
-      console.error("Error loading track:", err);
-    } finally {
-      loadingTrackRef.current = null;
-    }
-  };
-
-  // Track select handler
-  const handleTrackChange = async (trackId: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSelectedTrack(trackId);
-    if (isPlaying || sound) {
-      await loadAndPlayTrack(trackId);
-    }
-  };
-
-  // Volume slider interaction simulation
-  const handleVolumeAdjust = async (direction: 'up' | 'down') => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    let nextVol = volume;
-    if (direction === 'up') {
-      nextVol = Math.min(volume + 0.1, 1.0);
-    } else {
-      nextVol = Math.max(volume - 0.1, 0.0);
-    }
-    setVolume(nextVol);
-    if (sound) {
-      const activeVolume = isSpeaking ? nextVol * 0.3 : nextVol;
-      await sound.setVolumeAsync(activeVolume);
-    }
-  };
-
-  // Surround simulation toggle
-  const toggleSurround = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const nextSurround = !isSurround;
-    setIsSurround(nextSurround);
-
-    if (sound) {
-      try {
-        // Spatial Audio simulation: pan left/right or adjust volumes/rates
-        if (nextSurround) {
-          // Slight stereo separation simulation
-          await sound.setStatusAsync({
-            rate: 1.0,
-            shouldCorrectPitch: true,
-          });
-        } else {
-          await sound.setStatusAsync({
-            rate: 1.0,
-          });
-        }
-      } catch (err) {
-        console.error("Surround effect simulation error:", err);
-      }
-    }
-  };
-
-  // AI Narrative Generator & Voice narration with ducking orchestration
-  const generateAtmosphere = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    setIsGenerating(true);
-
-    // Stop any active narration
-    Speech.stop();
-    setIsSpeaking(false);
-
-    try {
-      const activeMoodObj = MOOD_CAPSULES.find(m => m.id === selectedMood);
-      const moodLabel = activeMoodObj ? activeMoodObj.label : selectedMood;
-
-      const generated = await AIService.generateAtmosphereNarrative(moodLabel, customPrompt);
-      setNarrativeText(generated);
-
-      // Begin Narration automatically
-      speakNarrative(generated);
-    } catch (err) {
-      console.error("AI Generation failed:", err);
-      setNarrativeText("משהו השתבש ביצירת האווירה, אך הטרקלין פתוח והסאונד מוכן!");
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  // Audio narration with custom ducking orchestration
-  const speakNarrative = async (textToSpeak: string) => {
-    // 1. Duck background audio if playing
-    if (sound && isPlaying) {
-      isDucked.value = withTiming(1, { duration: 300 });
-      await sound.setVolumeAsync(volume * 0.25);
-    }
-
-    setIsSpeaking(true);
-
-    // 2. Play the cinematic voice using expo-speech in Hebrew
-    Speech.speak(textToSpeak, {
-      language: 'he-IL',
-      rate: 0.82,  // slow, mysterious cinematic narration rate
-      pitch: 0.88, // slightly deep, premium voice
-      onStart: () => {
-        setIsSpeaking(true);
-      },
-      onDone: () => {
-        setIsSpeaking(false);
-        // 3. Smoothly swell background audio back to normal volume
-        if (sound && isPlaying) {
-          isDucked.value = withTiming(0, { duration: 500 });
-          sound.setVolumeAsync(volume).catch(err => console.error("Error setting volume:", err));
-        }
-      },
-      onStopped: () => {
-        setIsSpeaking(false);
-        if (sound && isPlaying) {
-          isDucked.value = withTiming(0, { duration: 500 });
-          sound.setVolumeAsync(volume).catch(err => console.error("Error setting volume:", err));
-        }
-      },
-      onError: (err) => {
-        console.error("Speech narration error:", err);
-        setIsSpeaking(false);
-        if (sound && isPlaying) {
-          isDucked.value = withTiming(0, { duration: 500 });
-          sound.setVolumeAsync(volume).catch(e => console.error("Error setting volume:", e));
-        }
-      }
-    });
-  };
-
-  // SVG Sine Wave path generation worklets
-  const generateSinePath = (phaseVal: number, amplitude: number, frequency: number, baselineY: number) => {
-    'worklet';
-    const points = [];
-    const step = 5;
-    const pathWidth = 360;
-
-    for (let x = 0; x <= pathWidth; x += step) {
-      const y = baselineY + Math.sin(x * frequency + phaseVal) * amplitude;
-      points.push(`${x},${y}`);
-    }
-    return `M ${points.join(' L ')}`;
-  };
-
-  // Wave 1: Primary Music Pink Wave
-  const primaryWaveProps = useAnimatedProps(() => {
-    const isMusicActive = musicPlaying.value > 0.1;
-    const isDuckActive = isDucked.value > 0.1;
-    let amp = 6;
-    if (isMusicActive) {
-      amp = isDuckActive ? 12 : 28;
-    }
-    // Add surround stereoscopic wave jitter
-    const freq = isSurround ? 0.025 : 0.035;
-    return {
-      d: generateSinePath(phase.value, amp, freq, 80),
-    };
-  });
-
-  // Wave 2: Cyan Ambient background rhythm
-  const secondaryWaveProps = useAnimatedProps(() => {
-    const isMusicActive = musicPlaying.value > 0.1;
-    const amp = isMusicActive ? 18 : 8;
-    const freq = isSurround ? 0.015 : 0.022;
-    return {
-      d: generateSinePath(-phase.value * 1.1 + 1.5, amp, freq, 85),
-    };
-  });
-
-  // Wave 3: Glowing AI Yellow Narration Wave (highly reactive when speaking)
-  const voiceWaveProps = useAnimatedProps(() => {
-    const isSpeakingActive = aiSpeaking.value > 0.1;
-    const amp = isSpeakingActive ? 36 : 2;
-    return {
-      d: generateSinePath(phase.value * 1.4, amp, 0.045, 75),
-    };
-  });
 
   return (
     <View className="flex-1 bg-background" style={{ paddingBottom: insets.bottom }}>
@@ -386,10 +51,7 @@ export default function LoungeScreen() {
       <View className="flex-row-reverse items-center justify-between px-6 pt-4 mb-4" style={{ marginTop: insets.top }}>
         <Pressable
           testID="back-button"
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            router.back();
-          }}
+          onPress={goBack}
           className="w-10 h-10 rounded-full border border-white/10 items-center justify-center bg-black/35"
         >
           <Ionicons name="chevron-back" size={22} color={Colors.white} />

@@ -1,25 +1,19 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
-import { router } from 'expo-router';
 import { ChevronRight, Ticket, Calendar, Clock } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Typography } from '@/constants/Theme';
-import { useBookingStore } from '@/store/useBookingStore';
+import { useHistory } from '@/hooks/useHistory';
 
 export default function HistoryScreen() {
   const insets = useSafeAreaInsets();
-  const { myTickets, fetchMyTickets } = useBookingStore();
-  const [isLoading, setIsLoading] = React.useState(true);
-
-  useEffect(() => {
-    fetchMyTickets().finally(() => setIsLoading(false));
-  }, []);
+  const { tickets: myTickets, isLoading, goBack } = useHistory();
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       {/* Header */}
       <View className="flex-row items-center px-4 py-4 border-b border-white/10 relative">
-        <Pressable onPress={() => router.back()} className="w-10 h-10 rounded-full bg-white/5 justify-center items-center z-10">
+        <Pressable onPress={goBack} className="w-10 h-10 rounded-full bg-white/5 justify-center items-center z-10">
           <ChevronRight size={24} color={Colors.text} />
         </Pressable>
         <View className="absolute inset-0 justify-center items-center">

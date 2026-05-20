@@ -1,22 +1,19 @@
 import React from 'react';
 import { View, Text, Pressable, ScrollView, Switch } from 'react-native';
-import { router } from 'expo-router';
 import { ChevronRight, Bell, Calendar, Tag } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Typography } from '@/constants/Theme';
-import NotificationService from '@/services/NotificationService';
+import { useNotifications } from '@/hooks/useNotifications';
 
 export default function NotificationsScreen() {
   const insets = useSafeAreaInsets();
-  const [reminders, setReminders] = React.useState(true);
-  const [promos, setPromos] = React.useState(false);
-  const [news, setNews] = React.useState(true);
+  const { reminders, promos, news, toggleReminders, togglePromos, toggleNews, goBack } = useNotifications();
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       {/* Header */}
       <View className="flex-row items-center px-4 py-4 border-b border-white/10 relative">
-        <Pressable onPress={() => router.back()} className="w-10 h-10 rounded-full bg-white/5 justify-center items-center z-10">
+        <Pressable onPress={goBack} className="w-10 h-10 rounded-full bg-white/5 justify-center items-center z-10">
           <ChevronRight size={24} color={Colors.text} />
         </Pressable>
         <View className="absolute inset-0 justify-center items-center">
@@ -40,7 +37,7 @@ export default function NotificationsScreen() {
                 <Text style={{ fontFamily: 'Rubik-Regular', fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>קבל התראה לפני שהסרט מתחיל</Text>
               </View>
             </View>
-            <Switch value={reminders} onValueChange={setReminders} trackColor={{ false: '#3f3f46', true: Colors.primary }} />
+            <Switch value={reminders} onValueChange={toggleReminders} trackColor={{ false: '#3f3f46', true: Colors.primary }} />
           </View>
 
           <View className="flex-row items-center justify-between p-5 border-b border-white/5">
@@ -55,12 +52,7 @@ export default function NotificationsScreen() {
             </View>
             <Switch 
               value={promos} 
-              onValueChange={(value) => {
-                setPromos(value);
-                if (value) {
-                  NotificationService.notifyPromoDeals();
-                }
-              }} 
+              onValueChange={togglePromos} 
               trackColor={{ false: '#3f3f46', true: Colors.secondary }} 
             />
           </View>
@@ -75,7 +67,7 @@ export default function NotificationsScreen() {
                 <Text style={{ fontFamily: 'Rubik-Regular', fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>הודעות חשובות על האפליקציה</Text>
               </View>
             </View>
-            <Switch value={news} onValueChange={setNews} trackColor={{ false: '#3f3f46', true: '#3B82F6' }} />
+            <Switch value={news} onValueChange={toggleNews} trackColor={{ false: '#3f3f46', true: '#3B82F6' }} />
           </View>
         </View>
       </ScrollView>

@@ -136,6 +136,7 @@ export const ServerTicketSchema = z.object({
   _id: z.string().optional(),
   movieId: z.number(),
   movieTitle: z.string(),
+  moviePoster: z.string().optional(),
   date: z.string(),
   showtime: ServerShowtimeSchema,
   seats: z.array(ServerSeatSchema),

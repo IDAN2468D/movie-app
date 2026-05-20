@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { View, Text, Pressable, ScrollView, Image } from 'react-native';
 import { router } from 'expo-router';
 import { ChevronRight, Heart, Star } from 'lucide-react-native';
@@ -6,43 +6,19 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { Colors, Typography, POSTER_SIZES } from '@/constants/Theme';
 import { cssInterop } from 'react-native-css-interop';
-import { useAuthStore } from '@/store/useAuthStore';
-import { getMovieDetails, type TMDBMovieDetails } from '@/lib/tmdb';
+import { useFavorites } from '@/hooks/useFavorites';
 
 cssInterop(BlurView, { className: 'style' });
 
 export default function FavoritesScreen() {
   const insets = useSafeAreaInsets();
-  const { user } = useAuthStore();
-  const [movies, setMovies] = useState<TMDBMovieDetails[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadFavorites = async () => {
-      if (!user?.watchlist || user.watchlist.length === 0) {
-        setLoading(false);
-        return;
-      }
-      
-      try {
-        const promises = user.watchlist.map(id => getMovieDetails(id));
-        const results = await Promise.all(promises);
-        setMovies(results.filter(Boolean) as TMDBMovieDetails[]);
-      } catch (error) {
-        console.error('Failed to load favorites', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    loadFavorites();
-  }, [user?.watchlist]);
+  const { movies, isLoading: loading, goBack } = useFavorites();
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       {/* Header */}
       <View className="flex-row items-center px-4 py-4 border-b border-white/10 relative">
-        <Pressable onPress={() => router.back()} className="w-10 h-10 rounded-full bg-white/5 justify-center items-center z-10">
+        <Pressable onPress={goBack} className="w-10 h-10 rounded-full bg-white/5 justify-center items-center z-10">
           <ChevronRight size={24} color={Colors.text} />
         </Pressable>
         <View className="absolute inset-0 justify-center items-center">

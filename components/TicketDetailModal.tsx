@@ -1,12 +1,13 @@
-import React from 'react';
-import { View, Text, Modal, Pressable, ScrollView, Image, Share, Alert } from 'react-native';
-import { X, CreditCard, Share2 } from 'lucide-react-native';
+import React, { useState } from 'react';
+import { View, Text, Modal, Pressable, ScrollView, Image, Share, Alert, ActivityIndicator } from 'react-native';
+import { X, CreditCard, Share2, Cloud } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BookedTicket } from '@/store/useBookingStore';
 import { Colors } from '@/constants/Theme';
 import GyroLiquidTicket from './GyroLiquidTicket';
 import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
+import { GoogleDriveService } from '@/services/GoogleDriveService';
 
 interface TicketDetailModalProps {
   ticket: BookedTicket | null;
@@ -16,6 +17,7 @@ interface TicketDetailModalProps {
 
 export default function TicketDetailModal({ ticket, isVisible, onClose }: TicketDetailModalProps) {
   const insets = useSafeAreaInsets();
+  const [isSavingToDrive, setIsSavingToDrive] = useState(false);
 
   if (!ticket) return null;
 
@@ -48,6 +50,32 @@ export default function TicketDetailModal({ ticket, isVisible, onClose }: Ticket
       );
     } catch (error) {
       console.error('Error adding to wallet:', error);
+    }
+  };
+
+  const handleSaveToDrive = async () => {
+    if (!ticket) return;
+    setIsSavingToDrive(true);
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    try {
+      const result = await GoogleDriveService.uploadTicketToDrive(ticket);
+      if (result.success) {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Alert.alert(
+          'נשמר ב-Google Drive',
+          `הכרטיס לסרט "${ticket.movieTitle}" נשמר בהצלחה בתיקיית הדרייב שלך כקובץ כרטיס יוקרתי!`,
+          [{ text: 'מעולה', style: 'default' }]
+        );
+      } else {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        Alert.alert('שגיאת שמירה', result.message || 'לא ניתן לשמור ב-Google Drive כעת');
+      }
+    } catch (error: any) {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('שגיאה', error.message || 'שגיאת חיבור לשרת');
+    } finally {
+      setIsSavingToDrive(false);
     }
   };
 
@@ -148,6 +176,20 @@ export default function TicketDetailModal({ ticket, isVisible, onClose }: Ticket
                     >
                       <CreditCard color="black" size={20} />
                       <Text className="text-label text-black font-bold font-display uppercase tracking-wider">הוסף לארנק</Text>
+                    </Pressable>
+                    <Pressable 
+                      onPress={handleSaveToDrive}
+                      disabled={isSavingToDrive}
+                      className="flex-row-reverse items-center justify-center bg-white/5 border border-white/10 h-16 rounded-[24px] gap-3 active:bg-white/10"
+                    >
+                      {isSavingToDrive ? (
+                        <ActivityIndicator color="white" />
+                      ) : (
+                        <Cloud color="white" size={20} />
+                      )}
+                      <Text className="text-label text-white font-bold font-display">
+                        {isSavingToDrive ? 'שומר ב-Drive...' : 'שמור ב-Google Drive'}
+                      </Text>
                     </Pressable>
                     <Pressable 
                       onPress={handleShare}

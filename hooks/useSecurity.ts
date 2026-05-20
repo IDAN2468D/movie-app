@@ -1,0 +1,50 @@
+import { useState, useCallback } from 'react';
+import { Alert } from 'react-native';
+import { router } from 'expo-router';
+import { useAuthStore } from '@/store/useAuthStore';
+
+export const useSecurity = () => {
+  const {
+    biometricsEnabled,
+    setBiometricsEnabled,
+    twoFactorEnabled,
+    setTwoFactorEnabled,
+  } = useAuthStore();
+
+  const [passwordModalVisible, setPasswordModalVisible] = useState(false);
+  const [twoFactorModalVisible, setTwoFactorModalVisible] = useState(false);
+
+  const handleBiometricsToggle = useCallback(async (value: boolean) => {
+    const success = await setBiometricsEnabled(value);
+    if (!success && value) {
+      Alert.alert('שגיאה', 'לא ניתן להפעיל זיהוי ביומטרי. ודא שהמכשיר תומך ומוגדר כראוי.');
+    }
+  }, [setBiometricsEnabled]);
+
+  const handleTwoFactorToggle = useCallback((value: boolean) => {
+    if (value) {
+      setTwoFactorModalVisible(true);
+    } else {
+      setTwoFactorEnabled(false);
+    }
+  }, [setTwoFactorEnabled]);
+
+  const openPasswordModal = () => setPasswordModalVisible(true);
+  const closePasswordModal = () => setPasswordModalVisible(false);
+  const closeTwoFactorModal = () => setTwoFactorModalVisible(false);
+
+  const goBack = () => router.back();
+
+  return {
+    biometricsEnabled,
+    twoFactorEnabled,
+    passwordModalVisible,
+    twoFactorModalVisible,
+    handleBiometricsToggle,
+    handleTwoFactorToggle,
+    openPasswordModal,
+    closePasswordModal,
+    closeTwoFactorModal,
+    goBack,
+  };
+};
