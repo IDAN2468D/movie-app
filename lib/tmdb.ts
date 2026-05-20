@@ -4,7 +4,7 @@
  */
 
 import { z } from 'zod';
-import { 
+import {
   MovieResponseSchema,
   MovieDetailsSchema,
   CastResponseSchema,
@@ -15,10 +15,10 @@ import {
   type Video
 } from './apiSchemas';
 
-export { 
-  type Movie, 
-  type MovieDetails, 
-  type Cast, 
+export {
+  type Movie,
+  type MovieDetails,
+  type Cast,
   type Video,
   type Movie as TMDBMovie,
   type MovieDetails as TMDBMovieDetails,
@@ -26,7 +26,7 @@ export {
   type Video as TMDBVideo,
 };
 
-const API_KEY = 'be203612e3b424a9b153ba0e800e17e9'; // Replace with your key or use env
+const API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY || '';
 const BASE_URL = 'https://api.themoviedb.org/3';
 
 export const GENRE_MAP: Record<number, string> = {
@@ -225,8 +225,8 @@ function getMockResponse(endpoint: string, params: Record<string, string>): any 
 }
 
 async function fetchTMDB<T>(
-  endpoint: string, 
-  schema: z.ZodSchema<T>, 
+  endpoint: string,
+  schema: z.ZodSchema<T>,
   params: Record<string, string> = {},
   retries = 2
 ): Promise<T> {
@@ -236,7 +236,7 @@ async function fetchTMDB<T>(
   Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value));
 
   let lastError: any = null;
-  
+
   for (let attempt = 0; attempt <= retries; attempt++) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
@@ -253,23 +253,23 @@ async function fetchTMDB<T>(
       if (!response.ok) {
         throw new Error(`TMDB Error: ${response.status} ${response.statusText}`);
       }
-      
+
       const json = await response.json();
       const result = schema.safeParse(json);
-      
+
       if (!result.success) {
         console.error(`Zod Validation Error for ${endpoint}:`, result.error);
-        return json as T; 
+        return json as T;
       }
-      
+
       return result.data;
     } catch (error: any) {
       clearTimeout(timeoutId);
       lastError = error;
-      
+
       const isAbort = error.name === 'AbortError';
       const errorMsg = isAbort ? 'Request timed out (8s)' : error.message || String(error);
-      
+
       console.warn(
         `TMDB fetch attempt ${attempt + 1}/${retries + 1} failed for ${endpoint}: ${errorMsg}`
       );
@@ -284,7 +284,7 @@ async function fetchTMDB<T>(
   console.warn(
     `[TMDB Client] TMDB API completely unreachable. Falling back to local offline mock database for ${endpoint}`
   );
-  
+
   const mockRes = getMockResponse(endpoint, params);
   if (mockRes) {
     const result = schema.safeParse(mockRes);
@@ -366,4 +366,3 @@ export async function getSimilarMovies(movieId: number): Promise<Movie[]> {
   const data = await fetchTMDB(`/movie/${movieId}/similar`, MovieResponseSchema);
   return data.results;
 }
-
