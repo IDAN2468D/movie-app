@@ -64,7 +64,7 @@ export default function TicketDetailModal({ ticket, isVisible, onClose }: Ticket
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         Alert.alert(
           'נשמר ב-Google Drive',
-          `הכרטיס לסרט "${ticket.movieTitle}" נשמר בהצלחה בתיקיית הדרייב שלך כקובץ כרטיס יוקרתי!`,
+          `הכרטיס לסרט "${ticket.movieTitle}" נשמר בהצלחה בתיקיית הדרייב שלך כקובץ PDF יוקרתי!`,
           [{ text: 'מעולה', style: 'default' }]
         );
       } else {

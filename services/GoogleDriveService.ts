@@ -2,6 +2,8 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { GOOGLE_CONFIG } from '@/constants/Config';
 import type { BookedTicket } from '@/store/useBookingStore';
 import { Colors } from '@/constants/Theme';
+import * as Print from 'expo-print';
+import * as FileSystem from 'expo-file-system';
 
 export class GoogleDriveService {
   /**
@@ -296,49 +298,79 @@ export class GoogleDriveService {
       }
       console.log('[GoogleDriveService] OAuth token acquired successfully.');
 
-      // Build the file metadata and media content
-      const fileName = `CineBook_Ticket_${ticket.movieTitle.replace(/\s+/g, '_')}.html`;
-      const htmlContent = this.generateTicketHTML(ticket);
+      let pdfUri = '';
+      try {
+        // Build the file metadata and media content
+        const fileName = `CineBook_Ticket_${ticket.movieTitle.replace(/\s+/g, '_')}.pdf`;
+        const htmlContent = this.generateTicketHTML(ticket);
 
-      const boundary = 'foo_bar_cinebook_boundary';
-      const metadata = JSON.stringify({
-        name: fileName,
-        mimeType: 'text/html',
-      });
+        console.log('[GoogleDriveService] Generating PDF from HTML design using expo-print...');
+        const pdfFile = await Print.printToFileAsync({ html: htmlContent });
+        pdfUri = pdfFile.uri;
+        console.log('[GoogleDriveService] PDF generated at:', pdfUri);
 
-      // Construct multipart/related body
-      const multipartBody = 
-        `\r\n--${boundary}\r\n` +
-        `Content-Type: application/json; charset=UTF-8\r\n\r\n` +
-        `${metadata}\r\n` +
-        `\r\n--${boundary}\r\n` +
-        `Content-Type: text/html; charset=UTF-8\r\n\r\n` +
-        `${htmlContent}\r\n` +
-        `\r\n--${boundary}--\r\n`;
+        console.log('[GoogleDriveService] Reading PDF as Base64 string...');
+        const base64Pdf = await FileSystem.readAsStringAsync(pdfUri, {
+          encoding: 'base64',
+        });
 
-      console.log('[GoogleDriveService] Uploading file to Google Drive REST API...');
-      const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': `multipart/related; boundary=${boundary}`,
-          'Content-Length': String(multipartBody.length),
-        },
-        body: multipartBody,
-      });
+        const boundary = 'foo_bar_cinebook_boundary';
+        const metadata = JSON.stringify({
+          name: fileName,
+          mimeType: 'application/pdf',
+        });
 
-      const responseText = await response.text();
-      console.log('[GoogleDriveService] Drive API Response Code:', response.status);
-      console.log('[GoogleDriveService] Drive API Response:', responseText);
+        // Construct multipart/related body with Base64 encoded PDF
+        const multipartBody = 
+          `\r\n--${boundary}\r\n` +
+          `Content-Type: application/json; charset=UTF-8\r\n\r\n` +
+          `${metadata}\r\n` +
+          `\r\n--${boundary}\r\n` +
+          `Content-Type: application/pdf\r\n` +
+          `Content-Transfer-Encoding: base64\r\n\r\n` +
+          `${base64Pdf}\r\n` +
+          `\r\n--${boundary}--\r\n`;
 
-      if (response.ok) {
-        return { success: true };
-      } else {
-        const errorData = JSON.parse(responseText);
-        return { 
-          success: false, 
-          message: errorData.error?.message || 'שגיאה בהעלאת הקובץ לגוגל דרייב' 
-        };
+        console.log('[GoogleDriveService] Uploading PDF file to Google Drive REST API...');
+        const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': `multipart/related; boundary=${boundary}`,
+            'Content-Length': String(multipartBody.length),
+          },
+          body: multipartBody,
+        });
+
+        const responseText = await response.text();
+        console.log('[GoogleDriveService] Drive API Response Code:', response.status);
+        console.log('[GoogleDriveService] Drive API Response:', responseText);
+
+        // Delete temporary PDF file proactively
+        try {
+          await FileSystem.deleteAsync(pdfUri, { idempotent: true });
+          console.log('[GoogleDriveService] Cleaned up temporary PDF file.');
+        } catch (cleanupErr) {
+          console.warn('[GoogleDriveService] Failed to delete temporary PDF:', cleanupErr);
+        }
+
+        if (response.ok) {
+          return { success: true };
+        } else {
+          const errorData = JSON.parse(responseText);
+          return { 
+            success: false, 
+            message: errorData.error?.message || 'שגיאה בהעלאת הקובץ לגוגל דרייב' 
+          };
+        }
+      } catch (err) {
+        // Fallback cleanup if error happens before proactive deletion
+        if (pdfUri) {
+          try {
+            await FileSystem.deleteAsync(pdfUri, { idempotent: true });
+          } catch {}
+        }
+        throw err;
       }
     } catch (error: any) {
       console.error('[GoogleDriveService] Critical Error:', error);
