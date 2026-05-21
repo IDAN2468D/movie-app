@@ -104,8 +104,9 @@ export default function TicketsScreen() {
       {/* Floating Scan Button */}
       <Pressable
         onPress={() => setScannerVisible(true)}
-        className="absolute bottom-40 end-6 w-16 h-16 rounded-full bg-primary items-center justify-center shadow-2xl shadow-primary/40 border-4 border-background"
+        className="absolute bottom-40 end-6 w-16 h-16 rounded-full bg-primary items-center justify-center shadow-2xl"
         style={({ pressed }: { pressed: boolean }) => [
+          { shadowColor: Colors.primary, shadowOpacity: 0.4 },
           { transform: [{ scale: pressed ? 0.9 : 1 }] }
         ]}
       >

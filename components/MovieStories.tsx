@@ -17,6 +17,7 @@ import { X } from 'lucide-react-native';
 import { cssInterop } from 'react-native-css-interop';
 import { router } from 'expo-router';
 import { useBookingStore } from '@/store/useBookingStore';
+import { Colors } from '@/constants/Theme';
 
 // Required for NativeWind v4 compatibility with Expo components
 cssInterop(BlurView, { className: 'style' });
@@ -215,7 +216,7 @@ export default function MovieStories({ stories, onClose, initialIndex = 0 }: Mov
 
                   <Pressable 
                     onPress={handleBookNow}
-                    className="mt-6 bg-primary h-14 rounded-2xl items-center justify-center shadow-lg shadow-primary/30"
+                    className="mt-6 bg-primary h-14 rounded-2xl items-center justify-center shadow-lg" style={{ shadowColor: Colors.primary, shadowOpacity: 0.3 }}
                   >
                     <Text className="text-white font-bold text-lg">הזמן כרטיס עכשיו</Text>
                   </Pressable>

@@ -268,7 +268,7 @@ export default function CheckoutScreen() {
         <Pressable 
           onPress={handlePayment}
           disabled={isProcessing}
-          className={`h-16 rounded-2xl overflow-hidden shadow-2xl shadow-primary/30 ${isProcessing ? 'opacity-70' : ''}`}
+          className={`h-16 rounded-2xl overflow-hidden shadow-2xl  ${isProcessing ? 'opacity-70' : ''}`}
         >
           <LinearGradient
             colors={[Colors.primary, '#9B1B30']}
@@ -339,9 +339,9 @@ export default function CheckoutScreen() {
             >
             {/* The Golden Ticket with Floating Animation */}
             <Animated.View 
-              className="shadow-2xl shadow-secondary/60 relative"
+              className="shadow-2xl"
               entering={FadeInDown.delay(600).duration(800)}
-              style={ticketAnimatedStyle}
+              style={[ticketAnimatedStyle, { shadowColor: Colors.secondary, shadowOpacity: 0.6 }]}
             >
               {/* Corner Success Badge on Ticket */}
               <Animated.View 

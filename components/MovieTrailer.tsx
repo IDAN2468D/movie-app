@@ -63,7 +63,7 @@ const MovieTrailer: React.FC<MovieTrailerProps> = ({ movieId, backdropPath, titl
           
           <Pressable 
             onPress={handleOpenTrailer}
-            className="bg-primary flex-row items-center justify-center py-4 rounded-2xl gap-3 shadow-xl shadow-primary/20 active:scale-95 transition-transform"
+            className="bg-primary flex-row items-center justify-center py-4 rounded-2xl gap-3 shadow-xl" style={{ shadowColor: Colors.primary, shadowOpacity: 0.2 }}
           >
             <Play size={20} color="white" fill="white" />
             <Text className="text-white font-bold text-[16px]" style={{ fontFamily: 'Rubik-Bold' }}>צפה בטריילר עכשיו</Text>

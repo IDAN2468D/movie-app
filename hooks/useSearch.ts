@@ -34,18 +34,27 @@ export const useSearch = () => {
   const { data: popularData = [] } = usePopular();
   const popular = useMemo(() => popularData.slice(0, 6), [popularData]);
 
-  const { data: searchResults = [], isLoading: isSearchLoading } = useSearchMovies(query, isAISearch);
+  const shouldDisableTextSearch = isAISearch && !aiFilters.query;
+  const { data: searchResults = [], isLoading: isSearchLoading } = useSearchMovies(query, shouldDisableTextSearch);
   const { data: genreResults = [], isLoading: isGenreLoading } = useMoviesByGenre(activeGenre);
   
   const activeFilters = useMemo(() => {
     const rawFilters = isAISearch ? aiFilters : manualFilters;
     const params: Record<string, string> = {};
 
+    // Map AI's TMDB keys directly
+    Object.keys(rawFilters).forEach(key => {
+      if (key !== 'query' && key !== 'genre' && key !== 'rating' && key !== 'language' && key !== 'runtime' && key !== 'vote_count' && key !== 'certification') {
+        params[key] = rawFilters[key] as string;
+      }
+    });
+
     // Map internal/UI keys to TMDB keys
-    if (rawFilters.genre) params.with_genres = rawFilters.genre;
-    if (rawFilters.rating) params['vote_average.gte'] = rawFilters.rating;
-    if (rawFilters.language) params.with_original_language = rawFilters.language;
-    if (rawFilters.primary_release_year) params.primary_release_year = rawFilters.primary_release_year;
+    if (rawFilters.genre) params.with_genres = rawFilters.genre as string;
+    if (rawFilters.rating) params['vote_average.gte'] = rawFilters.rating as string;
+    if (rawFilters.language) params.with_original_language = rawFilters.language as string;
+    if (rawFilters.primary_release_year) params.primary_release_year = rawFilters.primary_release_year as string;
+    if (rawFilters.sort_by) params.sort_by = rawFilters.sort_by as string;
     if (rawFilters.sort_by) params.sort_by = rawFilters.sort_by;
     
     // Custom mappings for vote count and certification
@@ -73,15 +82,16 @@ export const useSearch = () => {
     return params;
   }, [isAISearch, aiFilters, manualFilters, activeGenre]);
 
-  const shouldDiscover = isAISearch || Object.keys(activeFilters).length > 0;
+  const shouldDiscover = Object.keys(activeFilters).length > 0;
   
   const { data: discoveryResults = [], isLoading: isDiscoveryLoading } = useDiscoverMovies(activeFilters, shouldDiscover);
 
   const results = useMemo(() => {
+    if (isAISearch && aiFilters.query) return searchResults;
     if (shouldDiscover) return discoveryResults;
     if (activeGenre !== null) return genreResults;
     return searchResults;
-  }, [shouldDiscover, discoveryResults, activeGenre, genreResults, searchResults]);
+  }, [shouldDiscover, discoveryResults, activeGenre, genreResults, searchResults, isAISearch, aiFilters]);
 
   const loading = isSearchLoading || isGenreLoading || isDiscoveryLoading || isAiLoading;
 

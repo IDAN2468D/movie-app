@@ -8,6 +8,7 @@ import Animated, {
   withSequence, 
   withTiming 
 } from 'react-native-reanimated';
+import { Colors } from '@/constants/Theme';
 
 interface AIButtonProps {
   onPress: () => void;
@@ -69,8 +70,8 @@ export const AIButton: React.FC<AIButtonProps> = ({ onPress }) => {
           style={animatedRingStyle}
         />
         <View 
-          className="bg-primary w-14 h-14 rounded-full items-center justify-center shadow-2xl shadow-primary/60 border border-white/30"
-          style={{ elevation: 10 }}
+          className="bg-primary w-14 h-14 rounded-full items-center justify-center shadow-2xl" 
+          style={{ elevation: 10, shadowColor: Colors.primary, shadowOpacity: 0.6 }}
         >
           <Sparkles size={24} color="white" />
         </View>

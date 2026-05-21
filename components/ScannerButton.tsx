@@ -10,6 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
+import { Colors } from '@/constants/Theme';
 
 interface ScannerButtonProps {
   style?: ViewStyle;
@@ -78,8 +79,8 @@ export default function ScannerButton({ style }: ScannerButtonProps) {
             style={animatedRingStyle}
           />
           <View 
-            className="bg-primary w-14 h-14 rounded-full items-center justify-center shadow-2xl shadow-primary/60 border border-white/30"
-            style={{ elevation: 10 }}
+            className="bg-primary w-14 h-14 rounded-full items-center justify-center shadow-2xl"
+            style={{ elevation: 10, shadowColor: Colors.primary, shadowOpacity: 0.6 }}
           >
             <Scan size={24} color="white" />
           </View>

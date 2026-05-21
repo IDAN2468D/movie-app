@@ -331,7 +331,7 @@ export default function SnacksScreen() {
                 <Pressable
                   key={cat}
                   onPress={() => setCategory(cat)}
-                  className="rounded-2xl overflow-hidden border border-primary/30 active:scale-95 shadow-sm shadow-primary/20"
+                  className="rounded-2xl overflow-hidden border border-primary/30 active:scale-95 shadow-sm" style={{ shadowColor: Colors.primary, shadowOpacity: 0.2 }}
                 >
                   <LinearGradient
                     colors={[Colors.primary, '#D40054']}
@@ -635,7 +635,7 @@ function SnackCard({
                 <Text className="text-white font-bold text-sm mx-0.5">{quantity}</Text>
                 <Pressable 
                   onPress={onAdd}
-                  className="w-7 h-7 rounded-full bg-primary items-center justify-center active:scale-95 shadow-sm shadow-primary/25"
+                  className="w-7 h-7 rounded-full bg-primary items-center justify-center active:scale-95 shadow-sm" style={{ shadowColor: Colors.primary, shadowOpacity: 0.25 }}
                 >
                   <Plus size={14} color="white" />
                 </Pressable>

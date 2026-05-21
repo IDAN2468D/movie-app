@@ -224,7 +224,8 @@ export default function RegisterScreen() {
                     <TouchableOpacity 
                       onPress={handleRegister}
                       disabled={isLoading}
-                      className="bg-[#DFFF1A] py-5 rounded-2xl flex-row items-center justify-center shadow-lg shadow-[#DFFF1A]/20"
+                      className="bg-[#DFFF1A] py-5 rounded-2xl flex-row items-center justify-center shadow-lg"
+                      style={{ shadowColor: '#DFFF1A', shadowOpacity: 0.2 }}
                     >
                       <Text className="text-black text-xl font-bold ml-2" style={{ fontFamily: 'Rubik-Bold' }}>
                         יצירת חשבון

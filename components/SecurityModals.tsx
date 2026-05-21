@@ -141,7 +141,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isVisi
               <Pressable 
                 onPress={handleSave}
                 disabled={loading}
-                className="bg-primary h-14 rounded-2xl items-center justify-center mt-4 shadow-lg shadow-primary/20"
+                className="bg-primary h-14 rounded-2xl items-center justify-center mt-4 shadow-lg" style={{ shadowColor: Colors.primary, shadowOpacity: 0.2 }}
               >
                 {loading ? (
                   <ActivityIndicator color="white" />
@@ -220,7 +220,7 @@ export const TwoFactorSetupModal: React.FC<TwoFactorSetupModalProps> = ({ isVisi
             <Pressable 
               onPress={handleEnable}
               disabled={loading}
-              className="bg-secondary w-full h-14 rounded-2xl items-center justify-center shadow-lg shadow-secondary/10"
+              className="bg-secondary w-full h-14 rounded-2xl items-center justify-center shadow-lg" style={{ shadowColor: Colors.secondary, shadowOpacity: 0.1 }}
             >
               {loading ? (
                 <ActivityIndicator color="black" />

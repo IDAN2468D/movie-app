@@ -88,7 +88,7 @@ export default function TicketCard({ ticket, onPress }: TicketCardProps) {
                 </View>
               </View>
               
-              <View className="bg-white p-2 rounded-2xl shadow-lg shadow-primary/50 overflow-hidden">
+              <View className="bg-white p-2 rounded-2xl shadow-lg" style={{ shadowColor: Colors.primary, shadowOpacity: 0.5 }}>
                 <Image 
                   source={{ uri: qrUrl }}
                   style={{ width: 48, height: 48 }}

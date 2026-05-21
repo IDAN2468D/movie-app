@@ -85,7 +85,7 @@ export default function WatchlistScreen() {
               <Trash2 size={20} color="#ff4444" />
             </Pressable>
 
-            <View className="bg-primary px-5 py-2.5 rounded-2xl shadow-lg shadow-primary/20">
+            <View className="bg-primary px-5 py-2.5 rounded-2xl shadow-lg" style={{ shadowColor: Colors.primary, shadowOpacity: 0.2 }}>
                <Text className="text-background text-[13px] font-bold" style={{ fontFamily: 'Rubik-Bold' }}>צפה עכשיו</Text>
             </View>
           </View>
@@ -133,7 +133,7 @@ export default function WatchlistScreen() {
             
             <Pressable
               onPress={() => router.push('/(tabs)/search')}
-              className="mt-12 bg-primary px-12 py-4.5 rounded-2xl shadow-2xl shadow-primary/40"
+              className="mt-12 bg-primary px-12 py-4.5 rounded-2xl shadow-2xl" style={{ shadowColor: Colors.primary, shadowOpacity: 0.4 }}
             >
               <Text className="text-background font-bold text-[18px]" style={{ fontFamily: 'Rubik-Bold' }}>גלה סרטים</Text>
             </Pressable>

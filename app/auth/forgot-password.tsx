@@ -109,7 +109,8 @@ export default function ForgotPasswordScreen() {
 
                     <TouchableOpacity 
                       onPress={handleResetPassword}
-                      className="w-full bg-[#E50914] rounded-2xl py-4 items-center flex-row justify-center shadow-lg shadow-red-600/30"
+                      className="w-full bg-[#E50914] rounded-2xl py-4 items-center flex-row justify-center shadow-lg"
+                      style={{ shadowColor: '#E50914', shadowOpacity: 0.3 }}
                     >
                       <Text style={[Typography.h3, { fontFamily: 'Rubik-Bold', marginRight: 8 }]} className="text-white">שליחת קישור</Text>
                       <ChevronLeft size={20} color="white" />

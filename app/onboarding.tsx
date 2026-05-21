@@ -86,7 +86,7 @@ export default function OnboardingScreen() {
           <TouchableOpacity
             testID="onboarding-next-button"
             onPress={handleNext}
-            className="w-16 h-16 rounded-full bg-primary items-center justify-center shadow-lg shadow-primary/30"
+            className="w-16 h-16 rounded-full bg-primary items-center justify-center shadow-lg" style={{ shadowColor: Colors.primary, shadowOpacity: 0.3 }}
           >
             <Ionicons name="arrow-back" size={28} color="white" />
           </TouchableOpacity>

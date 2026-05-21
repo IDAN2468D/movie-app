@@ -486,7 +486,7 @@ const CinematicFeedItem = React.memo(function CinematicFeedItem({ movie, isActiv
               {/* Primary CTA Button: Book Now */}
               <Pressable
                 onPress={handleBookNow}
-                className="flex-1 h-14 rounded-2xl overflow-hidden active:scale-[0.98] shadow-lg shadow-primary/20"
+                className="flex-1 h-14 rounded-2xl overflow-hidden active:scale-[0.98] shadow-lg" style={{ shadowColor: Colors.primary, shadowOpacity: 0.2 }}
               >
                 <LinearGradient
                   colors={[Colors.primary, '#9B1B30']}

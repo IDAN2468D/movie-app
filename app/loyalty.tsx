@@ -62,7 +62,7 @@ export default function LoyaltyScreen() {
             colors={[Colors.primary, '#9B1B30']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            className="rounded-[40px] p-8 shadow-2xl shadow-primary/30"
+            className="rounded-[40px] p-8 shadow-2xl" style={{ shadowColor: Colors.primary, shadowOpacity: 0.3 }}
           >
             <View className="flex-row justify-between items-start mb-6">
               <View className="items-start">
@@ -129,9 +129,8 @@ export default function LoyaltyScreen() {
                 key={reward.id} 
                 entering={FadeInRight.delay(index * 100).duration(500)}
                 layout={Layout.springify()}
-                className="w-[260px] bg-surfaceLight border border-white/5 rounded-[32px] p-6"
-                style={{ transform: [{ scaleX: -1 }] }}
               >
+                <View className="w-[260px] bg-surfaceLight border border-white/5 rounded-[32px] p-6" style={{ transform: [{ scaleX: -1 }] }}>
                 <View 
                   className="w-14 h-14 rounded-2xl items-center justify-center mb-4 self-start"
                   style={{ backgroundColor: `${reward.color}20` }}
@@ -150,6 +149,7 @@ export default function LoyaltyScreen() {
                 >
                   <Text className="text-white font-bold text-[14px]">{reward.points} נקודות</Text>
                 </Pressable>
+                </View>
               </Animated.View>
             ))}
           </ScrollView>
