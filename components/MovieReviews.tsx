@@ -118,18 +118,18 @@ export default function MovieReviews({ movieId, themeColors }: MovieReviewsProps
 
   // Check if current user has already reviewed the movie
   const hasUserReviewed = reviews.some(
-    (review) => review.userId === (user?.id || user?._id)
+    (review) => review.userId === user?.id
   );
 
   return (
     <View className="mt-8 mb-10 w-full" style={{ alignItems: I18nManager.isRTL ? 'flex-end' : 'flex-start' }}>
       {/* Title */}
-      <View className="w-full flex-row items-center justify-between mb-4 px-1" style={{ flexDirection: 'row-reverse' }}>
-        <View className="flex-row items-center gap-3" style={{ flexDirection: 'row-reverse' }}>
+      <View className="w-full flex-row items-center justify-between mb-4 px-1" style={{ flexDirection: 'row' }}>
+        <View className="flex-row items-center gap-3" style={{ flexDirection: 'row' }}>
           <View style={{ backgroundColor: `${themeColors.primary}33` }} className="p-2 rounded-xl">
             <MessageSquare size={20} color={themeColors.primary} />
           </View>
-          <Text className="text-h2 text-white font-display">ביקורות וקהילה</Text>
+          <Text className="text-h2 text-white font-display" style={{ writingDirection: 'ltr', textAlign: 'left' }}>ביקורות וקהילה</Text>
         </View>
         
         {isAuthenticated && !hasUserReviewed && (
@@ -141,7 +141,7 @@ export default function MovieReviews({ movieId, themeColors }: MovieReviewsProps
             className="px-4 py-2 rounded-full overflow-hidden border border-white/10"
             style={{ backgroundColor: showComposer ? 'rgba(255,255,255,0.05)' : `${themeColors.primary}20` }}
           >
-            <View className="flex-row items-center gap-1.5" style={{ flexDirection: 'row-reverse' }}>
+            <View className="flex-row items-center gap-1.5" style={{ flexDirection: 'row' }}>
               {showComposer ? (
                 <ChevronUp size={16} color="white" />
               ) : (
@@ -205,8 +205,8 @@ export default function MovieReviews({ movieId, themeColors }: MovieReviewsProps
               className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white font-body mb-4"
               style={{
                 minHeight: 100,
-                textAlign: 'right',
-                writingDirection: 'rtl',
+                textAlign: 'left',
+                writingDirection: 'ltr',
               }}
             />
 
@@ -348,7 +348,7 @@ export default function MovieReviews({ movieId, themeColors }: MovieReviewsProps
               key={review._id}
               review={review}
               index={index}
-              currentUserId={user?.id || user?._id}
+              currentUserId={user?.id}
               themeColors={themeColors}
               onToggleLike={() => toggleLike(review._id)}
               onDelete={() => {
@@ -477,16 +477,6 @@ function ReviewCard({
               />
             ))}
           </View>
-
-          {isOwnReview && (
-            <Pressable
-              onPress={onDelete}
-              hitSlop={12}
-              className="p-1 rounded-lg bg-primary/10 border border-primary/20 mt-1"
-            >
-              <Trash2 size={12} color={themeColors.primary} />
-            </Pressable>
-          )}
         </View>
       </View>
 
@@ -517,8 +507,8 @@ function ReviewCard({
           <Text
             className="text-body text-white/80 leading-relaxed font-body"
             style={{
-              textAlign: 'right',
-              writingDirection: 'rtl',
+              textAlign: 'left',
+              writingDirection: 'ltr',
             }}
           >
             {review.content}
@@ -532,11 +522,22 @@ function ReviewCard({
         style={{ flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row' }}
       >
         <View 
-          className="flex-row items-center gap-1.5" 
+          className="flex-row items-center gap-2" 
           style={{ flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row' }}
         >
+          {isOwnReview && (
+            <Pressable
+              onPress={onDelete}
+              hitSlop={12}
+              className="px-2 py-1 rounded-md bg-primary/10 border border-primary/20 flex-row items-center gap-1.5"
+              style={{ flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row' }}
+            >
+              <Trash2 size={10} color={themeColors.primary} />
+              <Text style={{ color: themeColors.primary }} className="text-[9px] font-bold font-body">מחק</Text>
+            </Pressable>
+          )}
           {review.isSpoiler && (
-            <View className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 flex-row items-center gap-1" style={{ flexDirection: 'row-reverse' }}>
+            <View className="px-2 py-1 rounded-md bg-white/5 border border-white/10 flex-row items-center gap-1" style={{ flexDirection: 'row-reverse' }}>
               <AlertTriangle size={10} color={themeColors.primary} />
               <Text style={{ color: themeColors.primary }} className="text-[9px] font-bold font-body">ספוילר</Text>
             </View>
