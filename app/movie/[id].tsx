@@ -46,6 +46,7 @@ import { type Showtime } from '@/store/useBookingStore';
 import { useMovieDetails } from '@/hooks/useMovieDetails';
 import MovieTrailer from '@/components/MovieTrailer';
 import { getImageSource, handleImageError } from '@/utils/ImageUtils';
+import MovieReviews from '@/components/MovieReviews';
 
 // Interop external components to support NativeWind className
 cssInterop(LinearGradient, { className: 'style' });
@@ -439,6 +440,9 @@ export default function MovieDetailsScreen() {
               </View>
             </Animated.View>
           ) : null}
+
+          {/* User & Community Reviews */}
+          <MovieReviews movieId={movie.id} themeColors={themeColors} />
 
           {/* Director's Cut - Premium Feature */}
           <Animated.View 
