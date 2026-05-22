@@ -144,7 +144,7 @@ export default function AIConciergeModal({ visible, onClose, onNavigate: parentN
   } = useAIConcierge({ visible, onNavigate: handleNavigate });
 
   return (
-    <Modal visible={visible} animationType="slide" transparent statusBarTranslucent>
+    <Modal visible={visible} animationType="slide" transparent statusBarTranslucent onRequestClose={onClose}>
       <View className="flex-1">
         {/* Cinematic Backdrop */}
         <LinearGradient
@@ -158,9 +158,12 @@ export default function AIConciergeModal({ visible, onClose, onNavigate: parentN
             className="flex-1"
           >
             {/* Header */}
-            <View className="pt-14 pb-4 px-6 border-b border-white/5 bg-black/40">
+            <View 
+              className="pb-4 px-6 border-b border-white/5 bg-black/40"
+              style={{ paddingTop: Math.max(insets.top + 10, 56) }}
+            >
               <View className="flex-row justify-between items-center">
-                <View className="flex-row items-center">
+                <View className="flex-row items-center flex-1 me-3">
                   <View className="me-4">
                     <LinearGradient
                       colors={[Colors.primary, '#9333ea']}
@@ -174,11 +177,11 @@ export default function AIConciergeModal({ visible, onClose, onNavigate: parentN
                       style={[{ position: 'absolute', bottom: -2, end: -2, width: 12, height: 12, borderRadius: 6, backgroundColor: '#22c55e', borderWidth: 2, borderColor: '#000' }, animatedPulseStyle]}
                     />
                   </View>
-                  <View>
-                    <Text className="text-h2 text-white font-display text-start">סייען AI אישי</Text>
+                  <View className="flex-1">
+                    <Text className="text-h2 text-white font-display text-start" numberOfLines={1}>סייען AI אישי</Text>
                     <View className="flex-row items-center">
-                      <View className="w-1.5 h-1.5 rounded-full bg-green-500 me-1.5" />
-                      <Text className="text-caption text-white/50 font-body text-start">
+                      <View className="w-1.5 h-1.5 rounded-full bg-green-500 me-1.5 shrink-0" />
+                      <Text className="text-caption text-white/50 font-body text-start flex-1" numberOfLines={1}>
                         {isExecutingCommand ? '⚡ מבצע פקודה...' : 'פעיל במערכת • תומך פקודות קוליות'}
                       </Text>
                     </View>
