@@ -592,8 +592,14 @@ ${watchlistInfo}
   static async speak(text: string) {
     if (Platform.OS === 'web') return;
     try {
-      Speech.speak(text, {
-        language: 'he',
+      // Strip emojis, markdown, and special characters for better TTS
+      const cleanText = text
+        .replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '')
+        .replace(/[*_#`~]/g, '')
+        .trim();
+
+      Speech.speak(cleanText, {
+        language: 'he-IL',
         pitch: 1.0,
         rate: 1.0,
       });

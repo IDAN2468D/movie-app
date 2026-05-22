@@ -221,8 +221,16 @@ export const useAIConcierge = ({ visible, onNavigate }: UseAIConciergeOptions) =
     Haptics.selectionAsync();
     const nextState = !isTTSEnabled;
     setIsTTSEnabled(nextState);
-    if (!nextState) AIService.stopSpeaking();
-  }, [isTTSEnabled]);
+    if (!nextState) {
+      AIService.stopSpeaking();
+    } else {
+      // Speak the last model message immediately when turned ON
+      const lastModelMsg = [...messages].reverse().find(m => m.role === 'model' && !m.content.startsWith('⚡'));
+      if (lastModelMsg) {
+        AIService.speak(lastModelMsg.content);
+      }
+    }
+  }, [isTTSEnabled, messages]);
 
   const handleVoicePress = useCallback(async () => {
     if (isRecording) {
