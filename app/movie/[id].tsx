@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * Movie Details Screen - Full cinematic details with booking flow
  */

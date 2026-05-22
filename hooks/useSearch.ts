@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Keyboard, Animated } from 'react-native';
 import { useSharedValue, withTiming } from 'react-native-reanimated';

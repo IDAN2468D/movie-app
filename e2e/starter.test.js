@@ -1,3 +1,5 @@
+
+/* global device, element, by, expect, waitFor, describe, beforeAll, it */
 describe('CineBook Smoke Test', () => {
   beforeAll(async () => {
     await device.launchApp({ newInstance: true });

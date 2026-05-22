@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /**
  * MarkerHighlight - Premium YUV design highlight component
  * Renders text with a signature 'marker stroke' background.

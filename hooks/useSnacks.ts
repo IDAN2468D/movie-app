@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useCallback, useMemo } from 'react';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';

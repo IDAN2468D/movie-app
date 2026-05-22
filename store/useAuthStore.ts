@@ -24,7 +24,7 @@ interface User {
   watchlist: number[];
   paymentMethods: IPaymentMethod[];
   loyaltyPoints?: number;
-  loyaltyActivity?: Array<{ action: string; points: string; date: string }>;
+  loyaltyActivity?: { action: string; points: string; date: string }[];
   loyaltyTrophies?: string[];
 }
 

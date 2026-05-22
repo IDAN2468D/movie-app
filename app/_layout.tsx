@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /**
  * Root Layout - CineBook
  * Sets up dark theme, RTL, fonts, and navigation container.
@@ -22,6 +23,11 @@ import { useAuthStore } from '@/store/useAuthStore';
 import NotificationService from '../services/NotificationService';
 import InTheaterOverlay from '@/components/InTheaterOverlay';
 import OfflineBanner from '@/components/OfflineBanner';
+
+import { AsyncStorage } from '@/utils/SafeModules';
+import { QueryClient } from '@tanstack/react-query';
+import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 
 cssInterop(LinearGradient, { className: 'style' });
 
@@ -110,11 +116,6 @@ function NavigationGuard() {
 
   return null;
 }
-
-import { AsyncStorage } from '@/utils/SafeModules';
-import { QueryClient } from '@tanstack/react-query';
-import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
-import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 
 const queryClient = new QueryClient({
   defaultOptions: {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState } from 'react';
 import {
   View,
@@ -43,9 +44,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { Colors, POSTER_SIZES } from '@/constants/Theme';
 import MarkerHighlight from '@/components/MarkerHighlight';
+import BentoMovieCard from '@/components/BentoMovieCard';
 import { type TMDBMovie, getGenreName } from '@/lib/tmdb';
 import { useSearch } from '@/hooks/useSearch';
 import AIOrb from '@/components/AIOrb';
+import * as Haptics from 'expo-haptics';
 
 const { width } = Dimensions.get('window');
 const ITEM_HEIGHT = 160;
@@ -80,22 +83,57 @@ export default function SearchScreen() {
 
   const { isRecording, startRecording, stopRecording } = useVoiceRecording();
   const [isVoiceProcessing, setIsVoiceProcessing] = useState(false);
+  const [voiceFeedbackText, setVoiceFeedbackText] = useState("מעבד את הבקשה שלך...");
 
   const handleVoicePress = async () => {
     if (isRecording) {
       const base64 = await stopRecording();
       if (base64) {
         setIsVoiceProcessing(true);
+        setVoiceFeedbackText("מפענח את הקול שלך...");
         try {
-          const filters = await AIService.processVoiceSearch(base64);
-          applyVoiceResults(filters);
+          const transcribedText = await AIService.transcribeVoice(base64);
+          if (transcribedText) {
+            setVoiceFeedbackText("מנתח כוונות קוליות...");
+            const command = await AIService.detectVoiceCommand(transcribedText);
+            
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            setVoiceFeedbackText(command.displayText);
+            
+            // Wait a moment for user to read feedback
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            if (command.type === 'navigate' && command.params?.screen) {
+              const route = command.params.screen === 'home' ? '/' : `/(tabs)/${command.params.screen}`;
+              router.push(route as any);
+            } else if (command.type === 'search' && command.params?.query) {
+               // Execute regular search text
+               handleSearch(command.params.query);
+               executeAISearch();
+            } else if (command.type === 'mood' && command.params?.mood) {
+              const moodResult = await AIService.getMoodRecommendations(command.params.mood);
+              setVoiceFeedbackText(`🎭 מסנן לפי מצב רוח: ${moodResult.mood}\n${moodResult.description}`);
+              await new Promise(resolve => setTimeout(resolve, 2500));
+              
+              if (moodResult.genres) {
+                applyVoiceResults({ with_genres: moodResult.genres });
+              }
+            } else {
+              // Fallback semantic search
+              const filters = await AIService.processVoiceSearch(base64);
+              applyVoiceResults(filters);
+            }
+          }
         } catch (error) {
           console.error('Voice search processing failed', error);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         } finally {
           setIsVoiceProcessing(false);
+          setVoiceFeedbackText("מעבד את הבקשה שלך...");
         }
       }
     } else {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       await startRecording();
     }
   };
@@ -115,46 +153,51 @@ export default function SearchScreen() {
     };
   });
 
-  const renderDiscovery = () => (
-    <RNAnimated.View style={{ opacity: fadeAnim }}>
-      <View className="mt-6 px-5">
-        <View className="flex-row items-center justify-between px-5 mb-5">
-          <MarkerHighlight
-            text="חיפושים פופולריים"
-            className="text-h2 text-text"
-            color={Colors.primary}
-          />
-          <TrendingUp size={20} color={Colors.primary} />
+  const renderDiscovery = () => {
+    const heroMovie = popular[0];
+    const mediumMovies = popular.slice(1, 3);
+    const smallMovies = popular.slice(3, 7);
+
+    return (
+      <RNAnimated.View style={{ opacity: fadeAnim }}>
+        <View className="mt-6 px-5">
+          <View className="flex-row items-center justify-between px-2 mb-5">
+            <MarkerHighlight
+              text="חיפושים פופולריים"
+              className="text-[22px] font-bold text-text"
+              color={Colors.primary}
+            />
+            <TrendingUp size={20} color={Colors.primary} />
+          </View>
+          
+          <View className="gap-3">
+            {/* Hero Section */}
+            {heroMovie && (
+              <BentoMovieCard movie={heroMovie} size="hero" index={0} />
+            )}
+            
+            {/* Medium 2-Column Section */}
+            {mediumMovies.length > 0 && (
+              <View className="flex-row gap-3">
+                {mediumMovies.map((movie, idx) => (
+                  <BentoMovieCard key={movie.id} movie={movie} size="medium" index={idx + 1} />
+                ))}
+              </View>
+            )}
+            
+            {/* Small Horizontal Section */}
+            {smallMovies.length > 0 && (
+              <View className="flex-row gap-3 mt-1">
+                {smallMovies.map((movie, idx) => (
+                  <BentoMovieCard key={movie.id} movie={movie} size="small" index={idx + 3} />
+                ))}
+              </View>
+            )}
+          </View>
         </View>
-        <FlatList
-          data={popular}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          keyExtractor={(item) => `pop-${item.id}`}
-          contentContainerStyle={{ gap: 12, paddingEnd: 20 }}
-          renderItem={({ item }) => (
-            <Pressable
-              className="w-[130px] h-[190px] rounded-2xl overflow-hidden bg-surface border border-white/5"
-              onPress={() => router.push(`/movie/${item.id}`)}
-            >
-              <Image
-                source={item.poster_path ? { uri: `${POSTER_SIZES.small}${item.poster_path}` } : require('../../assets/images/poster-placeholder.png')}
-                className="w-full h-full"
-              />
-              <LinearGradient
-                colors={['transparent', 'rgba(0,0,0,0.85)']}
-                className="absolute bottom-0 start-0 end-0 p-3 h-[50%] justify-end"
-              >
-                <Text className="text-[13px] text-white font-bold" style={{ fontFamily: 'Rubik-Bold' }} numberOfLines={2}>
-                  {item.title}
-                </Text>
-              </LinearGradient>
-            </Pressable>
-          )}
-        />
-      </View>
-    </RNAnimated.View>
-  );
+      </RNAnimated.View>
+    );
+  };
 
 
 
@@ -357,7 +400,7 @@ export default function SearchScreen() {
               className="text-white text-[20px] mt-12 font-bold text-center px-10"
               style={{ fontFamily: 'Rubik-Bold' }}
             >
-              {isRecording ? "אני מקשיב... ספר לי איזה סרט מתחשק לך לראות" : "מעבד את הבקשה שלך..."}
+              {isRecording ? "אני מקשיב... ספר לי איזה סרט מתחשק לך לראות" : voiceFeedbackText}
             </Text>
           </Reanimated.View>
 

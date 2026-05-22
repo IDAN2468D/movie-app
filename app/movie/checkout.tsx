@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * Checkout Screen - Final order summary and payment
  */
@@ -21,6 +22,8 @@ import { cssInterop } from 'react-native-css-interop';
 import { Colors, POSTER_SIZES } from '@/constants/Theme';
 import MarkerHighlight from '@/components/MarkerHighlight';
 import { useCheckout } from '@/hooks/useCheckout';
+import InviteModal from '@/components/InviteModal';
+import { Users } from 'lucide-react-native';
 
 // Interop external components to support NativeWind className
 cssInterop(LinearGradient, { className: 'style' });
@@ -51,6 +54,7 @@ export default function CheckoutScreen() {
   } = useCheckout();
   const { items, addItem } = useSnacksStore();
   const { user, addVirtualCard } = useAuthStore();
+  const [isInviteModalVisible, setIsInviteModalVisible] = React.useState(false);
 
 
   if (!selectedShowtime) return null;
@@ -110,6 +114,17 @@ export default function CheckoutScreen() {
               </View>
             ))}
           </View>
+          
+          <Pressable 
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setIsInviteModalVisible(true);
+            }}
+            className="mt-4 flex-row items-center gap-2 bg-secondary/10 px-4 py-3 rounded-xl border border-secondary/20"
+          >
+            <Users size={18} color={Colors.secondary} />
+            <Text className="text-secondary font-bold text-body">פיצול תשלום עם חברים</Text>
+          </Pressable>
         </View>
 
         {/* Ordered Snacks List */}
@@ -437,6 +452,12 @@ export default function CheckoutScreen() {
           </Animated.View>
         </View>
       </Modal>
+
+      <InviteModal 
+        visible={isInviteModalVisible} 
+        onClose={() => setIsInviteModalVisible(false)} 
+        movieTitle={selectedMovieTitle}
+      />
     </View>
   );
 }

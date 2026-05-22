@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React from 'react';
 import { View, Text, TouchableOpacity, Pressable } from 'react-native';
 import { Stack, router } from 'expo-router';

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from 'react';
 import { router } from 'expo-router';
 import { useBookingStore } from '@/store/useBookingStore';

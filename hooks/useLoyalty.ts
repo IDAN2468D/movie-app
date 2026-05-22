@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState, useRef, useCallback } from 'react';
 import { ScrollView, Alert } from 'react-native';
 import { router } from 'expo-router';

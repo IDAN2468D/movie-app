@@ -4,9 +4,9 @@ import * as CameraModule from 'expo-camera';
 import { X, Zap, ZapOff, ScanLine } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import Animated, { FadeIn, FadeOut, withRepeat, withSequence, withTiming, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import Animated, { FadeIn, withRepeat, withSequence, withTiming, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 
-import { Colors, Radius, Typography } from '@/constants/Theme';
+import { Colors } from '@/constants/Theme';
 
 interface TicketScannerModalProps {
   isVisible: boolean;
@@ -14,7 +14,7 @@ interface TicketScannerModalProps {
   onScan: (data: string) => void;
 }
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 const SCAN_AREA_SIZE = width * 0.7;
 
 export default function TicketScannerModal({ isVisible, onClose, onScan }: TicketScannerModalProps) {
@@ -37,7 +37,7 @@ export default function TicketScannerModal({ isVisible, onClose, onScan }: Ticke
         false
       );
     }
-  }, [isVisible]);
+  }, [isVisible, scanLinePos]);
 
   const animatedLineStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: scanLinePos.value }],

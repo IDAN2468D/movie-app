@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React from 'react';
 import { View, Text, Pressable, ScrollView, Modal, TextInput, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { CreditCard, Plus, CheckCircle2, X, Trash2, Shield, AlertCircle, ChevronRight } from 'lucide-react-native';

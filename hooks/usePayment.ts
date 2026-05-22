@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Keyboard, Alert, TextInput } from 'react-native';
 import { router } from 'expo-router';

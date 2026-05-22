@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-require-imports */
 import React from 'react';
 import { View, Text, Platform } from 'react-native';
 

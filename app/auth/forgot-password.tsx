@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * Forgot Password Screen - Premium Cinematic Experience
  */

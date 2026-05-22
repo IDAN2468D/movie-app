@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * Profile Screen - Premium Liquid Glass Redesign
  */

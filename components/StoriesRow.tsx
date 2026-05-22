@@ -37,7 +37,7 @@ function StoryCircle({ story, onPress }: { story: StoryItem, onPress: () => void
       <Text 
         numberOfLines={1} 
         className="text-white text-[10px] w-16 text-center font-medium"
-        style={{ writingDirection: 'rtl' }}
+        style={{ writingDirection: 'ltr' }}
       >
         {story.title}
       </Text>

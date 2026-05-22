@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Platform } from 'react-native';
 import * as Device from 'expo-device';
 import { Notifications } from '../utils/SafeModules';

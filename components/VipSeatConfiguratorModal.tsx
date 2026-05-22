@@ -20,10 +20,6 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withTiming,
-  withSequence,
-  withRepeat,
-  interpolateColor,
-  useDerivedValue,
   Easing,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -49,9 +45,6 @@ import { Seat } from '@/store/useBookingStore';
 const { width: SW } = Dimensions.get('window');
 
 // ─── Animated SVG Chair ──────────────────────────────────────────────────────
-
-const AnimatedPath = Animated.createAnimatedComponent(Path as any);
-const AnimatedG = Animated.createAnimatedComponent(G as any);
 
 function SeatSvgIllustration({
   recline,

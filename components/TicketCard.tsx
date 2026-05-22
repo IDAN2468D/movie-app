@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { View, Text, Pressable, Alert, ActivityIndicator, Image } from 'react-native';
 import { useState } from 'react';
 import { API_BASE_URL } from '@/constants/Config';
@@ -9,6 +10,9 @@ import type { BookedTicket } from '@/store/useBookingStore';
 import { Colors } from '@/constants/Theme';
 import { addBookingToCalendar } from '@/lib/calendar';
 import { useAuthStore } from '@/store/useAuthStore';
+import DigitalRewardsModal from './DigitalRewardsModal';
+import { useRouter } from 'expo-router';
+import { MessageCircle, Gift } from 'lucide-react-native';
 
 interface TicketCardProps {
   ticket: BookedTicket;
@@ -18,7 +22,9 @@ interface TicketCardProps {
 export default function TicketCard({ ticket, onPress }: TicketCardProps) {
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [rewardsModalVisible, setRewardsModalVisible] = useState(false);
   const { token } = useAuthStore();
+  const router = useRouter();
 
   const handleAddToCalendar = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -158,12 +164,38 @@ export default function TicketCard({ ticket, onPress }: TicketCardProps) {
               </View>
             </View>
             
-            <View className="bg-primary/10 py-4 rounded-2xl items-center border border-primary/20">
-              <Text className="text-label text-primary font-bold font-body">לחץ להצגת הכרטיס המלא</Text>
+            <View className="flex-row gap-3 mt-4">
+              <Pressable 
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  setRewardsModalVisible(true);
+                }}
+                className="flex-1 bg-secondary/20 py-3 rounded-2xl items-center flex-row justify-center gap-2 border border-secondary/30"
+              >
+                <Gift size={16} color={Colors.secondary} />
+                <Text className="text-[12px] text-secondary font-bold font-body">פתח הפתעות סיום</Text>
+              </Pressable>
+              
+              <Pressable 
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  router.push({ pathname: '/movie/spoiler-lounge' as any, params: { title: ticket.movieTitle } });
+                }}
+                className="flex-1 bg-primary/20 py-3 rounded-2xl items-center flex-row justify-center gap-2 border border-primary/30"
+              >
+                <MessageCircle size={16} color={Colors.primary} />
+                <Text className="text-[12px] text-primary font-bold font-body">לאונג' ספוילרים</Text>
+              </Pressable>
             </View>
           </View>
         </View>
       </BlurView>
+
+      <DigitalRewardsModal 
+        visible={rewardsModalVisible} 
+        onClose={() => setRewardsModalVisible(false)} 
+        movieTitle={ticket.movieTitle || 'סרט'}
+      />
     </Pressable>
   );
 }

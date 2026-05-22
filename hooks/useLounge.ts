@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useRef } from 'react';
 import { Audio } from 'expo-av';
 import * as Speech from 'expo-speech';

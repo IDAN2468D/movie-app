@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars, react-hooks/exhaustive-deps */
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';

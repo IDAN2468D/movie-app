@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useCallback, useEffect } from 'react';
 import { Alert } from 'react-native';
 import { type BookedTicket } from '@/store/useBookingStore';

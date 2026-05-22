@@ -197,17 +197,17 @@ export default function MovieStories({ stories, onClose, initialIndex = 0 }: Mov
               <BlurView intensity={30} tint="dark" className="rounded-3xl overflow-hidden border border-white/10">
                 <View className="p-6">
                   <Text 
-                    className="text-white text-3xl font-display mb-2 text-right"
-                    style={{ writingDirection: 'rtl' }}
+                    className="text-white text-3xl font-display mb-2 text-left"
+                    style={{ writingDirection: 'ltr' }}
                   >
                     {currentStory.title}
                   </Text>
                   
                   <Text 
-                    className="text-textSecondary text-base leading-6 text-right"
+                    className="text-textSecondary text-base leading-6 text-left"
                     style={{ 
-                      writingDirection: 'rtl',
-                      textAlign: currentStory.overview.match(/[a-z]/i) ? 'left' : 'right' 
+                      writingDirection: 'ltr',
+                      textAlign: 'left' 
                     }}
                     numberOfLines={4}
                   >
