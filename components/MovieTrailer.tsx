@@ -6,6 +6,7 @@ import { Colors } from '@/constants/Theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { getImageSource, handleImageError } from '../utils/ImageUtils';
+import Trailer4DPlayerModal from './Trailer4DPlayerModal';
 
 interface MovieTrailerProps {
   movieId: number;
@@ -17,6 +18,7 @@ const MovieTrailer: React.FC<MovieTrailerProps> = ({ movieId, backdropPath, titl
   const [video, setVideo] = useState<TMDBVideo | null>(null);
   const [loading, setLoading] = useState(true);
   const [imageSource, setImageSource] = useState(getImageSource(backdropPath, 'backdrop', 'medium'));
+  const [isModalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
     getMovieVideos(movieId).then(videos => {
@@ -34,7 +36,7 @@ const MovieTrailer: React.FC<MovieTrailerProps> = ({ movieId, backdropPath, titl
 
   const handleOpenTrailer = () => {
     if (video) {
-      Linking.openURL(`https://www.youtube.com/watch?v=${video.key}`);
+      setModalVisible(true);
     }
   };
 
@@ -66,10 +68,19 @@ const MovieTrailer: React.FC<MovieTrailerProps> = ({ movieId, backdropPath, titl
             className="bg-primary flex-row items-center justify-center py-4 rounded-2xl gap-3 shadow-xl" style={{ shadowColor: Colors.primary, shadowOpacity: 0.2 }}
           >
             <Play size={20} color="white" fill="white" />
-            <Text className="text-white font-bold text-[16px]" style={{ fontFamily: 'Rubik-Bold' }}>צפה בטריילר עכשיו</Text>
+            <Text className="text-white font-bold text-[16px]" style={{ fontFamily: 'Rubik-Bold' }}>צפה בטריילר עכשיו (4D)</Text>
           </Pressable>
         </View>
       </View>
+
+      {video && (
+        <Trailer4DPlayerModal 
+          isVisible={isModalVisible}
+          onClose={() => setModalVisible(false)}
+          videoKey={video.key}
+          title={title}
+        />
+      )}
     </Animated.View>
   );
 };
