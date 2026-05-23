@@ -119,8 +119,8 @@ export const useSearch = () => {
     }
   }, []);
 
-  const executeAISearch = async (overrideQuery?: string) => {
-    const searchQuery = overrideQuery || query;
+  const executeAISearch = async (overrideQuery?: string | any) => {
+    const searchQuery = typeof overrideQuery === 'string' ? overrideQuery : query;
     if (searchQuery.length < 2) return;
     
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
