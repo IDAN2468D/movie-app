@@ -111,6 +111,12 @@ export const useCheckout = () => {
     const auth = await authenticateBiometrics('אשר את התשלום עבור הכרטיסים');
     
     if (auth) {
+      const { submitOrder } = useSnacksStore.getState();
+      
+      if (Object.keys(cart).length > 0) {
+        await submitOrder();
+      }
+
       const snacksPayload = snacksInCart.map(item => ({
         id: item.id!,
         name: item.name!,

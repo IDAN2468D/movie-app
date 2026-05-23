@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TextInput, ScrollView, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Send, Clock, AlertTriangle, ChevronRight } from 'lucide-react-native';
@@ -9,20 +9,59 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import { io, Socket } from 'socket.io-client';
+import { useAuthStore } from '@/store/useAuthStore';
+
+const SERVER_URL = 'https://movie-app-server-olet.onrender.com';
+
+interface Message {
+  id: string;
+  user: string;
+  text: string;
+  isSystem: boolean;
+}
 
 export default function SpoilerLoungeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { title = "הסרט" } = useLocalSearchParams();
   const scrollViewRef = useRef<ScrollView>(null);
+  const { user } = useAuthStore();
   
-  const [messages, setMessages] = useState([
-    { id: '1', user: 'מערכת', text: `ברוכים הבאים ללאונג' הספוילרים של ${title}!\nהחדר יהיה פתוח לשעתיים הקרובות.`, isSystem: true },
-    { id: '2', user: 'יעל', text: 'וואו איזה סוף מטורף! לא ציפיתי לזה בכלל 😱', isSystem: false },
-    { id: '3', user: 'דניאל', text: 'מישהו הבין מה קרה בסצנה שאחרי הקרדיטים?', isSystem: false }
+  const [messages, setMessages] = useState<Message[]>([
+    { id: '1', user: 'מערכת', text: `ברוכים הבאים ללאונג' הספוילרים של ${title}!\nהחדר יהיה פתוח לשעתיים הקרובות. (מתחבר לשרת...)`, isSystem: true }
   ]);
   const [inputText, setInputText] = useState('');
   const [timeLeft, setTimeLeft] = useState('01:59:45');
+  
+  const socketRef = useRef<Socket | null>(null);
+
+  useEffect(() => {
+    socketRef.current = io(SERVER_URL);
+
+    socketRef.current.on('connect', () => {
+      console.log('Connected to chat server');
+      socketRef.current?.emit('join_room', { room: title });
+    });
+
+    socketRef.current.on('chat_history', (history: Message[]) => {
+      if (history && history.length > 0) {
+        setMessages(history);
+      }
+      setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 200);
+    });
+
+    socketRef.current.on('receive_message', (message: Message) => {
+      setMessages(prev => [...prev, message]);
+      setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
+    });
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+    };
+  }, [title]);
 
   const hasText = inputText.trim().length > 0;
   const sendIconStyle = useAnimatedStyle(() => {
@@ -39,12 +78,22 @@ export default function SpoilerLoungeScreen() {
   const sendMessage = () => {
     if (!inputText.trim()) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setMessages(prev => [...prev, {
+    
+    const newMsg = {
       id: Date.now().toString(),
-      user: 'אני',
+      user: user?.name || 'אורח',
       text: inputText.trim(),
-      isSystem: false
-    }]);
+      isSystem: false,
+      room: title,
+      timestamp: Date.now()
+    };
+
+    if (socketRef.current) {
+      socketRef.current.emit('send_message', newMsg);
+    }
+    
+    // Optimistic UI update
+    setMessages(prev => [...prev, newMsg]);
     setInputText('');
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
@@ -117,7 +166,7 @@ export default function SpoilerLoungeScreen() {
           onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
         >
           {messages.map((msg, idx) => {
-            const isMe = msg.user === 'אני';
+            const isMe = msg.user === (user?.name || 'אורח');
             
             if (msg.isSystem) {
               return (

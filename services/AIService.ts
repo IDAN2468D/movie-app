@@ -343,6 +343,19 @@ ${watchlistInfo}
    * Translates a natural language query into TMDB filters using AI
    */
   static async getSemanticFilters(query: string): Promise<Record<string, string>> {
+    try {
+      const response = await fetch(`https://movie-app-server-olet.onrender.com/api/voice/semantic`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query })
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (error) {
+      console.error("AIService Error (Semantic Search API):", error);
+    }
+    // Fallback if backend fails
     const model = this.getModel("אתה עוזר למשתמשים למצוא סרטים. המשימה שלך היא לתרגם שאילתת חיפוש חופשית לאובייקט פילטרים עבור TMDB API.");
     if (!model) return this.translateQueryToFiltersLegacy(query);
 
@@ -359,15 +372,28 @@ ${watchlistInfo}
         return JSON.parse(jsonStr);
       });
     } catch (error) {
-      console.error("AIService Error (Semantic Search):", error);
+      console.error("AIService Error (Semantic Search Fallback):", error);
       return this.translateQueryToFiltersLegacy(query);
     }
   }
 
   /**
-   * Processes audio recording (base64) and extracts semantic filters using Gemini
+   * Processes audio recording (base64) and extracts semantic filters using backend or Gemini
    */
   static async processVoiceSearch(audioBase64: string): Promise<Record<string, string>> {
+    try {
+      const response = await fetch(`https://movie-app-server-olet.onrender.com/api/voice/process`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ audioBase64 })
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (error) {
+      console.error("AIService Error (Voice Process API):", error);
+    }
+
     const model = this.getModel("אתה סוכן חיפוש קולי חכם. המשימה שלך היא להקשיב לקובץ השמע, להבין מה המשתמש מחפש ולתרגם זאת לפילטרים של TMDB.");
     if (!model) return {};
 
@@ -392,7 +418,7 @@ ${watchlistInfo}
         return JSON.parse(jsonStr);
       });
     } catch (error) {
-      console.error("AIService Error (Voice Search):", error);
+      console.error("AIService Error (Voice Search Fallback):", error);
       return {};
     }
   }

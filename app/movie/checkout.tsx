@@ -353,51 +353,52 @@ export default function CheckoutScreen() {
               className="items-center z-10 overflow-visible"
             >
             {/* The Golden Ticket with Floating Animation */}
-            <Animated.View 
-              className="shadow-2xl"
-              entering={FadeInDown.delay(600).duration(800)}
-              style={[ticketAnimatedStyle, { shadowColor: Colors.secondary, shadowOpacity: 0.6 }]}
-            >
-              {/* Corner Success Badge on Ticket */}
+            <Animated.View entering={FadeInDown.delay(600).duration(800)}>
               <Animated.View 
-                entering={ZoomIn.delay(1200)}
-                className="absolute -top-4 -right-4 w-12 h-12 bg-secondary rounded-full items-center justify-center z-30 shadow-lg border-4 border-black"
+                className="shadow-2xl"
+                style={[ticketAnimatedStyle, { shadowColor: Colors.secondary, shadowOpacity: 0.6 }]}
               >
-                <CheckCircle2 size={24} color={Colors.background} />
-              </Animated.View>
+                {/* Corner Success Badge on Ticket */}
+                <Animated.View 
+                  entering={ZoomIn.delay(1200)}
+                  className="absolute -top-4 -right-4 w-12 h-12 bg-secondary rounded-full items-center justify-center z-30 shadow-lg border-4 border-black"
+                >
+                  <CheckCircle2 size={24} color={Colors.background} />
+                </Animated.View>
 
-              {/* Sparkles on Ticket Corners */}
-              <Animated.View 
-                entering={FadeIn.delay(1400)}
-                className="absolute -top-8 -left-8 z-20"
-              >
-                <Sparkles size={40} color={Colors.secondary} />
-              </Animated.View>
-              <Animated.View 
-                entering={FadeIn.delay(1600)}
-                className="absolute -bottom-6 -right-6 z-20"
-              >
-                <Sparkles size={30} color={Colors.white} />
-              </Animated.View>
+                {/* Sparkles on Ticket Corners */}
+                <Animated.View 
+                  entering={FadeIn.delay(1400)}
+                  className="absolute -top-8 -left-8 z-20"
+                >
+                  <Sparkles size={40} color={Colors.secondary} />
+                </Animated.View>
+                <Animated.View 
+                  entering={FadeIn.delay(1600)}
+                  className="absolute -bottom-6 -right-6 z-20"
+                >
+                  <Sparkles size={30} color={Colors.white} />
+                </Animated.View>
 
-              <Image 
-                source={require('../../assets/images/golden_ticket.png')}
-                style={{ width: 310, height: 175, borderRadius: 24 }}
-                resizeMode="contain"
-              />
-              
-              {/* Shine effect overlay */}
-              <Animated.View 
-                className="absolute inset-0 bg-white/20 rounded-3xl overflow-hidden"
-                entering={FadeIn.delay(1000).duration(2000)}
-              >
-                <LinearGradient
-                  colors={['transparent', 'rgba(255,255,255,0.4)', 'transparent']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  className="absolute inset-0"
-                  style={{ transform: [{ translateX: -100 }] }}
+                <Image 
+                  source={require('../../assets/images/golden_ticket.png')}
+                  style={{ width: 310, height: 175, borderRadius: 24 }}
+                  resizeMode="contain"
                 />
+                
+                {/* Shine effect overlay */}
+                <Animated.View 
+                  className="absolute inset-0 bg-white/20 rounded-3xl overflow-hidden"
+                  entering={FadeIn.delay(1000).duration(2000)}
+                >
+                  <LinearGradient
+                    colors={['transparent', 'rgba(255,255,255,0.4)', 'transparent']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    className="absolute inset-0"
+                    style={{ transform: [{ translateX: -100 }] }}
+                  />
+                </Animated.View>
               </Animated.View>
             </Animated.View>
 

@@ -111,7 +111,8 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       });
 
       if (response.success) {
-        const currentUserId = useAuthStore.getState().user?.id || useAuthStore.getState().user?._id;
+        const currentUser = useAuthStore.getState().user as any;
+        const currentUserId = currentUser?.id || currentUser?._id;
         if (!currentUserId) return;
 
         set(state => {

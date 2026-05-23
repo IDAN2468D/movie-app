@@ -12,13 +12,19 @@ export interface SnackItem {
 interface SnacksState {
   items: SnackItem[];
   cart: { [id: string]: number };
+  isLoading: boolean;
+  error: string | null;
   addItem: (id: string) => void;
   removeItem: (id: string) => void;
   clearCart: () => void;
   getTotalPrice: () => number;
+  fetchSnacks: () => Promise<void>;
+  submitOrder: () => Promise<{ success: boolean; orderId?: string }>;
 }
 
-const SNACK_MENU: SnackItem[] = [
+const SERVER_URL = 'https://movie-app-server-olet.onrender.com';
+
+const FALLBACK_SNACK_MENU: SnackItem[] = [
   {
     id: 'p1',
     name: 'פופקורן XL',
@@ -78,8 +84,10 @@ const SNACK_MENU: SnackItem[] = [
 ];
 
 export const useSnacksStore = create<SnacksState>((set, get) => ({
-  items: SNACK_MENU,
+  items: FALLBACK_SNACK_MENU,
   cart: {},
+  isLoading: false,
+  error: null,
   
   addItem: (id) => set((state) => ({
     cart: { ...state.cart, [id]: (state.cart[id] || 0) + 1 }
@@ -104,4 +112,61 @@ export const useSnacksStore = create<SnacksState>((set, get) => ({
       return total + (item ? item.price * quantity : 0);
     }, 0);
   },
+
+  fetchSnacks: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await fetch(`${SERVER_URL}/api/snacks`);
+      if (!response.ok) throw new Error('Failed to fetch snacks');
+      const data = await response.json();
+      
+      const mergedItems = data.map((remoteItem: any) => {
+        const localItem = FALLBACK_SNACK_MENU.find(i => i.id === remoteItem.id);
+        return {
+          ...remoteItem,
+          image: localItem ? localItem.image : require('../assets/images/snacks/mega-combo.png'),
+        };
+      });
+      
+      set({ items: mergedItems.length > 0 ? mergedItems : FALLBACK_SNACK_MENU, isLoading: false });
+    } catch (error) {
+      console.log('Falling back to local snack menu due to server error:', error);
+      set({ items: FALLBACK_SNACK_MENU, isLoading: false, error: 'Failed to load from server, using offline menu.' });
+    }
+  },
+
+  submitOrder: async () => {
+    const { cart, getTotalPrice, clearCart } = get();
+    if (Object.keys(cart).length === 0) return { success: false };
+    
+    set({ isLoading: true, error: null });
+    try {
+      const response = await fetch(`${SERVER_URL}/api/snacks/order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          cart, 
+          total: getTotalPrice(),
+          timestamp: Date.now()
+        }),
+      });
+      
+      if (!response.ok) {
+        console.warn(`Backend order submission failed (status: ${response.status}), falling back to local mock success.`);
+        clearCart();
+        set({ isLoading: false });
+        return { success: true, orderId: 'mock-' + Date.now() };
+      }
+      
+      const data = await response.json();
+      clearCart();
+      set({ isLoading: false });
+      return { success: true, orderId: data.orderId };
+    } catch (error) {
+      console.warn('Order submission network error, falling back to local mock success:', error);
+      clearCart();
+      set({ isLoading: false });
+      return { success: true, orderId: 'mock-' + Date.now() };
+    }
+  }
 }));

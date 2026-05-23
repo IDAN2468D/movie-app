@@ -35,7 +35,8 @@ export const useSearch = () => {
   const { data: popularData = [] } = usePopular();
   const popular = useMemo(() => popularData.slice(0, 6), [popularData]);
 
-  const shouldDisableTextSearch = isAISearch && !aiFilters.query;
+  const aiFailed = isAISearch && Object.keys(aiFilters).length === 0;
+  const shouldDisableTextSearch = isAISearch && !aiFilters.query && !aiFailed;
   const { data: searchResults = [], isLoading: isSearchLoading } = useSearchMovies(query, shouldDisableTextSearch);
   const { data: genreResults = [], isLoading: isGenreLoading } = useMoviesByGenre(activeGenre);
   
@@ -88,7 +89,11 @@ export const useSearch = () => {
   const { data: discoveryResults = [], isLoading: isDiscoveryLoading } = useDiscoverMovies(activeFilters, shouldDiscover);
 
   const results = useMemo(() => {
-    if (isAISearch && aiFilters.query) return searchResults;
+    if (isAISearch) {
+      if (aiFilters.query) return searchResults;
+      if (shouldDiscover) return discoveryResults;
+      return searchResults; // fallback if AI failed
+    }
     if (shouldDiscover) return discoveryResults;
     if (activeGenre !== null) return genreResults;
     return searchResults;
@@ -114,17 +119,19 @@ export const useSearch = () => {
     }
   }, []);
 
-  const executeAISearch = async () => {
-    if (query.length < 2) return;
+  const executeAISearch = async (overrideQuery?: string) => {
+    const searchQuery = overrideQuery || query;
+    if (searchQuery.length < 2) return;
     
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setIsAiLoading(true);
     setSearched(true);
     setActiveGenre(null);
+    setIsAISearch(true);
     Keyboard.dismiss();
 
     try {
-      const filters = await AIService.getSemanticFilters(query);
+      const filters = await AIService.getSemanticFilters(searchQuery);
       setAiFilters(filters);
     } catch (error) {
       console.error("[useSearch] AI Search Failed:", error);

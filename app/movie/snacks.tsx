@@ -155,6 +155,11 @@ export default function SnacksScreen() {
   } = useSnacks();
 
   const allSnacks = useSnacksStore(state => state.items);
+  const fetchSnacks = useSnacksStore(state => state.fetchSnacks);
+
+  useEffect(() => {
+    fetchSnacks();
+  }, []);
 
   // Flatten the cart into an array of individual items to render on the tray
   const trayItems = React.useMemo(() => {

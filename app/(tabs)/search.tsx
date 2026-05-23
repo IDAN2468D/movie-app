@@ -109,7 +109,7 @@ export default function SearchScreen() {
             } else if (command.type === 'search' && command.params?.query) {
                // Execute regular search text
                handleSearch(command.params.query);
-               executeAISearch();
+               executeAISearch(command.params.query);
             } else if (command.type === 'mood' && command.params?.mood) {
               const moodResult = await AIService.getMoodRecommendations(command.params.mood);
               setVoiceFeedbackText(`🎭 מסנן לפי מצב רוח: ${moodResult.mood}\n${moodResult.description}`);
