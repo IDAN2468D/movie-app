@@ -152,10 +152,14 @@ export const useSnacksStore = create<SnacksState>((set, get) => ({
       });
       
       if (!response.ok) {
-        console.warn(`Backend order submission failed (status: ${response.status}), falling back to local mock success.`);
-        clearCart();
-        set({ isLoading: false });
-        return { success: true, orderId: 'mock-' + Date.now() };
+        const status = response.status;
+        const rawBodyText = await response.text();
+        
+        console.error(`🚨 [CineBook Snacks API] HTTP Status: ${status}`);
+        console.error(`🚨 [CineBook Snacks API] Raw Response Body:`, rawBodyText);
+        
+        set({ isLoading: false, error: `שגיאת שרת (${status}): ההזמנה נכשלה` });
+        return { success: false };
       }
       
       const data = await response.json();
@@ -163,10 +167,9 @@ export const useSnacksStore = create<SnacksState>((set, get) => ({
       set({ isLoading: false });
       return { success: true, orderId: data.orderId };
     } catch (error) {
-      console.warn('Order submission network error, falling back to local mock success:', error);
-      clearCart();
-      set({ isLoading: false });
-      return { success: true, orderId: 'mock-' + Date.now() };
+      console.error(`🚨 [CineBook Snacks API] Fatal Exception:`, error);
+      set({ isLoading: false, error: 'שגיאת רשת: לא ניתן להתחבר לשרת, אנא נסה שנית' });
+      return { success: false };
     }
   }
 }));
