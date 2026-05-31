@@ -11,10 +11,12 @@ import {
 } from 'react-native-reanimated';
 import { useBookingStore, type Showtime } from '@/store/useBookingStore';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useWatchlistStore } from '@/store/useWatchlistStore';
 import { usePremiumStore } from '@/store/usePremiumStore';
 import { useMovieTheme } from '@/hooks/useMovieTheme';
 import { AIService } from '@/services/AIService';
 import { Video } from '@/utils/SafeModules';
+import { type TMDBMovie } from '@/lib/tmdb';
 import { 
   useMovieDetails as useMovieQuery, 
   useMovieCredits, 
@@ -145,7 +147,29 @@ export const useMovieDetails = (id: string | undefined) => {
   const handleToggleFavorite = () => {
     if (movie) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      
+      // 1. Sync remote watchlist
       toggleFavorite(movie.id);
+      
+      // 2. Sync local watchlist store
+      const watchlistStore = useWatchlistStore.getState();
+      if (watchlistStore.isInWatchlist(movie.id)) {
+        watchlistStore.removeFromWatchlist(movie.id);
+      } else {
+        const tmdbMovie: TMDBMovie = {
+          id: movie.id,
+          title: movie.title,
+          poster_path: movie.poster_path,
+          backdrop_path: movie.backdrop_path,
+          vote_average: movie.vote_average,
+          release_date: movie.release_date || '',
+          genre_ids: movie.genres?.map((g: any) => g.id) || [],
+          overview: movie.overview,
+          popularity: movie.popularity,
+          vote_count: movie.vote_count,
+        };
+        watchlistStore.addToWatchlist(tmdbMovie);
+      }
     }
   };
 

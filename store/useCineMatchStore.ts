@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { AsyncStorage } from '@/utils/SafeModules';
 import { type TMDBMovie } from '@/lib/tmdb';
 import { useWatchlistStore } from './useWatchlistStore';
+import { useAuthStore } from './useAuthStore';
 
 interface CineMatchState {
   // Swiped states
@@ -66,6 +67,12 @@ export const useCineMatchStore = create<CineMatchState>()(
           
           // 2. Add to global Watchlist store automatically as per specs
           useWatchlistStore.getState().addToWatchlist(movie);
+          
+          // Also sync to remote auth store if authenticated and not already favorited
+          const { user, toggleFavorite } = useAuthStore.getState();
+          if (user && !user.watchlist.includes(movie.id)) {
+            toggleFavorite(movie.id);
+          }
           
           // 3. Check for Group Match simulation
           let isMatch = false;

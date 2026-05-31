@@ -1,4 +1,4 @@
-import * as Calendar from 'expo-calendar';
+import * as Calendar from 'expo-calendar/legacy';
 import { Platform, Alert } from 'react-native';
 
 export interface CalendarEventData {

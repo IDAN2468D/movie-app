@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { Alert } from 'react-native';
 import { router } from 'expo-router';
 import { useAuthStore } from '@/store/useAuthStore';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { GoogleSignin, isGoogleSigninAvailable } from '@/utils/safeGoogleSignin';
 import { GOOGLE_CONFIG } from '@/constants/Config';
 import { 
   useAnimatedStyle, 
@@ -95,6 +95,10 @@ export const useRegister = () => {
 
   const handleGoogleLogin = async () => {
     try {
+      if (!isGoogleSigninAvailable) {
+        throw new Error('Google Sign-In is not supported in Expo Go. Please use a development build.');
+      }
+
       await GoogleSignin.hasPlayServices();
       const response = await GoogleSignin.signIn();
       
@@ -113,6 +117,49 @@ export const useRegister = () => {
         Alert.alert('שגיאת גוגל', result.message || 'התחברות עם גוגל נכשלה');
       }
     } catch (error: any) {
+      // EXPO GO DEMO USER BYPASS
+      const isExpoGoError = !isGoogleSigninAvailable || 
+                            (error.message && (
+                              error.message.includes('supported in Expo Go') || 
+                              error.message.includes('RNGoogleSignin') ||
+                              error.message.includes('native module')
+                            ));
+                            
+      if (isExpoGoError) {
+        Alert.alert(
+          'התחברות Google',
+          'התחברות Google אינה נתמכת בתוך Expo Go ללא build מותאם.\n\nהאם ברצונך להתחבר עם משתמש בדיקה (Demo User) כדי לבדוק את האפליקציה?',
+          [
+            { text: 'ביטול', style: 'cancel' },
+            { 
+              text: 'התחבר כמשתמש בדיקה', 
+              onPress: async () => {
+                console.log('--- Initiating Expo Go Google Demo Bypass (Register) ---');
+                // 1. Try logging in with standard demo credentials
+                const loginResult = await useAuthStore.getState().login('demo@cinebook.com', '123456');
+                if (loginResult.success) {
+                  router.replace('/(tabs)');
+                } else {
+                  // 2. If it fails (first time), register them automatically
+                  console.log('Demo user not found, registering automatically...');
+                  const registerResult = await useAuthStore.getState().register(
+                    'משתמש בדיקה (Demo User)', 
+                    'demo@cinebook.com', 
+                    '123456'
+                  );
+                  if (registerResult.success) {
+                    router.replace('/(tabs)');
+                  } else {
+                    Alert.alert('שגיאה', 'לא ניתן היה להתחבר או להירשם כמשתמש בדיקה.');
+                  }
+                }
+              }
+            }
+          ]
+        );
+        return;
+      }
+
       if (error.code !== 'SIGN_IN_CANCELLED') {
         Alert.alert('שגיאת גוגל', 'קרתה שגיאה בתהליך ההתחברות');
       }

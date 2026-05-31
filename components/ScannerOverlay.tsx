@@ -98,7 +98,7 @@ export default function ScannerOverlay({ scannerState, errorMessage }: ScannerOv
   const maskLeftWidth = (width - SCAN_WIDTH) / 2;
 
   return (
-    <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
       
       {/* 4-Piece Camera Cutout Focus Mask */}
       {/* Top Mask */}
@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   successGlow: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(229, 255, 0, 0.08)',
     borderRadius: 24,
     borderWidth: 3,
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.secondary,
   },
   flashScreen: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: '#ffffff',
     zIndex: 50,
   },

@@ -79,6 +79,7 @@ export default function SearchScreen() {
     manualFilters,
     updateManualFilter,
     clearManualFilters,
+    setIsAISearch,
   } = useSearch();
 
   const { isRecording, startRecording, stopRecording } = useVoiceRecording();
@@ -107,9 +108,22 @@ export default function SearchScreen() {
               const route = command.params.screen === 'home' ? '/' : `/(tabs)/${command.params.screen}`;
               router.push(route as any);
             } else if (command.type === 'search' && command.params?.query) {
-               // Execute regular search text
+               // Execute search
                handleSearch(command.params.query);
-               executeAISearch(command.params.query);
+               
+               // Smart voice check: if it is a semantic recommendation request or has a genre filter, run AI search.
+               // Otherwise, if it is a specific movie title search, turn off AI search to display exact TMDB matches!
+               const isSemanticRequest = command.params.genre || 
+                                         transcribedText.includes('ממליץ') || 
+                                         transcribedText.includes('כדאי') || 
+                                         transcribedText.includes('משהו') || 
+                                         transcribedText.includes('מצב רוח');
+                                         
+               if (isSemanticRequest) {
+                 executeAISearch(command.params.query);
+               } else {
+                 setIsAISearch(false);
+               }
             } else if (command.type === 'mood' && command.params?.mood) {
               const moodResult = await AIService.getMoodRecommendations(command.params.mood);
               setVoiceFeedbackText(`🎭 מסנן לפי מצב רוח: ${moodResult.mood}\n${moodResult.description}`);

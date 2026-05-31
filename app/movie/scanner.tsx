@@ -30,7 +30,7 @@ export default function ScannerScreen() {
   if (!permission) {
     return (
       <View style={styles.loadingContainer}>
-        <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFillObject} />
+        <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
         <Text className="text-text font-assistant text-lg tracking-wider animate-pulse">
           טוען עדשת סריקה...
         </Text>
@@ -105,7 +105,7 @@ export default function ScannerScreen() {
     <View style={styles.container}>
       <CameraView 
         ref={cameraRef}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
         facing="back"
         enableTorch={flash}
       />
@@ -129,7 +129,7 @@ export default function ScannerScreen() {
           className="flex-row items-center px-4 rounded-full overflow-hidden border border-white/10 shadow-lg"
           style={{ height: 48, minWidth: 105, justifyContent: 'center' }}
         >
-          <BlurView intensity={45} tint="dark" style={StyleSheet.absoluteFillObject} />
+          <BlurView intensity={45} tint="dark" style={StyleSheet.absoluteFill} />
           <X color="white" size={16} style={{ marginRight: 6 }} />
           <Text className="text-white font-assistant text-xs font-semibold" style={{ textAlign: 'left', writingDirection: 'ltr' }}>
             סגור
@@ -144,7 +144,7 @@ export default function ScannerScreen() {
           style={{ opacity: scannerState === 'idle' ? 1 : 0.4 }}
         >
           <View className="w-22 h-22 rounded-3xl items-center justify-center border border-white/20 bg-black/35 p-3 shadow-2xl">
-            <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFillObject} className="rounded-3xl" />
+            <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill} className="rounded-3xl" />
             <View 
               className="w-16 h-16 rounded-full items-center justify-center bg-primary"
               style={{
@@ -167,7 +167,7 @@ export default function ScannerScreen() {
           className="flex-row items-center px-4 rounded-full overflow-hidden border border-white/10 shadow-lg"
           style={{ height: 48, minWidth: 105 }}
         >
-          <BlurView intensity={45} tint="dark" style={StyleSheet.absoluteFillObject} />
+          <BlurView intensity={45} tint="dark" style={StyleSheet.absoluteFill} />
           {flash ? (
             <Zap color={Colors.secondary} size={16} style={{ marginRight: 6 }} />
           ) : (

@@ -23,7 +23,7 @@ try {
     Location = require('expo-location');
   }
 } catch (e) {
-  console.warn('SafeModules: ExpoLocation not available');
+  // Quietly fallback
 }
 
 // --- VIDEO ---
@@ -60,7 +60,7 @@ try {
     console.log('[SafeModules] ExpoVideo loaded in web mock mode.');
   }
 } catch (e: any) {
-  console.warn('[SafeModules] ExpoVideo native module not available. Details:', e?.message || e);
+  // Quietly fallback
 }
 
 // --- NOTIFICATIONS ---
@@ -80,7 +80,7 @@ try {
     Notifications = require('expo-notifications');
   }
 } catch (e) {
-  console.warn('SafeModules: ExpoNotifications not available');
+  // Quietly fallback
 }
 
 // --- SENSORS ---
@@ -96,7 +96,7 @@ try {
     Gyroscope = SensorsModule.Gyroscope;
   }
 } catch (e) {
-  console.warn('SafeModules: ExpoSensors not available');
+  // Quietly fallback
 }
 
 // --- ASYNC STORAGE ---
@@ -122,7 +122,7 @@ try {
     throw new Error('AsyncStorage native module is null');
   }
 } catch (e) {
-  console.warn('SafeModules: AsyncStorage not available, using mock');
+  // Quietly fallback
 }
 
 // Named exports

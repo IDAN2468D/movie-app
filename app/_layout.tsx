@@ -4,9 +4,14 @@
  * Sets up dark theme, RTL, fonts, and navigation container.
  */
 import { useEffect } from 'react';
-import { I18nManager, StatusBar, DevSettings } from 'react-native';
+import { I18nManager, StatusBar, DevSettings, LogBox } from 'react-native';
+
+// Silence specific development warnings
+LogBox.ignoreLogs([
+  '[Reanimated] Writing to `value` during component render',
+]);
 import "../global.css";
-import { DarkTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, ThemeProvider } from 'expo-router/react-navigation';
 import { Stack, router, useSegments, useRootNavigationState } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { Colors } from '@/constants/Theme';

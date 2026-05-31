@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { Audio } from 'expo-av';
+import { Audio, isAudioAvailable } from '@/utils/safeExpoAv';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Haptics from 'expo-haptics';
 
@@ -42,6 +42,12 @@ export const useVoiceRecording = () => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       
       if (uri) {
+        // Expo Go/Mock Mode Bypass: If audio is mock, return simulated base64 string
+        if (!isAudioAvailable || uri.includes('mock-')) {
+          console.log('[useVoiceRecording] Mock audio recording detected. Returning simulated base64 audio data.');
+          return 'MOCK_BASE64_VOICE_DATA';
+        }
+
         const base64 = await FileSystem.readAsStringAsync(uri, {
           encoding: 'base64'
         });

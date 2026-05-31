@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useRef } from 'react';
-import { Audio } from 'expo-av';
+import { Audio } from '@/utils/safeExpoAv';
 import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
 import {

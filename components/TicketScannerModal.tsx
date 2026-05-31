@@ -79,7 +79,7 @@ export default function TicketScannerModal({ isVisible, onClose, onScan }: Ticke
       <View className="flex-1 bg-black">
         {CameraModule.CameraView ? (
           <CameraModule.CameraView
-            style={StyleSheet.absoluteFillObject}
+            style={StyleSheet.absoluteFill}
             facing="back"
             onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
             barcodeScannerSettings={{
@@ -106,7 +106,7 @@ export default function TicketScannerModal({ isVisible, onClose, onScan }: Ticke
         )}
 
         {/* Overlay */}
-        <View style={StyleSheet.absoluteFillObject} className="items-center justify-center">
+        <View style={StyleSheet.absoluteFill} className="items-center justify-center">
           <View className="bg-black/50 absolute top-0 w-full h-full" />
           
           {/* Scan Area */}

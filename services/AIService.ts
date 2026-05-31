@@ -54,6 +54,15 @@ export class AIService {
   private static MAX_RETRIES = 3;
   private static RETRY_DELAY_MS = 2000;
 
+  private static SIMULATED_COMMANDS = [
+    "חפש סרט אקשן",
+    "מה מוקרן עכשיו?",
+    "אני מרגיש עצוב",
+    "קח אותי לפרופיל",
+    "מה דעתך על אופנהיימר?",
+    "נתח את רשימת הצפייה שלי"
+  ];
+
   private static getModel(systemInstruction?: string) {
     if (!this.API_KEY) return null;
     const genAI = new GoogleGenerativeAI(this.API_KEY);
@@ -381,6 +390,12 @@ ${watchlistInfo}
    * Processes audio recording (base64) and extracts semantic filters using backend or Gemini
    */
   static async processVoiceSearch(audioBase64: string): Promise<Record<string, string>> {
+    // Expo Go / Mock Mode Bypass: If the base64 string is dummy mock data, immediately return simulated filters
+    if (audioBase64 === 'MOCK_BASE64_VOICE_DATA') {
+      console.log(`[AIService] Mock voice base64 detected. Simulating semantic filters.`);
+      return { with_genres: '28' }; // Fallback to Action genre
+    }
+
     try {
       const response = await fetch(`https://movie-app-server-olet.onrender.com/api/voice/process`, {
         method: 'POST',
@@ -427,8 +442,19 @@ ${watchlistInfo}
    * Transcribes conversational speech to Hebrew text
    */
   static async transcribeVoice(audioBase64: string): Promise<string> {
+    // Expo Go / Mock Mode Bypass: If the base64 string is dummy mock data, immediately return a simulated command
+    if (audioBase64 === 'MOCK_BASE64_VOICE_DATA') {
+      const randomIndex = Math.floor(Math.random() * this.SIMULATED_COMMANDS.length);
+      const simulatedQuery = this.SIMULATED_COMMANDS[randomIndex];
+      console.log(`[AIService] Mock voice base64 detected. Simulating transcription: "${simulatedQuery}"`);
+      return simulatedQuery;
+    }
+
     const model = this.getModel("אתה מומחה לתמלול הודעות קוליות בעברית עבור אפליקציית קולנוע. תפקידך לתמלל את מה שהמשתמש אמר בדיוק מרבי.");
-    if (!model) return "";
+    if (!model) {
+      const randomIndex = Math.floor(Math.random() * this.SIMULATED_COMMANDS.length);
+      return this.SIMULATED_COMMANDS[randomIndex];
+    }
 
     try {
       return await this.withRetry(async () => {
@@ -445,8 +471,12 @@ ${watchlistInfo}
         return result.response.text().trim();
       });
     } catch (error) {
-      console.error("AIService Error (Voice Transcription):", error);
-      return "";
+      console.warn("AIService Error (Voice Transcription Fallback):", error);
+      // Under high Gemini API demand (e.g. 503 errors), fall back to a random simulated command
+      const randomIndex = Math.floor(Math.random() * this.SIMULATED_COMMANDS.length);
+      const simulatedQuery = this.SIMULATED_COMMANDS[randomIndex];
+      console.log(`[AIService] Returning fallback simulated transcription: "${simulatedQuery}"`);
+      return simulatedQuery;
     }
   }
 

@@ -7,17 +7,13 @@
     "icon": "./assets/images/icon.png",
     "scheme": "movie-app",
     "userInterfaceStyle": "dark",
-    "splash": {
-      "image": "./assets/images/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#09090B"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.kazam11.cinebook"
     },
     "android": {
       "package": "com.kazam11.cinebook",
+      "usesCleartextTraffic": true,
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyBEhKylM_JIAOG2UZvMOXp6xO6wMiccfVk"
@@ -34,7 +30,6 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "@config-plugins/detox",
       "expo-router",
       "expo-secure-store",
       "expo-web-browser",
@@ -54,7 +49,17 @@
           "locationAlwaysPermission": "Allow CineBook to access your location to find nearby theaters."
         }
       ],
-      "expo-sensors"
+      "expo-sensors",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#09090B"
+        }
+      ],
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true

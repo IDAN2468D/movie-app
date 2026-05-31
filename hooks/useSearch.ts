@@ -213,6 +213,7 @@ export const useSearch = () => {
     popular,
     activeGenre,
     isAISearch,
+    setIsAISearch,
     scrollY,
     fadeAnim,
     isFocused,
