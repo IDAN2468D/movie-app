@@ -5,7 +5,7 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, ScrollView, TouchableOpacity, ImageBackground, StyleSheet, Dimensions, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { User, Bell, CreditCard, Shield, ChevronLeft, LogOut, Ticket, Heart, History, TrendingUp, Moon, Trophy, Map as MapIcon, Sparkles, Headphones } from 'lucide-react-native';
+import { User, Bell, CreditCard, Shield, ChevronLeft, LogOut, Ticket, Heart, History, TrendingUp, Moon, Trophy, Map as MapIcon, Sparkles, Headphones, Users } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { router } from 'expo-router';
@@ -131,6 +131,14 @@ export default function ProfileScreen() {
             description="התנסו בסאונד תלת-ממדי קולנועי ובאווירה אינטראקטיבית עם קריינות AI!"
             color="#8B5CF6" 
             onPress={() => router.push('/movie/lounge' as any)} 
+          />
+          
+          <MenuItem 
+            icon={Users} 
+            title="מועדון חברים וקהילה — CineFriends" 
+            description="עקבו אחר רשימות הצפייה וההזמנות של החברים שלכם!"
+            color="#EC4899" 
+            onPress={() => router.push('/friends' as any)} 
           />
           
           <Pressable 
