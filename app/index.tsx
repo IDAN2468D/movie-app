@@ -21,12 +21,16 @@ export default function SplashScreen() {
     console.log('Splash mounted. Auth State:', { isLoading, isAuthenticated, hasSeenOnboarding });
     // Start animation
     logoOpacity.value = withTiming(1, { duration: 800 });
-    logoScale.value = withSpring(1, { damping: 12, stiffness: 90 }, () => {
-      // Guaranteed minimum visible time for the cinematic splash
+
+    const finishSplash = () => {
       setTimeout(() => {
         console.log('Splash animation finished');
-        runOnJS(setAnimationFinished)(true);
+        setAnimationFinished(true);
       }, 2000);
+    };
+
+    logoScale.value = withSpring(1, { damping: 12, stiffness: 90 }, () => {
+      runOnJS(finishSplash)();
     });
   }, [logoOpacity, logoScale, hasSeenOnboarding, isAuthenticated, isLoading]);
 

@@ -5,13 +5,26 @@ import * as SecureStore from 'expo-secure-store';
 // Custom storage for SecureStore (Expo compatible)
 const secureStorage = {
   getItem: async (name: string): Promise<string | null> => {
-    return await SecureStore.getItemAsync(name);
+    try {
+      return await SecureStore.getItemAsync(name);
+    } catch (e) {
+      console.warn('Failed to get item from SecureStore:', e);
+      return null;
+    }
   },
   setItem: async (name: string, value: string): Promise<void> => {
-    await SecureStore.setItemAsync(name, value);
+    try {
+      await SecureStore.setItemAsync(name, value);
+    } catch (e) {
+      console.warn('Failed to set item in SecureStore:', e);
+    }
   },
   removeItem: async (name: string): Promise<void> => {
-    await SecureStore.deleteItemAsync(name);
+    try {
+      await SecureStore.deleteItemAsync(name);
+    } catch (e) {
+      console.warn('Failed to delete item from SecureStore:', e);
+    }
   },
 };
 
