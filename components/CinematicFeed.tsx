@@ -221,7 +221,7 @@ const CinematicFeedItem = React.memo(function CinematicFeedItem({ movie, isActiv
 
     console.log(`[CinematicFeedItem] Listening to player events for "${movie.title}". Current status:`, player?.status);
 
-    let timer: NodeJS.Timeout;
+    let timer: any;
 
     // Fallback timer: force video fade-in after 1.5 seconds if native events don't fire
     timer = setTimeout(() => {

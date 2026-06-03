@@ -37,7 +37,7 @@ export const useNetworkStatus = () => {
 
     // 2. Native-Specific Detection with Periodic Server/Internet Pings
     let isMounted = true;
-    let intervalId: NodeJS.Timeout;
+    let intervalId: any;
 
     const checkConnectivity = async () => {
       try {

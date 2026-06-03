@@ -23,7 +23,7 @@ const Trailer4DPlayerModal: React.FC<Trailer4DPlayerModalProps> = ({
 }) => {
   const [playing, setPlaying] = useState(false);
   const [is4DEnabled, setIs4DEnabled] = useState(true);
-  const hapticInterval = useRef<NodeJS.Timeout | null>(null);
+  const hapticInterval = useRef<any>(null);
 
   // The 4D Haptic Engine
   const startHapticEngine = useCallback(() => {

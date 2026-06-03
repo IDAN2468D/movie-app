@@ -121,7 +121,7 @@ export default function FriendsScreen() {
   return (
     <View className="flex-1 bg-black">
       {/* Background Ambience Glow */}
-      <View style={StyleSheet.absoluteFillObject} className="overflow-hidden pointer-events-none">
+      <View style={StyleSheet.absoluteFill} className="overflow-hidden pointer-events-none">
         <LinearGradient
           colors={['#1F0510', '#09090B']}
           style={StyleSheet.absoluteFill}
