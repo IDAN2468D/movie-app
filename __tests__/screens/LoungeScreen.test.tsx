@@ -2,13 +2,13 @@
 import React from 'react';
 import { render, fireEvent, act } from '@testing-library/react-native';
 import LoungeScreen from '../../app/movie/lounge';
-import { Audio } from 'expo-av';
+import { Audio } from '../../utils/safeExpoAv';
 import * as Speech from 'expo-speech';
 import { AIService } from '../../services/AIService';
 import { router } from 'expo-router';
 
-// Mock expo-av
-jest.mock('expo-av', () => {
+// Mock safeExpoAv
+jest.mock('../../utils/safeExpoAv', () => {
   const mockSoundInstance = {
     unloadAsync: jest.fn(() => Promise.resolve()),
     stopAsync: jest.fn(() => Promise.resolve()),
@@ -24,6 +24,7 @@ jest.mock('expo-av', () => {
         createAsync: jest.fn(() => Promise.resolve({ sound: mockSoundInstance })),
       },
     },
+    isAudioAvailable: false,
   };
 });
 

@@ -1,5 +1,3 @@
-import type { Audio as ExpoAudio } from 'expo-av';
-
 let AudioVal: any;
 let isAudioAvailable = false;
 
@@ -59,8 +57,8 @@ try {
 
 // Merge namespace (for compile-time types) and const (for runtime values)
 export namespace Audio {
-  export type Sound = ExpoAudio.Sound;
-  export type Recording = ExpoAudio.Recording;
+  export type Sound = any;
+  export type Recording = any;
 }
 
 export const Audio = AudioVal;
