@@ -13,6 +13,7 @@
     },
     "android": {
       "package": "com.kazam11.cinebook",
+      "googleServicesFile": "./google-services.json",
       "usesCleartextTraffic": true,
       "config": {
         "googleMaps": {

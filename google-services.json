@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "814484714037",
+    "project_id": "movie-app-22594",
+    "storage_bucket": "movie-app-22594.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:814484714037:android:b556529db4dac06621f77c",
+        "android_client_info": {
+          "package_name": "com.kazam11.cinebook"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "814484714037-u0ahpj6unqii7kho52uhit8r3e7rb7ac.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.kazam11.cinebook",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "814484714037-i2dt2kfij62esbutul7i4htv2u7maeol.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC-463JNUx0OMh0mk-G3xoRZH2njs0xnqI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "814484714037-i2dt2kfij62esbutul7i4htv2u7maeol.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
