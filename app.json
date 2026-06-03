@@ -14,7 +14,6 @@
     "android": {
       "package": "com.kazam11.cinebook",
       "googleServicesFile": "./google-services.json",
-      "usesCleartextTraffic": true,
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyBEhKylM_JIAOG2UZvMOXp6xO6wMiccfVk"
