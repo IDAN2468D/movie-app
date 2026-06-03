@@ -5,7 +5,15 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://movie-app-server-olet.onrender.com/api",
+        "EXPO_PUBLIC_TMDB_API_KEY": "993de0b76b63e6f4a2d6abfef0df66ce",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS": "your_ios_client_id_here",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_ANDROID": "814484714037-u0ahpj6unqii7kho52uhit8r3e7rb7ac.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_WEB": "814484714037-i2dt2kfij62esbutul7i4htv2u7maeol.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GEMINI_API_KEY": "AIzaSyCZo2K2hRD53dbCWmF6BeQfeA8lHcncpTg"
+      }
     },
     "preview": {
       "distribution": "internal",
