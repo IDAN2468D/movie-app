@@ -12,7 +12,7 @@
         "EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS": "your_ios_client_id_here",
         "EXPO_PUBLIC_GOOGLE_CLIENT_ID_ANDROID": "814484714037-u0ahpj6unqii7kho52uhit8r3e7rb7ac.apps.googleusercontent.com",
         "EXPO_PUBLIC_GOOGLE_CLIENT_ID_WEB": "814484714037-i2dt2kfij62esbutul7i4htv2u7maeol.apps.googleusercontent.com",
-        "EXPO_PUBLIC_GEMINI_API_KEY": "AIzaSyCZo2K2hRD53dbCWmF6BeQfeA8lHcncpTg"
+        "EXPO_PUBLIC_GEMINI_API_KEY": "your_gemini_api_key_here"
       }
     },
     "preview": {
@@ -26,7 +26,7 @@
         "EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS": "your_ios_client_id_here",
         "EXPO_PUBLIC_GOOGLE_CLIENT_ID_ANDROID": "814484714037-u0ahpj6unqii7kho52uhit8r3e7rb7ac.apps.googleusercontent.com",
         "EXPO_PUBLIC_GOOGLE_CLIENT_ID_WEB": "814484714037-i2dt2kfij62esbutul7i4htv2u7maeol.apps.googleusercontent.com",
-        "EXPO_PUBLIC_GEMINI_API_KEY": "AIzaSyCZo2K2hRD53dbCWmF6BeQfeA8lHcncpTg"
+        "EXPO_PUBLIC_GEMINI_API_KEY": "your_gemini_api_key_here"
       }
     },
     "production": {
@@ -39,7 +39,7 @@
         "EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS": "your_ios_client_id_here",
         "EXPO_PUBLIC_GOOGLE_CLIENT_ID_ANDROID": "814484714037-u0ahpj6unqii7kho52uhit8r3e7rb7ac.apps.googleusercontent.com",
         "EXPO_PUBLIC_GOOGLE_CLIENT_ID_WEB": "814484714037-i2dt2kfij62esbutul7i4htv2u7maeol.apps.googleusercontent.com",
-        "EXPO_PUBLIC_GEMINI_API_KEY": "AIzaSyCZo2K2hRD53dbCWmF6BeQfeA8lHcncpTg"
+        "EXPO_PUBLIC_GEMINI_API_KEY": "your_gemini_api_key_here"
       }
     },
     "detox-test": {
