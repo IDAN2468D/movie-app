@@ -33,6 +33,20 @@ jest.mock('react-native-reanimated', () => {
   const React = require('react');
   const { View } = require('react-native');
   
+  const makeLayoutAnimationMock = () => {
+    const mockObj = {
+      duration: () => mockObj,
+      delay: () => mockObj,
+      springify: () => mockObj,
+      damping: () => mockObj,
+      stiffness: () => mockObj,
+      mass: () => mockObj,
+      withCallback: () => mockObj,
+      randomDelay: () => mockObj,
+    };
+    return mockObj;
+  };
+
   return {
     __esModule: true,
     default: {
@@ -60,12 +74,16 @@ jest.mock('react-native-reanimated', () => {
       out: (f) => f,
       inOut: (f) => f,
     },
-    FadeIn: { duration: () => ({ delay: () => ({ springify: () => ({}) }) }) },
-    FadeOut: { duration: () => ({ delay: () => ({ springify: () => ({}) }) }) },
-    FadeInUp: { duration: () => ({ delay: () => ({ springify: () => ({}) }) }) },
-    FadeInDown: { duration: () => ({ delay: () => ({ springify: () => ({}) }) }) },
-    SlideInRight: { duration: () => ({ delay: () => ({ springify: () => ({}) }) }) },
-    Layout: { springify: () => ({}) },
+    FadeIn: makeLayoutAnimationMock(),
+    FadeOut: makeLayoutAnimationMock(),
+    FadeInUp: makeLayoutAnimationMock(),
+    FadeInDown: makeLayoutAnimationMock(),
+    FadeOutDown: makeLayoutAnimationMock(),
+    SlideInRight: makeLayoutAnimationMock(),
+    ZoomIn: makeLayoutAnimationMock(),
+    ZoomOut: makeLayoutAnimationMock(),
+    LinearTransition: makeLayoutAnimationMock(),
+    Layout: makeLayoutAnimationMock(),
     runOnJS: (fn) => fn,
     runOnUI: (fn) => fn,
   };

@@ -32,7 +32,12 @@ export const pickImage = async (): Promise<ImagePicker.ImagePickerAsset | null> 
 };
 
 export const uploadAvatar = async (imageUri: string): Promise<string> => {
-  const token = await SecureStore.getItemAsync('user_token');
+  let token: string | null = null;
+  try {
+    token = await SecureStore.getItemAsync('cinebook_auth_token');
+  } catch (e) {
+    console.warn('Failed to retrieve auth token in uploadAvatar:', e);
+  }
   if (!token) throw new Error('שגיאת אימות: אנא התחבר מחדש');
 
   const formData = new FormData();
@@ -65,7 +70,12 @@ export const uploadAvatar = async (imageUri: string): Promise<string> => {
 };
 
 export const updateProfile = async (data: ProfileUpdateData): Promise<void> => {
-  const token = await SecureStore.getItemAsync('user_token');
+  let token: string | null = null;
+  try {
+    token = await SecureStore.getItemAsync('cinebook_auth_token');
+  } catch (e) {
+    console.warn('Failed to retrieve auth token in updateProfile:', e);
+  }
   if (!token) throw new Error('שגיאת אימות: אנא התחבר מחדש');
 
   const response = await fetch(`${API_BASE_URL}/profile`, {

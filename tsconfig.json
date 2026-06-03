@@ -16,5 +16,11 @@
     "expo-env.d.ts",
     "nativewind-env.d.ts",
     "global.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "__tests__",
+    "**/__tests__",
+    "components/__tests__"
   ]
 }

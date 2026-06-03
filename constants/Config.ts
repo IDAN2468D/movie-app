@@ -1,5 +1,5 @@
 // API Configuration
-export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.143:5000/api';
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://movie-app-server-olet.onrender.com/api';
 
 // Google Auth IDs
 export const GOOGLE_CONFIG = {
