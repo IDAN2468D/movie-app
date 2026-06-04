@@ -18,7 +18,7 @@ const DEFAULT_THEME: MovieTheme = {
   isDark: true,
 };
 
-const GENRE_THEMES: Record<number, Partial<MovieTheme>> = {
+export const GENRE_THEMES: Record<number, Partial<MovieTheme>> = {
   28: { primary: '#FF4B4B', secondary: '#8B0000', accent: '#FFD700' }, // Action
   12: { primary: '#4BFFB8', secondary: '#006400', accent: '#DAA520' }, // Adventure
   16: { primary: '#FF4B9E', secondary: '#C71585', accent: '#00BFFF' }, // Animation

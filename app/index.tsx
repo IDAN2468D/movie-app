@@ -7,13 +7,21 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Colors } from '@/constants/Theme';
 import { Ionicons } from '@expo/vector-icons';
+import { useSplashScreenAudio } from '@/hooks/useSplashScreenAudio';
 
 export default function SplashScreen() {
+  useSplashScreenAudio(); // Load and play splash sound (lion roar effect)
+
   const isLoading = useAuthStore(state => state.isLoading);
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const hasSeenOnboarding = useAuthStore(state => state.hasSeenOnboarding);
+  const biometricsEnabled = useAuthStore(state => state.biometricsEnabled);
+  const authenticateBiometrics = useAuthStore(state => state.authenticateBiometrics);
 
   const [animationFinished, setAnimationFinished] = useState(false);
+  const [biometricAuthenticated, setBiometricAuthenticated] = useState(false);
+  const [biometricFailed, setBiometricFailed] = useState(false);
+  
   const logoScale = useSharedValue(0.5);
   const logoOpacity = useSharedValue(0);
 
@@ -40,8 +48,20 @@ export default function SplashScreen() {
       console.log('Splash finished, Auth:', isAuthenticated);
 
       if (isAuthenticated) {
-        console.log('Routing: Splash -> Tabs');
-        router.replace('/(tabs)');
+        if (biometricsEnabled && !biometricAuthenticated) {
+          authenticateBiometrics('אימות ביומטרי נדרש לכניסה ל-CineBook').then((success) => {
+            if (success) {
+              setBiometricAuthenticated(true);
+              console.log('Routing: Splash -> Tabs (Biometrics Success)');
+              router.replace('/(tabs)');
+            } else {
+              setBiometricFailed(true);
+            }
+          });
+        } else {
+          console.log('Routing: Splash -> Tabs');
+          router.replace('/(tabs)');
+        }
       } else if (!hasSeenOnboarding) {
         console.log('Routing: Splash -> Onboarding');
         router.replace('/onboarding');
@@ -50,7 +70,7 @@ export default function SplashScreen() {
         router.replace('/login');
       }
     }
-  }, [animationFinished, isLoading, isAuthenticated, hasSeenOnboarding, router]);
+  }, [animationFinished, isLoading, isAuthenticated, hasSeenOnboarding, biometricsEnabled, biometricAuthenticated, router]);
 
   const animatedLogoStyle = useAnimatedStyle(() => {
     return {
@@ -80,6 +100,34 @@ export default function SplashScreen() {
           חוויה קולנועית. מחדש.
         </Text>
       </Animated.View>
+
+      {biometricFailed && (
+        <TouchableOpacity
+          onPress={async () => {
+            const success = await authenticateBiometrics('אימות ביומטרי נדרש לכניסה ל-CineBook');
+            if (success) {
+              setBiometricAuthenticated(true);
+              router.replace('/(tabs)');
+            }
+          }}
+          style={{
+            position: 'absolute',
+            bottom: 110,
+            paddingHorizontal: 24,
+            paddingVertical: 16,
+            backgroundColor: 'rgba(255, 20, 100, 0.15)',
+            borderColor: 'rgba(255, 20, 100, 0.3)',
+            borderWidth: 1,
+            borderRadius: 16,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Ionicons name="finger-print-outline" size={22} color={Colors.primary} style={{ marginRight: 8 }} />
+          <Text style={{ fontFamily: 'Rubik-Bold', color: '#FFFFFF', fontSize: 16 }}>התחברות עם זיהוי ביומטרי</Text>
+        </TouchableOpacity>
+      )}
 
       {/* Temporary Debug Button - Remove after testing */}
       <TouchableOpacity

@@ -73,6 +73,16 @@ let Notifications: any = {
   getExpoPushTokenAsync: () => Promise.resolve({ data: 'mock-token' }),
   scheduleNotificationAsync: () => Promise.resolve('mock-id'),
   cancelAllScheduledNotificationsAsync: () => Promise.resolve(),
+  setNotificationChannelAsync: () => Promise.resolve(null),
+  AndroidImportance: {
+    UNSPECIFIED: 0,
+    NONE: 1,
+    MIN: 2,
+    LOW: 3,
+    DEFAULT: 4,
+    HIGH: 5,
+    MAX: 6,
+  },
 };
 
 try {

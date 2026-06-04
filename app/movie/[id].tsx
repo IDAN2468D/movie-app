@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/immutability, react-hooks/set-state-in-effect */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * Movie Details Screen - Full cinematic details with booking flow
@@ -10,6 +11,7 @@ import {
   Dimensions,
   ScrollView,
   I18nManager,
+  StyleSheet,
 } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { BlurView } from 'expo-blur';
@@ -21,6 +23,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   FadeIn,
   FadeInDown,
+  useAnimatedStyle,
+  interpolate,
+  Extrapolation,
+  useSharedValue,
+  useAnimatedScrollHandler,
+  withSpring,
+  type SharedValue,
 } from 'react-native-reanimated';
 import { 
   ChevronRight, 
@@ -47,6 +56,7 @@ import { useMovieDetails } from '@/hooks/useMovieDetails';
 import MovieTrailer from '@/components/MovieTrailer';
 import { getImageSource, handleImageError } from '@/utils/ImageUtils';
 import MovieReviews from '@/components/MovieReviews';
+import ScrollEntrance from '@/components/ScrollEntrance';
 
 // Interop external components to support NativeWind className
 cssInterop(LinearGradient, { className: 'style' });
@@ -102,6 +112,68 @@ export default function MovieDetailsScreen() {
     }
   }, [movie]);
 
+  // Reanimated style for poster parallax (floating upward effect)
+  const posterAnimatedStyle = useAnimatedStyle(() => {
+    const translateY = interpolate(
+      scrollY.value,
+      [0, 300],
+      [0, -25],
+      Extrapolation.CLAMP
+    );
+    return {
+      transform: [{ translateY }],
+    };
+  });
+
+  // Reanimated style for layered parallax (3D depth text float)
+  const textParallaxStyle = useAnimatedStyle(() => {
+    const translateY = interpolate(
+      scrollY.value,
+      [0, 300],
+      [0, -10],
+      Extrapolation.CLAMP
+    );
+    return {
+      transform: [{ translateY }],
+    };
+  });
+
+  // Scroll Progress Tracking
+  const scrollProgress = useSharedValue(0);
+  const localScrollHandler = useAnimatedScrollHandler({
+    onScroll: (event: any) => {
+      scrollY.value = event.contentOffset.y;
+      const totalScrollable = event.contentSize.height - event.layoutMeasurement.height;
+      scrollProgress.value = totalScrollable > 0 ? event.contentOffset.y / totalScrollable : 0;
+    }
+  });
+
+  // Scroll Progress Bar Animated Style (Uses high-performance transform scaleX & translateX)
+  const progressBarStyle = useAnimatedStyle(() => {
+    const scale = scrollProgress.value;
+    const translation = I18nManager.isRTL 
+      ? (1 - scale) * (SCREEN_WIDTH / 2) 
+      : (scale - 1) * (SCREEN_WIDTH / 2);
+    return {
+      transform: [
+        { scaleX: scale },
+        { translateX: translation }
+      ],
+      width: '100%',
+    };
+  });
+
+  // Reanimated style for sticky header
+  const detailsHeaderStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      scrollY.value,
+      [150, 280],
+      [0, 1],
+      Extrapolation.CLAMP
+    );
+    return { opacity };
+  });
+
   if (loading || !movie) {
     return (
       <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
@@ -125,11 +197,26 @@ export default function MovieDetailsScreen() {
 
   return (
     <View className="flex-1 bg-background">
+      {/* Scroll-Progress Indicator Bar */}
+      <Animated.View 
+        style={[
+          {
+            position: 'absolute',
+            top: insets.top,
+            left: 0,
+            height: 3,
+            backgroundColor: '#E5FF00', // Secondary system color
+            zIndex: 110,
+          },
+          progressBarStyle
+        ]}
+      />
+
       <Animated.ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 280 }}
-        onScroll={scrollHandler}
+        onScroll={localScrollHandler}
         scrollEventThrottle={16}
       >
         {/* Header with Parallax */}
@@ -201,70 +288,105 @@ export default function MovieDetailsScreen() {
           )}
         </Animated.View>
 
-        {/* Floating buttons */}
-        <View className="absolute top-0 left-0 right-0 z-20">
-          <Pressable
-            className="absolute left-4"
-            style={{ top: insets.top + 10 }}
-            onPress={handleBack}
+      {/* Sticky Top Header Bar with Movie Title */}
+      <Animated.View 
+        style={[
+          { 
+            position: 'absolute', 
+            top: 0, 
+            left: 0, 
+            right: 0, 
+            height: insets.top + 64, 
+            zIndex: 10,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingTop: insets.top,
+          }, 
+          detailsHeaderStyle
+        ]}
+      >
+        <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', borderBottomWidth: 1, borderBottomColor: 'rgba(255, 255, 255, 0.08)', height: '100%' }}>
+          <Text 
+            style={{ fontFamily: 'Rubik-Bold' }} 
+            className="text-white text-base font-bold text-center px-24" 
+            numberOfLines={1}
           >
-            <BlurView intensity={30} tint="light" className="w-12 h-12 rounded-full overflow-hidden border border-white/20 items-center justify-center">
-              <ChevronLeft size={28} color="white" />
-            </BlurView>
-          </Pressable>
-
-          <Pressable
-            className="absolute right-4"
-            style={{ top: insets.top + 10 }}
-            onPress={handleToggleFavorite}
-          >
-            <BlurView intensity={30} tint="light" className="w-12 h-12 rounded-full overflow-hidden border border-white/20 items-center justify-center">
-              <Heart
-                size={24}
-                color={user?.watchlist.includes(movie?.id || 0) ? Colors.primary : "white"}
-                fill={user?.watchlist.includes(movie?.id || 0) ? Colors.primary : 'transparent'}
-              />
-            </BlurView>
-          </Pressable>
-
-          <Pressable
-            className="absolute right-20"
-            style={{ top: insets.top + 10 }}
-            onPress={handleGroupWatchPress}
-          >
-            <BlurView intensity={30} tint="light" className="w-12 h-12 rounded-full overflow-hidden border border-white/20 items-center justify-center">
-              <Users
-                size={24}
-                color={isGroupWatchActive ? Colors.secondary : "white"}
-              />
-              {isGroupWatchActive && (
-                <View className="absolute top-0 right-0 w-3 h-3 bg-secondary rounded-full border border-white" />
-               )}
-            </BlurView>
-          </Pressable>
+            {movie.title}
+          </Text>
         </View>
+      </Animated.View>
 
-        {/* Movie Info */}
-        <Animated.View entering={FadeIn.delay(200)} className="-mt-32 px-5">
-          <View 
-            className="gap-6" 
-            style={{ 
-              flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row',
-            }}
-          >
-            {posterSource && (
-              <Animated.View 
-                entering={FadeInDown.delay(300).springify()}
-                className="shadow-2xl"
-              >
-                <Image
-                  source={posterSource}
-                  className="w-[140px] h-[210px] rounded-[24px] border-2 border-white/20"
-                  resizeMode="cover"
-                  onError={() => handleImageError(setPosterSource, 'poster')}
-                />
-              </Animated.View>
-            )}
+      {/* Floating buttons */}
+      <View className="absolute top-0 left-0 right-0 z-20">
+        <Pressable
+          className="absolute left-4"
+          style={{ top: insets.top + 10 }}
+          onPress={handleBack}
+        >
+          <BlurView intensity={30} tint="light" className="w-12 h-12 rounded-full overflow-hidden border border-white/20 items-center justify-center">
+            <ChevronLeft size={28} color="white" />
+          </BlurView>
+        </Pressable>
+
+        <Pressable
+          className="absolute right-4"
+          style={{ top: insets.top + 10 }}
+          onPress={handleToggleFavorite}
+        >
+          <BlurView intensity={30} tint="light" className="w-12 h-12 rounded-full overflow-hidden border border-white/20 items-center justify-center">
+            <Heart
+              size={24}
+              color={user?.watchlist.includes(movie?.id || 0) ? Colors.primary : "white"}
+              fill={user?.watchlist.includes(movie?.id || 0) ? Colors.primary : 'transparent'}
+            />
+          </BlurView>
+        </Pressable>
+
+        <Pressable
+          className="absolute right-20"
+          style={{ top: insets.top + 10 }}
+          onPress={handleGroupWatchPress}
+        >
+          <BlurView intensity={30} tint="light" className="w-12 h-12 rounded-full overflow-hidden border border-white/20 items-center justify-center">
+            <Users
+              size={24}
+              color={isGroupWatchActive ? Colors.secondary : "white"}
+            />
+            {isGroupWatchActive && (
+              <View className="absolute top-0 right-0 w-3 h-3 bg-secondary rounded-full border border-white" />
+             )}
+          </BlurView>
+        </Pressable>
+      </View>
+
+      {/* Movie Info */}
+      <Animated.View 
+        entering={FadeIn.delay(200)} 
+        style={textParallaxStyle}
+        className="-mt-32 px-5"
+      >
+        <View 
+          className="gap-6" 
+          style={{ 
+            flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row',
+          }}
+        >
+          {posterSource && (
+            <Animated.View 
+              entering={FadeInDown.delay(300).springify()}
+              style={posterAnimatedStyle}
+              className="shadow-2xl"
+            >
+              <Image
+                source={posterSource}
+                className="w-[140px] h-[210px] rounded-[24px] border-2 border-white/20"
+                resizeMode="cover"
+                onError={() => handleImageError(setPosterSource, 'poster')}
+              />
+            </Animated.View>
+          )}
             <View 
               className="flex-1 justify-end pb-2"
               style={{
@@ -336,54 +458,54 @@ export default function MovieDetailsScreen() {
               <Text className="text-white font-display text-h3 uppercase">{movie.original_language}</Text>
             </View>
           </View>
-
-          {/* Overview */}
           {movie.overview ? (
-            <View className="mt-8">
-              <View 
-                className="w-full mb-4" 
-                style={{ 
-                  paddingLeft: 16,
-                  position: 'relative',
-                  justifyContent: 'center',
-                  minHeight: 24
-                }}
-              >
+            <ScrollEntrance scrollY={scrollY}>
+              <View className="mt-8">
                 <View 
+                  className="w-full mb-4" 
                   style={{ 
-                    position: 'absolute',
-                    left: 0,
-                    top: '50%',
-                    transform: [{ translateY: -12 }],
-                    width: 6,
-                    height: 24,
-                    backgroundColor: themeColors.primary,
-                    borderRadius: 999 
-                  }} 
-                />
-                <Text 
-                  className="text-h2 text-white font-display"
-                  style={{
-                    textAlign: 'left',
-                    writingDirection: 'ltr'
+                    paddingLeft: 16,
+                    position: 'relative',
+                    justifyContent: 'center',
+                    minHeight: 24
                   }}
                 >
-                  סיפור הסרט
+                  <View 
+                    style={{ 
+                      position: 'absolute',
+                      left: 0,
+                      top: '50%',
+                      transform: [{ translateY: -12 }],
+                      width: 6,
+                      height: 24,
+                      backgroundColor: themeColors.primary,
+                      borderRadius: 999 
+                    }} 
+                  />
+                  <Text 
+                    className="text-h2 text-white font-display"
+                    style={{
+                      textAlign: 'left',
+                      writingDirection: 'ltr'
+                    }}
+                  >
+                    סיפור הסרט
+                  </Text>
+                </View>
+                <Text
+                  style={{
+                    ...Typography.body,
+                    color: Colors.textSecondary,
+                    lineHeight: 28,
+                    textAlign: 'left',
+                    writingDirection: I18nManager.isRTL ? 'rtl' : 'ltr',
+                  }}
+                  className="leading-loose"
+                >
+                  {movie.overview}
                 </Text>
               </View>
-              <Text
-                style={{
-                  ...Typography.body,
-                  color: Colors.textSecondary,
-                  lineHeight: 28,
-                  textAlign: 'left',
-                  writingDirection: I18nManager.isRTL ? 'rtl' : 'ltr',
-                }}
-                className="leading-loose"
-              >
-                {movie.overview}
-              </Text>
-            </View>
+            </ScrollEntrance>
           ) : null}
 
           {/* Trailer Discovery */}
@@ -396,84 +518,88 @@ export default function MovieDetailsScreen() {
 
           {/* AI Insights */}
           {insights ? (
-            <Animated.View 
-              entering={FadeInDown.delay(400)} 
-              className="mt-8 p-6 rounded-[32px] border"
-              style={{
-                backgroundColor: `${themeColors.primary}0D`,
-                borderColor: `${themeColors.primary}1A`
-              }}
-            >
-              <View className="flex-row items-center mb-6 gap-3" style={{ flexDirection: 'row' }}>
-                <View style={{ backgroundColor: `${themeColors.primary}33` }} className="p-2 rounded-xl">
-                  <Sparkles size={20} color={themeColors.primary} />
-                </View>
-                <Text className="text-h2 text-white font-display">תובנות AI</Text>
-              </View>
-
-              <View className="space-y-4">
-                <View style={{ alignItems: 'flex-start' }}>
-                  <View className="flex-row items-center mb-2 gap-2" style={{ flexDirection: 'row' }}>
-                    <ThumbsUp size={16} color="#22c55e" />
-                    <Text className="text-white font-bold font-body">מה אנחנו אוהבים:</Text>
+            <ScrollEntrance scrollY={scrollY}>
+              <View 
+                className="mt-8 p-6 rounded-[32px] border"
+                style={{
+                  backgroundColor: `${themeColors.primary}0D`,
+                  borderColor: `${themeColors.primary}1A`
+                }}
+              >
+                <View className="flex-row items-center mb-6 gap-3" style={{ flexDirection: 'row' }}>
+                  <View style={{ backgroundColor: `${themeColors.primary}33` }} className="p-2 rounded-xl">
+                    <Sparkles size={20} color={themeColors.primary} />
                   </View>
-                  {insights.pros.map((pro, index) => (
-                    <Text key={index} className="text-textSecondary font-body mb-1" style={{ textAlign: 'left', writingDirection: 'ltr' }}>• {pro}</Text>
-                  ))}
+                  <Text className="text-h2 text-white font-display">תובנות AI</Text>
                 </View>
 
-                <View style={{ alignItems: 'flex-start' }} className="mt-4">
-                  <View className="flex-row items-center mb-2 gap-2" style={{ flexDirection: 'row' }}>
-                    <ThumbsDown size={16} color="#ef4444" />
-                    <Text className="text-white font-bold font-body">פחות אהבנו:</Text>
+                <View className="space-y-4">
+                  <View style={{ alignItems: 'flex-start' }}>
+                    <View className="flex-row items-center mb-2 gap-2" style={{ flexDirection: 'row' }}>
+                      <ThumbsUp size={16} color="#22c55e" />
+                      <Text className="text-white font-bold font-body">מה אנחנו אוהבים:</Text>
+                    </View>
+                    {insights.pros.map((pro, index) => (
+                      <Text key={index} className="text-textSecondary font-body mb-1" style={{ textAlign: 'left', writingDirection: 'ltr' }}>• {pro}</Text>
+                    ))}
                   </View>
-                  {insights.cons.map((con, index) => (
-                    <Text key={index} className="text-textSecondary font-body mb-1" style={{ textAlign: 'left', writingDirection: 'ltr' }}>• {con}</Text>
-                  ))}
-                </View>
 
-                <View className="mt-6 pt-6 border-t border-white/5">
-                  <Text style={{ color: themeColors.primary, textAlign: 'left', writingDirection: 'ltr' }} className="font-bold italic font-body leading-relaxed">
-                    "{insights.verdict}"
-                  </Text>
+                  <View style={{ alignItems: 'flex-start' }} className="mt-4">
+                    <View className="flex-row items-center mb-2 gap-2" style={{ flexDirection: 'row' }}>
+                      <ThumbsDown size={16} color="#ef4444" />
+                      <Text className="text-white font-bold font-body">פחות אהבנו:</Text>
+                    </View>
+                    {insights.cons.map((con, index) => (
+                      <Text key={index} className="text-textSecondary font-body mb-1" style={{ textAlign: 'left', writingDirection: 'ltr' }}>• {con}</Text>
+                    ))}
+                  </View>
+
+                  <View className="mt-6 pt-6 border-t border-white/5">
+                    <Text style={{ color: themeColors.primary, textAlign: 'left', writingDirection: 'ltr' }} className="font-bold italic font-body leading-relaxed">
+                      "{insights.verdict}"
+                    </Text>
+                  </View>
                 </View>
               </View>
-            </Animated.View>
+            </ScrollEntrance>
           ) : null}
 
           {/* User & Community Reviews */}
-          <MovieReviews movieId={movie.id} themeColors={themeColors} />
+          <ScrollEntrance scrollY={scrollY}>
+            <MovieReviews movieId={movie.id} themeColors={themeColors} />
+          </ScrollEntrance>
 
           {/* Director's Cut - Premium Feature */}
-          <Animated.View 
-            entering={FadeInDown.delay(500)}
-            className="mt-8 overflow-hidden rounded-[32px] border border-white/5 bg-[#121214]" // Solid background
-          >
-            <View className="p-8">
-              <View className="flex-row items-center mb-6 gap-4" style={{ flexDirection: 'row' }}>
-                <View className="p-3 bg-secondary/20 rounded-2xl">
-                  <Film size={24} color={Colors.secondary} />
+          <ScrollEntrance scrollY={scrollY}>
+            <View 
+              className="mt-8 overflow-hidden rounded-[32px] border border-white/5 bg-[#121214]" // Solid background
+            >
+              <View className="p-8">
+                <View className="flex-row items-center mb-6 gap-4" style={{ flexDirection: 'row' }}>
+                  <View className="p-3 bg-secondary/20 rounded-2xl">
+                    <Film size={24} color={Colors.secondary} />
+                  </View>
+                  <View style={{ alignItems: 'flex-start' }}>
+                    <Text className="text-h2 text-white font-display" style={{ textAlign: 'left', writingDirection: 'ltr' }}>גרסת הבמאי</Text>
+                    <Text className="text-caption text-secondary/60 uppercase tracking-widest font-label" style={{ textAlign: 'left', writingDirection: 'ltr' }}>תובנות מאחורי הקלעים</Text>
+                  </View>
                 </View>
-                <View style={{ alignItems: 'flex-start' }}>
-                  <Text className="text-h2 text-white font-display" style={{ textAlign: 'left', writingDirection: 'ltr' }}>גרסת הבמאי</Text>
-                  <Text className="text-caption text-secondary/60 uppercase tracking-widest font-label" style={{ textAlign: 'left', writingDirection: 'ltr' }}>תובנות מאחורי הקלעים</Text>
+
+                <View className="flex-wrap gap-3 mb-8" style={{ flexDirection: 'row' }}>
+                  <CutBadge icon={<Zap size={12} color="white" />} text="סצנות מורחבות" />
+                  <CutBadge icon={<Star size={12} color="white" />} text="פרשנות שחקנים" />
+                  <CutBadge icon={<Info size={12} color="white" />} text="שחזור 4K" />
                 </View>
-              </View>
 
-              <View className="flex-wrap gap-3 mb-8" style={{ flexDirection: 'row' }}>
-                <CutBadge icon={<Zap size={12} color="white" />} text="סצנות מורחבות" />
-                <CutBadge icon={<Star size={12} color="white" />} text="פרשנות שחקנים" />
-                <CutBadge icon={<Info size={12} color="white" />} text="שחזור 4K" />
-              </View>
-
-              <View className="bg-white/5 p-5 rounded-2xl border border-white/10" style={{ alignItems: 'flex-start' }}>
-                <Text className="text-body text-white/80 leading-relaxed font-body" style={{ textAlign: 'left', writingDirection: 'ltr' }}>
-                  "ההפקה כללה מעל 200 סטים פיזיים והשתמשה בטכניקת תאורה מהפכנית כדי ללכוד את הזוהר הטבעי של הסביבה הקולנועית."
-                </Text>
-                <Text className="text-caption text-secondary font-bold mt-4 font-display" style={{ textAlign: 'left', writingDirection: 'ltr' }}>— סוד מההפקה</Text>
+                <View className="bg-white/5 p-5 rounded-2xl border border-white/10" style={{ alignItems: 'flex-start' }}>
+                  <Text className="text-body text-white/80 leading-relaxed font-body" style={{ textAlign: 'left', writingDirection: 'ltr' }}>
+                    "ההפקה כללה מעל 200 סטים פיזיים והשתמשה בטכניקת תאורה מהפכנית כדי ללכוד את הזוהר הטבעי של הסביבה הקולנועית."
+                  </Text>
+                  <Text className="text-caption text-secondary font-bold mt-4 font-display" style={{ textAlign: 'left', writingDirection: 'ltr' }}>— סוד מההפקה</Text>
+                </View>
               </View>
             </View>
-          </Animated.View>
+          </ScrollEntrance>
 
           {/* Group Watch Status */}
           {isGroupWatchActive && (
@@ -499,110 +625,117 @@ export default function MovieDetailsScreen() {
               </View>
             </Animated.View>
           )}
+
           {cast.length > 0 ? (
-            <View className="mt-2" style={{ alignItems: I18nManager.isRTL ? 'flex-end' : 'flex-start' }}>
-              <MarkerHighlight text="שחקנים" className="text-h2 text-white mb-4" />
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ paddingStart: 0, paddingEnd: 20, gap: 16 }}
-                className="flex-row"
-              >
-                {cast.slice(0, 10).map((c) => (
-                  <CastItem key={c.id} castMember={c} />
-                ))}
-              </ScrollView>
-            </View>
+            <ScrollEntrance scrollY={scrollY}>
+              <View className="mt-2" style={{ alignItems: I18nManager.isRTL ? 'flex-end' : 'flex-start' }}>
+                <MarkerHighlight text="שחקנים" className="text-h2 text-white mb-4" />
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ paddingStart: 0, paddingEnd: 20, gap: 16 }}
+                  className="flex-row"
+                >
+                  {cast.slice(0, 10).map((c) => (
+                    <CastItem key={c.id} castMember={c} />
+                  ))}
+                </ScrollView>
+              </View>
+            </ScrollEntrance>
           ) : null}
 
           {/* Date Selection */}
-          <View className="mt-8" style={{ alignItems: I18nManager.isRTL ? 'flex-end' : 'flex-start' }}>
-            <MarkerHighlight text="בחירת תאריך" className="text-h2 text-white mb-4" />
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingStart: 0, paddingEnd: 20 }}
-              className="flex-row"
-            >
-              {dates.map((d) => {
-                const isSelected = selectedDate === d.date;
-                return (
-                  <Pressable
-                    key={d.date}
-                    onPress={() => selectDate(d.date)}
-                    className={`items-center justify-center w-[65px] h-[75px] rounded-2xl ms-2 border overflow-hidden ${isSelected
-                      ? 'border-transparent'
-                      : 'bg-surfaceLight border-white/5'
-                      }`}
-                    style={isSelected ? {
-                      backgroundColor: themeColors.primary,
-                      shadowColor: themeColors.primary,
-                      shadowOffset: { width: 0, height: 4 },
-                      shadowOpacity: 0.3,
-                      shadowRadius: 8,
-                      elevation: 5
-                    } : {}}
-                  >
-                    <Text className={`text-[10px] font-bold font-body uppercase tracking-wider ${isSelected ? 'text-background' : 'text-textMuted'}`}>
-                      {d.dayName}
-                    </Text>
-                    <Text className={`text-h3 font-display mt-0.5 ${isSelected ? 'text-background' : 'text-white'}`}>
-                      {d.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          </View>
+          <ScrollEntrance scrollY={scrollY}>
+            <View className="mt-8" style={{ alignItems: I18nManager.isRTL ? 'flex-end' : 'flex-start' }}>
+              <MarkerHighlight text="בחירת תאריך" className="text-h2 text-white mb-4" />
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingStart: 0, paddingEnd: 20 }}
+                className="flex-row"
+              >
+                {dates.map((d) => {
+                  const isSelected = selectedDate === d.date;
+                  return (
+                    <Pressable
+                      key={d.date}
+                      onPress={() => selectDate(d.date)}
+                      className={`items-center justify-center w-[65px] h-[75px] rounded-2xl ms-2 border overflow-hidden ${isSelected
+                        ? 'border-transparent'
+                        : 'bg-surfaceLight border-white/5'
+                        }`}
+                      style={isSelected ? {
+                        backgroundColor: themeColors.primary,
+                        shadowColor: themeColors.primary,
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.3,
+                        shadowRadius: 8,
+                        elevation: 5
+                      } : {}}
+                    >
+                      <Text className={`text-[10px] font-bold font-body uppercase tracking-wider ${isSelected ? 'text-background' : 'text-textMuted'}`}>
+                        {d.dayName}
+                      </Text>
+                      <Text className={`text-h3 font-display mt-0.5 ${isSelected ? 'text-background' : 'text-white'}`}>
+                        {d.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          </ScrollEntrance>
 
           {/* Showtimes */}
-          <View className="mt-7" style={{ alignItems: I18nManager.isRTL ? 'flex-end' : 'flex-start' }}>
-            <View className="px-0 w-full" style={{ alignItems: I18nManager.isRTL ? 'flex-end' : 'flex-start' }}>
-              <MarkerHighlight text="שעות הקרנה" className="text-h2 text-white mb-3" />
-            </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 0, gap: 12 }}
-              className="flex-row"
-            >
-              {MOCK_SHOWTIMES.map((st) => {
-                const isSelected = selectedShowtime?.id === st.id;
-                return (
-                  <Pressable
-                    key={st.id}
-                    onPress={() => handleSelectShowtime(st)}
-                    className={`items-center py-4 px-6 rounded-[24px] border min-w-[120px] overflow-hidden ${isSelected
-                      ? 'border-transparent'
-                      : 'border-white/10'
-                      }`}
-                    style={[
-                      { backgroundColor: isSelected ? themeColors.primary : 'rgba(255,255,255,0.03)' },
-                      isSelected ? {
-                        shadowColor: themeColors.primary,
-                        shadowOffset: { width: 0, height: 6 },
-                        shadowOpacity: 0.3,
-                        shadowRadius: 12,
-                        elevation: 6
-                      } : {}
-                    ]}
-                  >
-                    <Text className={`text-h3 font-display ${isSelected ? 'text-background' : 'text-white'}`}>
-                      {st.time}
-                    </Text>
-                    <Text className={`text-caption mt-0.5 font-body opacity-80 ${isSelected ? 'text-background' : 'text-textSecondary'}`}>
-                      {st.format}
-                    </Text>
-                    <View className="px-3 py-1 rounded-full mt-2.5" style={{ backgroundColor: isSelected ? 'rgba(0,0,0,0.2)' : `${themeColors.primary}1A` }}>
-                      <Text className={`text-[10px] font-bold font-display ${isSelected ? 'text-background' : ''}`} style={!isSelected ? { color: themeColors.primary } : {}}>
-                        ₪{st.price}
+          <ScrollEntrance scrollY={scrollY}>
+            <View className="mt-7" style={{ alignItems: I18nManager.isRTL ? 'flex-end' : 'flex-start' }}>
+              <View className="px-0 w-full" style={{ alignItems: I18nManager.isRTL ? 'flex-end' : 'flex-start' }}>
+                <MarkerHighlight text="שעות הקרנה" className="text-h2 text-white mb-3" />
+              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: 0, gap: 12 }}
+                className="flex-row"
+              >
+                {MOCK_SHOWTIMES.map((st) => {
+                  const isSelected = selectedShowtime?.id === st.id;
+                  return (
+                    <Pressable
+                      key={st.id}
+                      onPress={() => handleSelectShowtime(st)}
+                      className={`items-center py-4 px-6 rounded-[24px] border min-w-[120px] overflow-hidden ${isSelected
+                        ? 'border-transparent'
+                        : 'border-white/10'
+                        }`}
+                      style={[
+                        { backgroundColor: isSelected ? themeColors.primary : 'rgba(255,255,255,0.03)' },
+                        isSelected ? {
+                          shadowColor: themeColors.primary,
+                          shadowOffset: { width: 0, height: 6 },
+                          shadowOpacity: 0.3,
+                          shadowRadius: 12,
+                          elevation: 6
+                        } : {}
+                      ]}
+                    >
+                      <Text className={`text-h3 font-display ${isSelected ? 'text-background' : 'text-white'}`}>
+                        {st.time}
                       </Text>
-                    </View>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          </View>
+                      <Text className={`text-caption mt-0.5 font-body opacity-80 ${isSelected ? 'text-background' : 'text-textSecondary'}`}>
+                        {st.format}
+                      </Text>
+                      <View className="px-3 py-1 rounded-full mt-2.5" style={{ backgroundColor: isSelected ? 'rgba(0,0,0,0.2)' : `${themeColors.primary}1A` }}>
+                        <Text className={`text-[10px] font-bold font-display ${isSelected ? 'text-background' : ''}`} style={!isSelected ? { color: themeColors.primary } : {}}>
+                          ₪{st.price}
+                        </Text>
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          </ScrollEntrance>
         </Animated.View>
       </Animated.ScrollView>
 
@@ -683,3 +816,5 @@ function CutBadge({ icon, text }: { icon: React.ReactNode; text: string }) {
     </View>
   );
 }
+
+

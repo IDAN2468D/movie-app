@@ -55,11 +55,12 @@ export default function TicketsScreen() {
               <MarkerHighlight text="הכרטיסים שלי" className="text-h1 text-text" color={Colors.secondary} />
             </View>
           }
-          renderItem={({ item }) => (
-            <TicketCard ticket={item} onPress={() => handleViewTicket(item)} />
+          renderItem={({ item, index }) => (
+            <TicketCard ticket={item} index={index} onPress={() => handleViewTicket(item)} />
           )}
           contentContainerStyle={{ 
-            paddingBottom: insets.bottom + 120
+            paddingBottom: insets.bottom + 120,
+            gap: 20
           }}
           showsVerticalScrollIndicator={false}
           refreshControl={

@@ -5,6 +5,7 @@ import { API_BASE_URL } from '@/constants/Config';
 import { Calendar as CalendarIcon, Mail, CheckCircle2, QrCode, ArrowRightLeft } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
+import Animated, { ZoomIn, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 
 import type { BookedTicket } from '@/store/useBookingStore';
 import { Colors } from '@/constants/Theme';
@@ -17,9 +18,10 @@ import { MessageCircle, Gift } from 'lucide-react-native';
 interface TicketCardProps {
   ticket: BookedTicket;
   onPress?: () => void;
+  index?: number;
 }
 
-export default function TicketCard({ ticket, onPress }: TicketCardProps) {
+export default function TicketCard({ ticket, onPress, index = 0 }: TicketCardProps) {
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [rewardsModalVisible, setRewardsModalVisible] = useState(false);
@@ -89,12 +91,34 @@ export default function TicketCard({ ticket, onPress }: TicketCardProps) {
 
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${ticket.id}&color=${Colors.primary.replace('#', '')}&bgcolor=FFFFFF`;
 
+  const scaleValue = useSharedValue(1);
+
+  const scaleStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: scaleValue.value }],
+    };
+  });
+
+  const handlePressIn = () => {
+    scaleValue.value = withSpring(0.96, { damping: 12, stiffness: 200 });
+  };
+
+  const handlePressOut = () => {
+    scaleValue.value = withSpring(1, { damping: 12, stiffness: 200 });
+  };
+
   return (
-    <Pressable 
-      testID={`ticket-card-${ticket.id}`}
-      onPress={onPress}
+    <Animated.View
+      entering={ZoomIn.delay(Math.min(index * 100, 500)).springify().damping(15)}
+      style={scaleStyle}
     >
-      <BlurView intensity={20} tint="dark" className="rounded-[32px] overflow-hidden border border-white/10 shadow-2xl">
+      <Pressable 
+        testID={`ticket-card-${ticket.id}`}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={onPress}
+      >
+        <BlurView intensity={20} tint="dark" className="rounded-[32px] overflow-hidden border border-white/10 shadow-2xl">
         <View>
           {/* Top Section - Movie Info */}
           <View className="p-5">
@@ -216,7 +240,8 @@ export default function TicketCard({ ticket, onPress }: TicketCardProps) {
         onClose={() => setRewardsModalVisible(false)} 
         movieTitle={ticket.movieTitle || 'סרט'}
       />
-    </Pressable>
+      </Pressable>
+    </Animated.View>
   );
 }
 

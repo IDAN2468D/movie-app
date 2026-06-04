@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Alert } from 'react-native';
 import { router } from 'expo-router';
+import * as LocalAuthentication from 'expo-local-authentication';
 import { useAuthStore } from '@/store/useAuthStore';
 
 export const useSecurity = () => {
@@ -13,6 +14,28 @@ export const useSecurity = () => {
 
   const [passwordModalVisible, setPasswordModalVisible] = useState(false);
   const [twoFactorModalVisible, setTwoFactorModalVisible] = useState(false);
+  const [biometricType, setBiometricType] = useState<'face' | 'fingerprint' | 'generic'>('generic');
+
+  useEffect(() => {
+    const detectBiometricType = async () => {
+      try {
+        if (!LocalAuthentication || !LocalAuthentication.supportedAuthenticationTypesAsync) {
+          return;
+        }
+        const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
+        if (types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
+          setBiometricType('face');
+        } else if (types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
+          setBiometricType('fingerprint');
+        } else {
+          setBiometricType('generic');
+        }
+      } catch (err) {
+        console.warn('Error fetching supported authentication types:', err);
+      }
+    };
+    detectBiometricType();
+  }, []);
 
   const handleBiometricsToggle = useCallback(async (value: boolean) => {
     const success = await setBiometricsEnabled(value);
@@ -46,5 +69,6 @@ export const useSecurity = () => {
     closePasswordModal,
     closeTwoFactorModal,
     goBack,
+    biometricType,
   };
 };

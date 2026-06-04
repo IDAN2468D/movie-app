@@ -11,6 +11,7 @@ import { Video } from '@/utils/SafeModules';
 
 export const useCheckout = () => {
   const { 
+    selectedMovieId,
     selectedMovieTitle, 
     selectedMoviePoster, 
     selectedShowtime, 
@@ -128,12 +129,41 @@ export const useCheckout = () => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setIsSuccess(true);
       
-      NotificationService.notifyTicketPurchase(selectedMovieTitle, selectedSeats.length);
+      NotificationService.notifyTicketPurchase(selectedMovieTitle, selectedSeats.length, selectedMovieId || undefined);
+
+      if (selectedDate && selectedShowtime?.time) {
+        try {
+          const dateParts = selectedDate.split('-');
+          const timeParts = selectedShowtime.time.split(':');
+          
+          if (dateParts.length === 3 && timeParts.length >= 2) {
+            const year = Number(dateParts[0]);
+            const month = Number(dateParts[1]);
+            const day = Number(dateParts[2]);
+            const hour = Number(timeParts[0]);
+            const minute = Number(timeParts[1]);
+            
+            if (!isNaN(year) && !isNaN(month) && !isNaN(day) && !isNaN(hour) && !isNaN(minute)) {
+              const showtimeDate = new Date(year, month - 1, day, hour, minute);
+              if (!isNaN(showtimeDate.getTime())) {
+                NotificationService.scheduleMovieReminder(
+                  selectedMovieTitle,
+                  showtimeDate,
+                  selectedMovieId || undefined,
+                  selectedShowtime.hall
+                );
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('Failed to schedule movie reminder:', e);
+        }
+      }
     } else {
       setIsProcessing(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
-  }, [authenticateBiometrics, bookCurrentSelection, selectedMovieTitle, selectedSeats.length]);
+  }, [authenticateBiometrics, bookCurrentSelection, selectedMovieId, selectedMovieTitle, selectedSeats.length, selectedDate, selectedShowtime, snacksInCart, cart]);
 
   const handleFinish = useCallback(() => {
     clearBooking();

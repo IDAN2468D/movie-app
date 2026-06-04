@@ -1,10 +1,11 @@
 import os
 from PIL import Image, ImageDraw
 
-res_dir = r"C:\Users\Lenovo\Desktop\project-movie\movie-app\android\app\src\main\res"
+script_dir = os.path.dirname(os.path.abspath(__file__))
+res_dir = os.path.join(script_dir, "android", "app", "src", "main", "res")
 
-adaptive_src_path = r"c:\Users\Lenovo\Desktop\project-movie\movie-app\assets\images\adaptive-icon.png"
-icon_src_path = r"c:\Users\Lenovo\Desktop\project-movie\movie-app\assets\images\icon.png"
+adaptive_src_path = os.path.join(script_dir, "assets", "images", "adaptive-icon.png")
+icon_src_path = os.path.join(script_dir, "assets", "images", "icon.png")
 
 configs = {
     "mipmap-mdpi": {

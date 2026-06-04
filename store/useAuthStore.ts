@@ -1,3 +1,16 @@
+/**
+ * CineBook Data Classification Policy:
+ * 
+ * | Data | Storage | Encrypted |
+ * |:---|:---|:---|
+ * | JWT Access Token | `expo-secure-store` | ✅ OS-level |
+ * | Refresh Token | `expo-secure-store` | ✅ OS-level |
+ * | User Email (for auto-fill) | `expo-secure-store` | ✅ OS-level |
+ * | Theme Preference | `AsyncStorage` | ❌ Not needed |
+ * | Search History | `AsyncStorage` | ❌ Not needed |
+ * | Movie Cache | In-memory (Zustand) | ❌ Ephemeral |
+ */
+
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
 import * as LocalAuthentication from 'expo-local-authentication';
@@ -291,6 +304,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const result = await LocalAuthentication.authenticateAsync({
           promptMessage: 'אימות ביומטרי נדרש להפעלת השירות',
           cancelLabel: 'ביטול',
+          disableDeviceFallback: false,
           fallbackLabel: 'השתמש בסיסמה',
         });
         
@@ -329,6 +343,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const result = await LocalAuthentication.authenticateAsync({
         promptMessage,
         cancelLabel: 'ביטול',
+        disableDeviceFallback: false,
         fallbackLabel: 'השתמש בסיסמה',
       });
       

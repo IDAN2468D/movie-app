@@ -8,11 +8,11 @@ jest.mock('../../store/apiHelper', () => ({
 describe('useBookingStore', () => {
   beforeEach(() => {
     useBookingStore.getState().clearBooking();
-    jest.spyOn(global.Math, 'random').mockReturnValue(0.5); // Ensure no seats are "taken"
+    jest.spyOn(Math, 'random').mockReturnValue(0.5); // Ensure no seats are "taken"
   });
 
   afterEach(() => {
-    jest.spyOn(global.Math, 'random').mockRestore();
+    jest.spyOn(Math, 'random').mockRestore();
   });
 
   it('should initialize with default state', () => {

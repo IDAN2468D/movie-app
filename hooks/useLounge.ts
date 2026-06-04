@@ -262,14 +262,14 @@ export const useLounge = () => {
         setIsSpeaking(false);
         if (sound && isPlaying) {
           isDucked.value = withTiming(0, { duration: 500 });
-          sound.setVolumeAsync(volume).catch(err => console.error("Error setting volume:", err));
+          sound.setVolumeAsync(volume).catch((err: any) => console.error("Error setting volume:", err));
         }
       },
       onStopped: () => {
         setIsSpeaking(false);
         if (sound && isPlaying) {
           isDucked.value = withTiming(0, { duration: 500 });
-          sound.setVolumeAsync(volume).catch(err => console.error("Error setting volume:", err));
+          sound.setVolumeAsync(volume).catch((err: any) => console.error("Error setting volume:", err));
         }
       },
       onError: (err) => {
@@ -277,7 +277,7 @@ export const useLounge = () => {
         setIsSpeaking(false);
         if (sound && isPlaying) {
           isDucked.value = withTiming(0, { duration: 500 });
-          sound.setVolumeAsync(volume).catch(e => console.error("Error setting volume:", e));
+          sound.setVolumeAsync(volume).catch((e: any) => console.error("Error setting volume:", e));
         }
       }
     });

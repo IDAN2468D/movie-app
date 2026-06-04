@@ -13,7 +13,14 @@ export default function SecurityScreen() {
     passwordModalVisible, twoFactorModalVisible,
     handleBiometricsToggle, handleTwoFactorToggle,
     openPasswordModal, closePasswordModal, closeTwoFactorModal, goBack,
+    biometricType,
   } = useSecurity();
+
+  const getBiometricTitle = () => {
+    if (biometricType === 'face') return 'זיהוי Face ID';
+    if (biometricType === 'fingerprint') return 'זיהוי Touch ID (טביעת אצבע)';
+    return 'זיהוי ביומטרי';
+  };
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
@@ -47,8 +54,8 @@ export default function SecurityScreen() {
                 <Fingerprint size={20} color={Colors.primary} />
               </View>
               <View className="ms-4 flex-1">
-                <Text style={{ fontFamily: 'Rubik-Bold', fontSize: 16, color: 'white' }}>זיהוי ביומטרי (FaceID)</Text>
-                <Text style={{ fontFamily: 'Rubik-Regular', fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>כניסה מהירה ובטוחה לאפליקציה</Text>
+                <Text style={{ fontFamily: 'Rubik-Bold', fontSize: 16, color: 'white', textAlign: 'right', writingDirection: 'rtl' }}>{getBiometricTitle()}</Text>
+                <Text style={{ fontFamily: 'Rubik-Regular', fontSize: 12, color: 'rgba(255,255,255,0.5)', textAlign: 'right', writingDirection: 'rtl' }}>כניסה מהירה ובטוחה לאפליקציה</Text>
               </View>
             </View>
             <Switch value={biometricsEnabled} onValueChange={handleBiometricsToggle} trackColor={{ false: '#3f3f46', true: Colors.primary }} />
@@ -60,8 +67,8 @@ export default function SecurityScreen() {
                 <Smartphone size={20} color={Colors.secondary} />
               </View>
               <View className="ms-4 flex-1">
-                <Text style={{ fontFamily: 'Rubik-Bold', fontSize: 16, color: 'white', textAlign: 'left', writingDirection: 'ltr' }}>אימות דו-שלבי</Text>
-                <Text style={{ fontFamily: 'Rubik-Regular', fontSize: 12, color: 'rgba(255,255,255,0.5)', textAlign: 'left', writingDirection: 'ltr' }}>שכבת הגנה נוספת בעת התחברות</Text>
+                <Text style={{ fontFamily: 'Rubik-Bold', fontSize: 16, color: 'white', textAlign: 'right', writingDirection: 'rtl' }}>אימות דו-שלבי</Text>
+                <Text style={{ fontFamily: 'Rubik-Regular', fontSize: 12, color: 'rgba(255,255,255,0.5)', textAlign: 'right', writingDirection: 'rtl' }}>שכבת הגנה נוספת בעת התחברות</Text>
               </View>
             </View>
             <Switch 
@@ -80,8 +87,8 @@ export default function SecurityScreen() {
                 <KeyRound size={20} color="white" />
               </View>
               <View className="ms-4 flex-1">
-                <Text style={{ fontFamily: 'Rubik-Bold', fontSize: 16, color: 'white', textAlign: 'left', writingDirection: 'ltr' }}>החלפת סיסמה</Text>
-                <Text style={{ fontFamily: 'Rubik-Regular', fontSize: 12, color: 'rgba(255,255,255,0.5)', textAlign: 'left', writingDirection: 'ltr' }}>עדכון סיסמת ההתחברות שלך</Text>
+                <Text style={{ fontFamily: 'Rubik-Bold', fontSize: 16, color: 'white', textAlign: 'right', writingDirection: 'rtl' }}>החלפת סיסמה</Text>
+                <Text style={{ fontFamily: 'Rubik-Regular', fontSize: 12, color: 'rgba(255,255,255,0.5)', textAlign: 'right', writingDirection: 'rtl' }}>עדכון סיסמת ההתחברות שלך</Text>
               </View>
             </View>
             <ChevronRight size={16} color="rgba(255,255,255,0.3)" style={{ transform: [{ scaleX: -1 }] }} />

@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { Platform } from 'react-native';
+import { Platform, Alert } from 'react-native';
+import { router } from 'expo-router';
 import * as Device from 'expo-device';
 import { Notifications } from '../utils/SafeModules';
 
@@ -29,6 +29,38 @@ class NotificationService {
         shouldSetBadge: true,
       }),
     });
+
+    if (Platform.OS === 'android' && typeof Notifications.setNotificationChannelAsync === 'function') {
+      Notifications.setNotificationChannelAsync('default', {
+        name: 'default',
+        importance: Notifications.AndroidImportance?.MAX ?? 4,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#E5FF00',
+      }).catch((err: any) => {
+        console.warn('Failed to configure Android notification channel:', err);
+      });
+    }
+
+    try {
+      Notifications.addNotificationResponseReceivedListener((response: any) => {
+        const data = response?.notification?.request?.content?.data;
+        const navigate = () => {
+          try {
+            if (data?.screen === 'tickets') {
+              router.push('/(tabs)/tickets');
+            } else if (data?.movieId) {
+              router.push(`/movie/${data.movieId}`);
+            }
+          } catch (err) {
+            console.warn('[NotificationService] Router not ready, retrying in 500ms:', err);
+            setTimeout(navigate, 500);
+          }
+        };
+        setTimeout(navigate, 150);
+      });
+    } catch (error) {
+      console.warn('Failed to register notification response listener:', error);
+    }
   }
 
   /**
@@ -55,7 +87,11 @@ class NotificationService {
       }
       
       if (finalStatus !== 'granted') {
-        console.log('Failed to get push token for push notification!');
+        Alert.alert(
+          'התראות',
+          'כדי לקבל תזכורות לסרטים וכרטיסים בזמן אמת, יש לאשר קבלת התראות בהגדרות המכשיר.',
+          [{ text: 'הבנתי', style: 'cancel' }]
+        );
         return false;
       }
       
@@ -106,41 +142,53 @@ class NotificationService {
   /**
    * Schedule a reminder for a movie.
    */
-  async scheduleMovieReminder(movieTitle: string, showtime: Date) {
+  async scheduleMovieReminder(movieTitle: string, showtimeDate: Date, movieId?: number, hallName: string = 'האולם המרכזי') {
     if (!this.hasNativeSupport || !Notifications) return null;
 
+    if (!showtimeDate || !(showtimeDate instanceof Date) || isNaN(showtimeDate.getTime())) {
+      console.warn('[NotificationService] Invalid showtimeDate provided to scheduleMovieReminder.');
+      return null;
+    }
+
     // Reminder 30 minutes before
-    const trigger = new Date(showtime.getTime() - 30 * 60000);
+    const trigger = new Date(showtimeDate.getTime() - 30 * 60 * 1000);
     
-    if (trigger < new Date()) return null;
+    if (trigger < new Date() || isNaN(trigger.getTime())) return null;
 
     return await Notifications.scheduleNotificationAsync({
       content: {
-        title: '🎬 Movie Starting Soon!',
-        body: `"${movieTitle}" starts in 30 minutes. Get your popcorn ready!`,
-        data: { movieTitle },
+        title: '🎬 הסרט שלך מתחיל בקרוב!',
+        body: `הסרט "${movieTitle}" מתחיל בעוד 30 דקות באולם "${hallName}". הכינו את הפופקורן!`,
+        data: { movieId, screen: 'tickets' },
+        sound: true,
       },
-      trigger,
+      trigger: {
+        type: 'date',
+        date: trigger,
+        channelId: 'default',
+      } as any,
     });
   }
 
   /**
    * Notify about a new movie.
    */
-  async notifyNewMovie(movieTitle: string) {
+  async notifyNewMovie(movieTitle: string, movieId?: number) {
     return await this.scheduleLocalNotification(
       '🎬 סרט חדש ב-CineBook!',
-      `הסרט "${movieTitle}" זמין כעת לצפייה. הזמן כרטיסים עכשיו!`
+      `הסרט "${movieTitle}" זמין כעת לצפייה. הזמן כרטיסים עכשיו!`,
+      { movieId }
     );
   }
 
   /**
    * Notify about a ticket purchase.
    */
-  async notifyTicketPurchase(movieTitle: string, seatCount: number) {
+  async notifyTicketPurchase(movieTitle: string, seatCount: number, movieId?: number) {
     return await this.scheduleLocalNotification(
       '✅ הרכישה הושלמה!',
-      `רכשת ${seatCount} כרטיסים לסרט "${movieTitle}". תהנו!`
+      `רכשת ${seatCount} כרטיסים לסרט "${movieTitle}". תהנו!`,
+      { movieId, screen: 'tickets' }
     );
   }
 

@@ -1,13 +1,17 @@
+/* eslint-disable react-hooks/immutability, react-hooks/exhaustive-deps */
 import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
-  ScrollView,
   FlatList,
   ActivityIndicator,
   RefreshControl,
   Modal,
   Pressable,
+  StyleSheet,
+  Dimensions,
+  I18nManager,
+  type ViewToken,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -24,6 +28,20 @@ import MovieStories from '@/components/MovieStories';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import CinematicFeed from '@/components/CinematicFeed';
+import Animated, {
+  useSharedValue,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  interpolate,
+  Extrapolation,
+  withTiming,
+} from 'react-native-reanimated';
+import { GENRE_THEMES } from '@/hooks/useMovieTheme';
+import { CARD_WIDTH } from '@/components/MovieCard';
+
+const VIEWABILITY_CONFIG_HORIZONTAL = {
+  itemVisiblePercentThreshold: 50,
+};
 
 
 export default function HomeScreen() {
@@ -43,6 +61,84 @@ export default function HomeScreen() {
     handleStoryPress,
     closeStories,
   } = useHome();
+
+  // Scroll and Progress tracking (Top level, strictly before loading conditional)
+  const scrollY = useSharedValue(0);
+  const scrollProgress = useSharedValue(0);
+
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+      const totalScrollable = event.contentSize.height - event.layoutMeasurement.height;
+      scrollProgress.value = totalScrollable > 0 ? event.contentOffset.y / totalScrollable : 0;
+    }
+  });
+
+  // Scroll Progress Bar Animated Style (Uses high-performance transform scaleX & translateX)
+  const screenWidth = Dimensions.get('window').width;
+  const progressBarStyle = useAnimatedStyle(() => {
+    const scale = scrollProgress.value;
+    const translation = I18nManager.isRTL 
+      ? (1 - scale) * (screenWidth / 2) 
+      : (scale - 1) * (screenWidth / 2);
+    return {
+      transform: [
+        { scaleX: scale },
+        { translateX: translation }
+      ],
+      width: '100%',
+    };
+  });
+
+  // Sticky header animation
+  const stickyHeaderStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      scrollY.value,
+      [0, 80],
+      [0, 1],
+      Extrapolation.CLAMP
+    );
+    return { opacity };
+  });
+
+  // Ambient Glow Color shared values
+  const glowPrimary = useSharedValue<string>(Colors.primary);
+  const glowSecondary = useSharedValue<string>('#9B1B30');
+
+  // Multi-layered/Dynamic Ambient Glow Style (Scales and fades dynamically on scroll)
+  const ambientGlowStyle = useAnimatedStyle(() => {
+    const scale = interpolate(scrollY.value, [0, 500], [1, 1.2], Extrapolation.CLAMP);
+    const opacity = interpolate(scrollY.value, [0, 500], [0.15, 0.08], Extrapolation.CLAMP);
+    return {
+      backgroundColor: glowPrimary.value,
+      opacity,
+      transform: [{ scale }],
+    };
+  });
+
+  // Ambient Glow transition trigger callback
+  const handleActiveMovieChange = React.useCallback((movie: any) => {
+    if (movie && movie.genre_ids && movie.genre_ids.length > 0) {
+      const firstGenreId = movie.genre_ids[0];
+      const genreTheme = GENRE_THEMES[firstGenreId];
+      if (genreTheme) {
+        glowPrimary.value = withTiming(genreTheme.primary || Colors.primary, { duration: 800 });
+        glowSecondary.value = withTiming(genreTheme.secondary || '#9B1B30', { duration: 800 });
+      }
+    }
+  }, []);
+
+  // onViewableItemsChangedHorizontal uses handleActiveMovieChange to sync ambient glow
+  const onViewableItemsChangedHorizontal = React.useCallback(({ viewableItems }: { viewableItems: ViewToken[] }) => {
+    if (viewableItems.length > 0) {
+      // Find centered item
+      const centerIndex = Math.floor(viewableItems.length / 2);
+      const centerItem = viewableItems[centerIndex];
+      if (centerItem && centerItem.item) {
+        handleActiveMovieChange(centerItem.item);
+      }
+    }
+  }, [handleActiveMovieChange]);
 
   // Cache mapped arrays using useMemo to avoid re-calculating lists and creating new array references on every render
   const storiesData = useMemo(() => {
@@ -69,6 +165,80 @@ export default function HomeScreen() {
 
   return (
     <View className="flex-1 bg-background">
+      {/* Dynamic Ambient Glow Circle (Sits at the back of the screen) */}
+      {!isCinematicView && (
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          <Animated.View 
+            style={[
+              {
+                position: 'absolute',
+                top: -150,
+                left: '50%',
+                marginLeft: -250,
+                width: 500,
+                height: 500,
+                borderRadius: 250,
+                opacity: 0.15,
+                zIndex: -2,
+              },
+              ambientGlowStyle
+            ]}
+          />
+          <BlurView 
+            intensity={90} 
+            tint="dark" 
+            style={[StyleSheet.absoluteFill, { zIndex: -1 }]} 
+          />
+        </View>
+      )}
+
+      {/* Scroll-Progress Indicator Bar */}
+      {!isCinematicView && (
+        <Animated.View 
+          style={[
+            {
+              position: 'absolute',
+              top: insets.top,
+              left: 0,
+              height: 3,
+              backgroundColor: '#E5FF00', // Secondary system color
+              zIndex: 110,
+            },
+            progressBarStyle
+          ]}
+        />
+      )}
+
+      {/* Sticky Header Background (Fades in on scroll) */}
+      {!isCinematicView && (
+        <Animated.View 
+          style={[
+            { 
+              position: 'absolute', 
+              top: 0, 
+              left: 0, 
+              right: 0, 
+              height: insets.top + 64, 
+              zIndex: 90 
+            }, 
+            stickyHeaderStyle
+          ]}
+        >
+          <BlurView 
+            intensity={40} 
+            tint="dark" 
+            style={StyleSheet.absoluteFill} 
+          />
+          <View 
+            style={{ 
+              flex: 1, 
+              borderBottomWidth: 1, 
+              borderBottomColor: 'rgba(255, 255, 255, 0.08)' 
+            }} 
+          />
+        </Animated.View>
+      )}
+
       {/* Glassmorphic View Mode Toggle Pill */}
       <View 
         style={{ 
@@ -128,11 +298,13 @@ export default function HomeScreen() {
       {isCinematicView ? (
         <CinematicFeed movies={nowPlaying} />
       ) : (
-        <ScrollView
+        <Animated.ScrollView
           className="flex-1"
           style={{ paddingTop: insets.top }}
           contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
           showsVerticalScrollIndicator={false}
+          onScroll={scrollHandler}
+          scrollEventThrottle={16}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -150,8 +322,6 @@ export default function HomeScreen() {
             </View>
           </View>
 
-
-
           {/* Stories */}
           {storiesData.length > 0 && (
             <StoriesRow 
@@ -161,7 +331,13 @@ export default function HomeScreen() {
           )}
 
           {/* Hero */}
-          {nowPlaying.length > 0 && <HeroSlider movies={nowPlaying} />}
+          {nowPlaying.length > 0 && (
+            <HeroSlider 
+              movies={nowPlaying} 
+              scrollY={scrollY}
+              onActiveMovieChange={handleActiveMovieChange} 
+            />
+          )}
 
           {/* Now Playing */}
           <SectionHeader title="🎬 עכשיו בקולנוע" />
@@ -169,14 +345,19 @@ export default function HomeScreen() {
             data={nowPlaying}
             horizontal
             showsHorizontalScrollIndicator={false}
-            renderItem={({ item }) => <MovieCard movie={item} />}
+            renderItem={({ item, index }) => <MovieCard movie={item} index={index} />}
             keyExtractor={(item) => `np-${item.id}`}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
+            contentContainerStyle={{ paddingHorizontal: 20 }}
             scrollEnabled
             nestedScrollEnabled={true}
             initialNumToRender={6}
             maxToRenderPerBatch={6}
             windowSize={5}
+            snapToInterval={CARD_WIDTH + 14}
+            decelerationRate="fast"
+            snapToAlignment="start"
+            onViewableItemsChanged={onViewableItemsChangedHorizontal}
+            viewabilityConfig={VIEWABILITY_CONFIG_HORIZONTAL}
           />
 
           {/* Popular */}
@@ -185,14 +366,19 @@ export default function HomeScreen() {
             data={popular}
             horizontal
             showsHorizontalScrollIndicator={false}
-            renderItem={({ item }) => <MovieCard movie={item} />}
+            renderItem={({ item, index }) => <MovieCard movie={item} index={index} />}
             keyExtractor={(item) => `pop-${item.id}`}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
+            contentContainerStyle={{ paddingHorizontal: 20 }}
             scrollEnabled
             nestedScrollEnabled={true}
             initialNumToRender={6}
             maxToRenderPerBatch={6}
             windowSize={5}
+            snapToInterval={CARD_WIDTH + 14}
+            decelerationRate="fast"
+            snapToAlignment="start"
+            onViewableItemsChanged={onViewableItemsChangedHorizontal}
+            viewabilityConfig={VIEWABILITY_CONFIG_HORIZONTAL}
           />
 
           {/* Top Rated */}
@@ -201,16 +387,21 @@ export default function HomeScreen() {
             data={topRated}
             horizontal
             showsHorizontalScrollIndicator={false}
-            renderItem={({ item }) => <MovieCard movie={item} />}
+            renderItem={({ item, index }) => <MovieCard movie={item} index={index} />}
             keyExtractor={(item) => `tr-${item.id}`}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
+            contentContainerStyle={{ paddingHorizontal: 20 }}
             scrollEnabled
             nestedScrollEnabled={true}
             initialNumToRender={6}
             maxToRenderPerBatch={6}
             windowSize={5}
+            snapToInterval={CARD_WIDTH + 14}
+            decelerationRate="fast"
+            snapToAlignment="start"
+            onViewableItemsChanged={onViewableItemsChangedHorizontal}
+            viewabilityConfig={VIEWABILITY_CONFIG_HORIZONTAL}
           />
-        </ScrollView>
+        </Animated.ScrollView>
       )}
 
       {/* Floating AI Concierge Button (Only in Classic View) */}
