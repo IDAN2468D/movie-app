@@ -216,7 +216,7 @@ export default function MovieDetailsScreen() {
       <Animated.ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 280 }}
+        contentContainerStyle={{ paddingBottom: 140 }}
         onScroll={localScrollHandler}
         scrollEventThrottle={16}
       >

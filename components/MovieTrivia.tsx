@@ -121,13 +121,13 @@ export default function MovieTrivia({ movieTitle, movieId, themeColors }: MovieT
       
       {gameState === 'idle' && (
         <View className="p-8">
-          <View className="flex-row items-center mb-6 gap-4" style={{ flexDirection: 'row' }}>
+          <View className="flex-row items-center mb-6 gap-4" style={{ flexDirection: I18nManager.isRTL ? 'row' : 'row-reverse' }}>
             <View className="p-3 rounded-2xl" style={{ backgroundColor: `${themeColors.primary}22` }}>
               <HelpCircle size={24} color={themeColors.primary} />
             </View>
-            <View style={{ alignItems: 'flex-start' }}>
-              <Text className="text-h2 text-white font-display" style={{ textAlign: 'left', writingDirection: 'rtl' }}>חידון טריוויה קולנועי</Text>
-              <Text className="text-caption text-textSecondary uppercase tracking-widest font-label" style={{ textAlign: 'left', writingDirection: 'ltr' }}>CINETRIVIA QUEST</Text>
+            <View style={{ alignItems: I18nManager.isRTL ? 'flex-end' : 'flex-start', flex: 1 }}>
+              <Text className="text-h2 text-white font-display" style={{ alignSelf: 'stretch', textAlign: 'left', writingDirection: 'rtl' }}>חידון טריוויה קולנועי</Text>
+              <Text className="text-caption text-textSecondary uppercase tracking-widest font-label" style={{ alignSelf: 'stretch', textAlign: 'left', writingDirection: 'ltr' }}>CINETRIVIA QUEST</Text>
             </View>
           </View>
 
@@ -141,7 +141,7 @@ export default function MovieTrivia({ movieTitle, movieId, themeColors }: MovieT
             </View>
           ) : (
             <View>
-              <Text className="text-textSecondary font-body text-[14px] leading-relaxed mb-6" style={{ textAlign: 'right', writingDirection: 'rtl' }}>
+              <Text className="text-textSecondary font-body text-[14px] leading-relaxed mb-6" style={{ alignSelf: 'stretch', textAlign: 'left', writingDirection: 'rtl', width: '100%' }}>
                 בחן את הידע שלך על הסרט '{movieTitle}'! ענה נכון על לפחות 2 שאלות מתוך 3 וזכה ב-50 נקודות מועדון למימוש הטבות.
               </Text>
 
@@ -168,8 +168,8 @@ export default function MovieTrivia({ movieTitle, movieId, themeColors }: MovieT
       {gameState === 'playing' && currentQuestion && (
         <View className="p-8">
           {/* Header Progress */}
-          <View className="flex-row justify-between items-center mb-6" style={{ flexDirection: 'row-reverse' }}>
-            <Text className="text-textMuted text-xs font-body" style={{ writingDirection: 'rtl' }}>
+          <View className="flex-row justify-between items-center mb-6" style={{ flexDirection: I18nManager.isRTL ? 'row' : 'row-reverse' }}>
+            <Text className="text-textMuted text-xs font-body" style={{ textAlign: 'right', writingDirection: 'rtl' }}>
               שאלה {currentQuestionIdx + 1} מתוך {questions.length}
             </Text>
             <View className="flex-row gap-1 bg-white/5 px-2.5 py-1 rounded-full border border-white/5">
@@ -177,7 +177,7 @@ export default function MovieTrivia({ movieTitle, movieId, themeColors }: MovieT
               <Text className="text-white text-[10px] font-bold" style={{ color: themeColors.secondary, writingDirection: 'rtl' }}>+50 נקודות</Text>
             </View>
           </View>
-
+ 
           {/* Progress Bar */}
           <View className="h-1.5 w-full bg-white/10 rounded-full mb-6 overflow-hidden">
             <View 
@@ -188,12 +188,14 @@ export default function MovieTrivia({ movieTitle, movieId, themeColors }: MovieT
               }} 
             />
           </View>
-
+ 
           {/* Question Text */}
-          <Text className="text-white text-base font-bold font-body mb-6 leading-relaxed" style={{ textAlign: 'right', writingDirection: 'rtl' }}>
-            {currentQuestion.question}
-          </Text>
-
+          <View style={{ width: '100%', alignItems: I18nManager.isRTL ? 'flex-end' : 'flex-start' }}>
+            <Text className="text-white text-base font-bold font-body mb-6 leading-relaxed" style={{ textAlign: 'left', writingDirection: 'rtl', width: '100%' }}>
+              {currentQuestion.question}
+            </Text>
+          </View>
+ 
           {/* Options List */}
           <View className="gap-3">
             {currentQuestion.options.map((option, index) => {
@@ -220,14 +222,14 @@ export default function MovieTrivia({ movieTitle, movieId, themeColors }: MovieT
                   textColor = 'rgba(255, 255, 255, 0.3)';
                 }
               }
-
+              
               return (
                 <Pressable
                   key={index}
                   onPress={() => handleAnswerSelect(index)}
                   disabled={hasAnswered}
-                  style={{ backgroundColor: buttonBg, borderColor }}
-                  className="p-4 rounded-xl border flex-row justify-between items-center"
+                  style={{ backgroundColor: buttonBg, borderColor, flexDirection: I18nManager.isRTL ? 'row' : 'row-reverse' }}
+                  className="p-4 rounded-xl border flex-row items-center gap-3"
                 >
                   {hasAnswered && isCorrectAnswer && (
                     <Animated.View entering={ZoomIn.duration(300)}>
@@ -244,40 +246,121 @@ export default function MovieTrivia({ movieTitle, movieId, themeColors }: MovieT
                       <Text className="text-[10px] text-white/40">{index + 1}</Text>
                     </View>
                   )}
-                  <Text className="text-[14px] font-body flex-1 text-right mr-3" style={{ color: textColor, writingDirection: 'rtl' }}>
+                  <Text className="text-[14px] font-body" style={{ color: textColor, textAlign: 'right', writingDirection: 'rtl' }}>
                     {option}
                   </Text>
                 </Pressable>
               );
             })}
           </View>
-
+ 
           {/* Explanation & Feedback */}
-          {selectedAnswerIdx !== null && (
-            <Animated.View 
-              entering={FadeInDown.duration(400)}
-              className="mt-6 p-4 rounded-2xl bg-white/5 border border-white/5"
-            >
-              <Text className="text-white font-bold font-body text-xs mb-1" style={{ textAlign: 'right', writingDirection: 'rtl' }}>
-                {selectedAnswerIdx === currentQuestion.correctAnswerIndex ? 'נכון מאוד! 🎉' : 'לא בדיוק... 😅'}
-              </Text>
-              <Text className="text-textSecondary font-body text-xs leading-relaxed" style={{ textAlign: 'right', writingDirection: 'rtl' }}>
-                {currentQuestion.explanation}
-              </Text>
-
-              {/* Next Button */}
-              <Pressable
-                onPress={handleNext}
-                className="mt-4 py-3 bg-white/10 rounded-xl border border-white/10 items-center justify-center flex-row gap-2"
-                style={({ pressed }) => [pressed && { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
+          {selectedAnswerIdx !== null && (() => {
+            const isCorrect = selectedAnswerIdx === currentQuestion.correctAnswerIndex;
+            const isLastQuestion = currentQuestionIdx === questions.length - 1;
+            
+            return (
+              <Animated.View 
+                entering={FadeInDown.duration(400)}
+                className="mt-6 rounded-[24px] border overflow-hidden"
+                style={{ 
+                  borderColor: isCorrect ? 'rgba(34, 197, 94, 0.25)' : 'rgba(239, 68, 68, 0.25)',
+                  backgroundColor: isCorrect ? '#15261C' : '#281A1C',
+                  shadowColor: isCorrect ? '#22c55e' : '#ef4444',
+                  shadowOffset: { width: 0, height: 6 },
+                  shadowOpacity: 0.12,
+                  shadowRadius: 12,
+                  elevation: 4,
+                  width: '100%'
+                }}
               >
-                <Text className="text-white font-bold text-xs font-display">
-                  {currentQuestionIdx < questions.length - 1 ? 'לשאלה הבאה' : 'סיים חידון'}
-                </Text>
-                <ArrowRight size={14} color="white" style={{ transform: [{ scaleX: -1 }] }} />
-              </Pressable>
-            </Animated.View>
-          )}
+                <View className="p-5">
+                  {/* Status Badge */}
+                  <View 
+                    className="flex-row items-center gap-2 mb-3 px-3 py-1.5 rounded-full border" 
+                    style={{ 
+                      flexDirection: I18nManager.isRTL ? 'row' : 'row-reverse',
+                      alignSelf: I18nManager.isRTL ? 'flex-end' : 'flex-start',
+                      backgroundColor: isCorrect ? 'rgba(34, 197, 94, 0.08)' : 'rgba(239, 68, 68, 0.08)',
+                      borderColor: isCorrect ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                    }}
+                  >
+                    {isCorrect ? (
+                      <CheckCircle2 size={15} color="#4ade80" />
+                    ) : (
+                      <XCircle size={15} color="#f87171" />
+                    )}
+                    <Text 
+                      className="text-[12px] font-bold" 
+                      style={{ 
+                        color: isCorrect ? '#4ade80' : '#f87171', 
+                        fontFamily: 'Rubik-Medium' 
+                      }}
+                    >
+                      {isCorrect ? 'נכון מאוד! 🎉' : 'לא בדיוק... 😅'}
+                    </Text>
+                  </View>
+
+                  {/* Explanation Text */}
+                  <Text 
+                    className="text-zinc-200 text-[14px] leading-relaxed mb-5" 
+                    style={{ 
+                      fontFamily: 'Assistant-Regular', 
+                      textAlign: 'left', 
+                      writingDirection: 'rtl',
+                      alignSelf: 'stretch' 
+                    }}
+                  >
+                    {currentQuestion.explanation}
+                  </Text>
+     
+                  {/* Next / Finish Button */}
+                  <View style={{ width: '100%', alignItems: 'center' }}>
+                    <Pressable
+                      onPress={handleNext}
+                      style={({ pressed }) => [
+                        { 
+                          transform: [{ scale: pressed ? 0.97 : 1 }],
+                          borderRadius: 16,
+                          overflow: 'hidden'
+                        }
+                      ]}
+                    >
+                      {isLastQuestion ? (
+                        <LinearGradient
+                          colors={[themeColors.primary, themeColors.secondary || '#9B1B30']}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 0 }}
+                          className="py-3.5 px-12 items-center justify-center flex-row"
+                        >
+                          <Text 
+                            className="text-white font-bold text-sm" 
+                            style={{ fontFamily: 'Rubik-Bold', textAlign: 'center' }}
+                          >
+                            סיים חידון
+                          </Text>
+                          <ArrowRight size={16} color="white" style={{ position: 'absolute', left: 16, transform: [{ scaleX: I18nManager.isRTL ? -1 : 1 }] }} />
+                        </LinearGradient>
+                      ) : (
+                        <View 
+                          className="py-3.5 px-12 bg-white/10 border border-white/10 items-center justify-center flex-row"
+                          style={{ borderRadius: 16 }}
+                        >
+                          <Text 
+                            className="text-white font-bold text-sm" 
+                            style={{ fontFamily: 'Rubik-Medium', textAlign: 'center' }}
+                          >
+                            לשאלה הבאה
+                          </Text>
+                          <ArrowRight size={16} color="white" style={{ position: 'absolute', left: 16, transform: [{ scaleX: I18nManager.isRTL ? -1 : 1 }] }} />
+                        </View>
+                      )}
+                    </Pressable>
+                  </View>
+                </View>
+              </Animated.View>
+            );
+          })()}
         </View>
       )}
 
@@ -296,29 +379,29 @@ export default function MovieTrivia({ movieTitle, movieId, themeColors }: MovieT
             <Award size={40} color={themeColors.primary} />
           </Animated.View>
 
-          <Text className="text-white text-h2 font-display text-center mb-2" style={{ writingDirection: 'rtl' }}>
+          <Text className="text-white text-h2 font-display text-center mb-2" style={{ textAlign: 'center', writingDirection: 'rtl' }}>
             החידון הושלם!
           </Text>
-
+ 
           {/* Score details */}
-          <Text className="text-textSecondary font-body text-[14px] text-center mb-6 leading-relaxed" style={{ writingDirection: 'rtl' }}>
+          <Text className="text-textSecondary font-body text-[14px] text-center mb-6 leading-relaxed" style={{ textAlign: 'center', writingDirection: 'rtl' }}>
             ענית נכון על <Text className="text-white font-bold">{correctAnswersCount}</Text> מתוך <Text className="text-white font-bold">{questions.length}</Text> שאלות.
           </Text>
-
+ 
           {correctAnswersCount >= Math.ceil(questions.length / 2) ? (
             <View className="w-full items-center">
               {!pointsAwarded ? (
                 <View className="w-full items-center">
-                  <Text className="text-emerald-400 font-bold font-body text-xs text-center mb-6 leading-relaxed" style={{ writingDirection: 'rtl' }}>
+                  <Text className="text-emerald-400 font-bold font-body text-xs text-center mb-6 leading-relaxed" style={{ textAlign: 'center', writingDirection: 'rtl' }}>
                     עברת את המבחן בהצלחה! לחץ כאן לקבלת 50 נקודות מועדון.
                   </Text>
                   
                   {errorMessage && (
-                    <Text className="text-red-500 text-xs font-body text-center mb-4" style={{ writingDirection: 'rtl' }}>
+                    <Text className="text-red-500 text-xs font-body text-center mb-4" style={{ textAlign: 'center', writingDirection: 'rtl' }}>
                       {errorMessage}
                     </Text>
                   )}
-
+ 
                   <Pressable
                     onPress={claimPoints}
                     disabled={isSubmittingPoints}
@@ -348,8 +431,8 @@ export default function MovieTrivia({ movieTitle, movieId, themeColors }: MovieT
                   className="w-full bg-emerald-500/10 border border-emerald-500/25 p-5 rounded-2xl items-center"
                 >
                   <Sparkles size={24} color={Colors.secondary} className="mb-2" />
-                  <Text className="text-secondary font-bold font-body text-sm mb-1 text-center" style={{ writingDirection: 'rtl' }}>הנקודות נוספו בהצלחה!</Text>
-                  <Text className="text-white/80 text-xs font-body text-center leading-relaxed" style={{ writingDirection: 'rtl' }}>
+                  <Text className="text-secondary font-bold font-body text-sm mb-1 text-center" style={{ textAlign: 'center', writingDirection: 'rtl' }}>הנקודות נוספו בהצלחה!</Text>
+                  <Text className="text-white/80 text-xs font-body text-center leading-relaxed" style={{ textAlign: 'center', writingDirection: 'rtl' }}>
                     קיבלת +50 נקודות לחשבונך. תוכל לראות אותן בלוח הבקרה ובארנק ההטבות.
                   </Text>
                 </Animated.View>
@@ -357,7 +440,7 @@ export default function MovieTrivia({ movieTitle, movieId, themeColors }: MovieT
             </View>
           ) : (
             <View className="w-full">
-              <Text className="text-red-400 font-bold font-body text-xs text-center mb-6 leading-relaxed" style={{ writingDirection: 'rtl' }}>
+              <Text className="text-red-400 font-bold font-body text-xs text-center mb-6 leading-relaxed" style={{ textAlign: 'center', writingDirection: 'rtl' }}>
                 לא ענית נכון על מספיק שאלות כדי לזכות בנקודות. נסה שוב!
               </Text>
               
