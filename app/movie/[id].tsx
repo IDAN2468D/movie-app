@@ -57,6 +57,7 @@ import MovieTrailer from '@/components/MovieTrailer';
 import { getImageSource, handleImageError } from '@/utils/ImageUtils';
 import MovieReviews from '@/components/MovieReviews';
 import ScrollEntrance from '@/components/ScrollEntrance';
+import MovieTrivia from '@/components/MovieTrivia';
 
 // Interop external components to support NativeWind className
 cssInterop(LinearGradient, { className: 'style' });
@@ -599,6 +600,11 @@ export default function MovieDetailsScreen() {
                 </View>
               </View>
             </View>
+          </ScrollEntrance>
+
+          {/* Movie Trivia Challenge - Premium Feature */}
+          <ScrollEntrance scrollY={scrollY}>
+            <MovieTrivia movieTitle={movie.title} movieId={movie.id} themeColors={themeColors} />
           </ScrollEntrance>
 
           {/* Group Watch Status */}

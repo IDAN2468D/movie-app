@@ -106,7 +106,7 @@ export default function TicketDetailModal({ ticket, isVisible, onClose }: Ticket
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
               {/* Ticket Body */}
               <Animated.View 
-                entering={FadeInDown.springify()}
+                entering={FadeInDown.springify().damping(18).stiffness(120).mass(1.0)}
                 className="bg-surfaceLight rounded-[48px] overflow-hidden border border-white/10 shadow-2xl relative"
               >
                 {/* Liquid Background Layer */}

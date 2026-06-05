@@ -100,16 +100,16 @@ export default function TicketCard({ ticket, onPress, index = 0 }: TicketCardPro
   });
 
   const handlePressIn = () => {
-    scaleValue.value = withSpring(0.96, { damping: 12, stiffness: 200 });
+    scaleValue.value = withSpring(0.97, { damping: 18, stiffness: 120 });
   };
 
   const handlePressOut = () => {
-    scaleValue.value = withSpring(1, { damping: 12, stiffness: 200 });
+    scaleValue.value = withSpring(1, { damping: 18, stiffness: 120 });
   };
 
   return (
     <Animated.View
-      entering={ZoomIn.delay(Math.min(index * 100, 500)).springify().damping(15)}
+      entering={ZoomIn.delay(Math.min(index * 100, 500)).springify().damping(18).stiffness(120).mass(1.0)}
       style={scaleStyle}
     >
       <Pressable 

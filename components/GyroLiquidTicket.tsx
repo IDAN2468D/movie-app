@@ -47,8 +47,8 @@ const GyroLiquidTicket: React.FC<GyroLiquidTicketProps> = ({
         Gyroscope.setUpdateInterval(16);
         subscription = Gyroscope.addListener((data: { x: number; y: number }) => {
           if (isMounted) {
-            tiltX.value = withSpring(data.y * 30, { damping: 15 });
-            tiltY.value = withSpring(data.x * 30, { damping: 15 });
+            tiltX.value = withSpring(data.y * 30, { damping: 22, stiffness: 90, mass: 1.0 });
+            tiltY.value = withSpring(data.x * 30, { damping: 22, stiffness: 90, mass: 1.0 });
           }
         });
       } catch {

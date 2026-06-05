@@ -55,6 +55,7 @@ interface AuthState {
   checkAuth: () => Promise<void>;
   toggleFavorite: (movieId: number) => Promise<void>;
   redeemReward: (rewardTitle: string, points: number) => Promise<{ success: boolean; message?: string }>;
+  addLoyaltyPoints: (action: string, points: number) => Promise<{ success: boolean; message?: string }>;
   hasSeenOnboarding: boolean;
   completeOnboarding: () => Promise<void>;
   resetOnboarding: () => Promise<void>;
@@ -277,6 +278,36 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
     } catch (error) {
       console.error('Failed to redeem reward', error);
+      return { success: false, message: 'שגיאת חיבור לשרת' };
+    }
+  },
+
+  addLoyaltyPoints: async (action: string, points: number) => {
+    const { token, user } = get();
+    if (!token || !user) {
+      return { success: false, message: 'משתמש לא מחובר' };
+    }
+
+    try {
+      const result = await safeFetch(`${API_URL}/users/loyalty/add`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ action, points }),
+      });
+
+      if (result.success) {
+        const updatedPoints = result.data.loyaltyPoints;
+        const updatedActivity = result.data.loyaltyActivity;
+        set({ user: { ...user, loyaltyPoints: updatedPoints, loyaltyActivity: updatedActivity } });
+        return { success: true, message: result.message };
+      } else {
+        return { success: false, message: result.message };
+      }
+    } catch (error) {
+      console.error('Failed to add loyalty points', error);
       return { success: false, message: 'שגיאת חיבור לשרת' };
     }
   },

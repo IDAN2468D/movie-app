@@ -28,6 +28,10 @@ import MovieStories from '@/components/MovieStories';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import CinematicFeed from '@/components/CinematicFeed';
+import CineSuiteDashboard from '@/components/CineSuiteDashboard';
+import CineEffectsBackground from '@/components/CineEffectsBackground';
+import CineEffectsSelector from '@/components/CineEffectsSelector';
+import { Sparkles } from 'lucide-react-native';
 import Animated, {
   useSharedValue,
   useAnimatedScrollHandler,
@@ -47,6 +51,7 @@ const VIEWABILITY_CONFIG_HORIZONTAL = {
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const [isCinematicView, setIsCinematicView] = useState(false);
+  const [effectsVisible, setEffectsVisible] = useState(false);
   const {
     nowPlaying,
     popular,
@@ -165,31 +170,13 @@ export default function HomeScreen() {
 
   return (
     <View className="flex-1 bg-background">
-      {/* Dynamic Ambient Glow Circle (Sits at the back of the screen) */}
+      {/* Dynamic Ambient Background Effects */}
       {!isCinematicView && (
-        <View style={StyleSheet.absoluteFill} pointerEvents="none">
-          <Animated.View 
-            style={[
-              {
-                position: 'absolute',
-                top: -150,
-                left: '50%',
-                marginLeft: -250,
-                width: 500,
-                height: 500,
-                borderRadius: 250,
-                opacity: 0.15,
-                zIndex: -2,
-              },
-              ambientGlowStyle
-            ]}
-          />
-          <BlurView 
-            intensity={90} 
-            tint="dark" 
-            style={[StyleSheet.absoluteFill, { zIndex: -1 }]} 
-          />
-        </View>
+        <CineEffectsBackground
+          scrollY={scrollY}
+          glowPrimary={glowPrimary}
+          glowSecondary={glowSecondary}
+        />
       )}
 
       {/* Scroll-Progress Indicator Bar */}
@@ -315,11 +302,21 @@ export default function HomeScreen() {
           }
         >
           {/* Custom Header (LTR, padded pt-16 to clear the floating pill) */}
-          <View className="px-6 pt-16 mb-6">
+          <View className="px-6 pt-16 mb-6 flex-row items-center justify-between">
             <View className="flex-1">
               <Text className="text-white/60 font-assistant text-sm text-left">שלום, חובב קולנוע 👋</Text>
               <Text className="text-white text-2xl font-bold font-assistant text-left">הסרטים של CineBook</Text>
             </View>
+            <Pressable
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setEffectsVisible(true);
+              }}
+              className="w-10 h-10 rounded-full bg-white/5 border border-white/10 items-center justify-center"
+              style={({ pressed }) => [pressed && { scale: 0.95, opacity: 0.85 }]}
+            >
+              <Sparkles size={18} color={Colors.primary} />
+            </Pressable>
           </View>
 
           {/* Stories */}
@@ -338,6 +335,9 @@ export default function HomeScreen() {
               onActiveMovieChange={handleActiveMovieChange} 
             />
           )}
+
+          {/* CineSuite Personal Area Dashboard */}
+          <CineSuiteDashboard />
 
           {/* Now Playing */}
           <SectionHeader title="🎬 עכשיו בקולנוע" />
@@ -458,6 +458,11 @@ export default function HomeScreen() {
           onClose={closeStories}
         />
       </Modal>
+
+      <CineEffectsSelector
+        visible={effectsVisible}
+        onClose={() => setEffectsVisible(false)}
+      />
     </View>
   );
 }
