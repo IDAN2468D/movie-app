@@ -44,7 +44,8 @@ import {
   Users,
   Film,
   Zap,
-  Info
+  Info,
+  Play
 } from 'lucide-react-native';
 
 import { Colors, Typography } from '@/constants/Theme';
@@ -289,7 +290,7 @@ export default function MovieDetailsScreen() {
             pointerEvents="none"
           />
 
-          {videos.length > 0 && videos[0]?.key && (
+           {videos.length > 0 && videos[0]?.key && (
             <Pressable 
               className="absolute inset-0 items-center justify-center bg-black/10"
               style={{ zIndex: 30 }}
@@ -297,13 +298,22 @@ export default function MovieDetailsScreen() {
             >
               <Animated.View 
                 entering={FadeIn.delay(800)}
-                className="w-20 h-20 rounded-full bg-primary/20 items-center justify-center border border-white/20"
+                className="w-20 h-20 rounded-full items-center justify-center border border-white/25 shadow-2xl relative overflow-hidden"
+                style={{
+                  backgroundColor: 'rgba(255, 20, 100, 0.25)',
+                  shadowColor: '#FF1464',
+                  shadowOffset: { width: 0, height: 0 },
+                  shadowOpacity: 0.6,
+                  shadowRadius: 16,
+                  elevation: 10,
+                }}
               >
-                <View className="me-1">
-                  <ChevronLeft size={32} color="white" />
+                <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
+                <View style={{ marginStart: 4 }}>
+                  <Play size={32} color="white" fill="white" />
                 </View>
               </Animated.View>
-              <Text className="text-white font-display mt-4 text-h3 shadow-lg uppercase tracking-widest">צפה בטריילר המלא</Text>
+              <Text className="text-white font-display mt-4 text-h3 shadow-lg uppercase tracking-widest">צפה בטריילר</Text>
             </Pressable>
           )}
         </Animated.View>
@@ -358,8 +368,8 @@ export default function MovieDetailsScreen() {
           style={{ top: insets.top + 10 }}
           onPress={handleBack}
         >
-          <BlurView intensity={30} tint="light" className="w-12 h-12 rounded-full overflow-hidden border border-white/20 items-center justify-center">
-            <ChevronLeft size={28} color="white" />
+          <BlurView intensity={40} tint="dark" className="w-11 h-11 rounded-full overflow-hidden border border-white/10 items-center justify-center bg-black/25">
+            <ChevronLeft size={24} color="white" style={{ transform: [{ scaleX: I18nManager.isRTL ? -1 : 1 }] }} />
           </BlurView>
         </Pressable>
 
@@ -368,9 +378,9 @@ export default function MovieDetailsScreen() {
           style={{ top: insets.top + 10 }}
           onPress={handleToggleFavorite}
         >
-          <BlurView intensity={30} tint="light" className="w-12 h-12 rounded-full overflow-hidden border border-white/20 items-center justify-center">
+          <BlurView intensity={40} tint="dark" className="w-11 h-11 rounded-full overflow-hidden border border-white/10 items-center justify-center bg-black/25">
             <Heart
-              size={24}
+              size={20}
               color={user?.watchlist.includes(movie?.id || 0) ? Colors.primary : "white"}
               fill={user?.watchlist.includes(movie?.id || 0) ? Colors.primary : 'transparent'}
             />
@@ -378,17 +388,17 @@ export default function MovieDetailsScreen() {
         </Pressable>
 
         <Pressable
-          className="absolute right-20"
+          className="absolute right-16"
           style={{ top: insets.top + 10 }}
           onPress={handleGroupWatchPress}
         >
-          <BlurView intensity={30} tint="light" className="w-12 h-12 rounded-full overflow-hidden border border-white/20 items-center justify-center">
+          <BlurView intensity={40} tint="dark" className="w-11 h-11 rounded-full overflow-hidden border border-white/10 items-center justify-center bg-black/25">
             <Users
-              size={24}
+              size={20}
               color={isGroupWatchActive ? Colors.secondary : "white"}
             />
             {isGroupWatchActive && (
-              <View className="absolute top-0 right-0 w-3 h-3 bg-secondary rounded-full border border-white" />
+              <View className="absolute top-0 right-0 w-2.5 h-2.5 bg-secondary rounded-full border border-white" />
              )}
           </BlurView>
         </Pressable>
@@ -428,7 +438,11 @@ export default function MovieDetailsScreen() {
             >
               <Text 
                 className="text-h1 text-white mb-2 font-display"
-                style={{ writingDirection: I18nManager.isRTL ? 'rtl' : 'ltr', textAlign: 'left', lineHeight: 42 }}
+                style={{ 
+                  writingDirection: I18nManager.isRTL ? 'rtl' : 'ltr', 
+                  textAlign: 'left', 
+                  lineHeight: 42 
+                }}
               >
                 {movie.title}
               </Text>
@@ -446,10 +460,36 @@ export default function MovieDetailsScreen() {
                 </Text>
               ) : null}
 
+              {themeColors.moodNarrative ? (
+                <Animated.View 
+                  entering={FadeInDown.delay(400).springify()}
+                  className="mt-3 p-3 rounded-2xl border border-white/5 bg-white/5 flex-row items-center gap-2"
+                  style={{
+                    alignSelf: 'stretch',
+                    flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row',
+                    justifyContent: 'flex-start',
+                  }}
+                >
+                  <Sparkles size={14} color={themeColors.accent} />
+                  <Text 
+                    style={{ 
+                      color: '#FAFAF7', 
+                      fontFamily: 'Assistant-SemiBold', 
+                      fontSize: 12, 
+                      flex: 1, 
+                      textAlign: 'left',
+                      lineHeight: 18
+                    }}
+                  >
+                    {themeColors.moodNarrative}
+                  </Text>
+                </Animated.View>
+              ) : null}
+
               <View 
                 className="gap-3 mt-4"
                 style={{
-                  flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row',
+                  flexDirection: 'row',
                 }}
               >
                 <View className="bg-white/10 px-3 py-1.5 rounded-xl border border-white/10">
@@ -464,22 +504,6 @@ export default function MovieDetailsScreen() {
                 >
                   <Text style={{ color: themeColors.primary }} className="text-xs font-bold">{movie.genres[0]?.name || 'כללי'}</Text>
                 </View>
-                
-                {themeColors.moodNarrative ? (
-                  <View 
-                    className="px-3 py-1.5 rounded-xl border flex-row items-center gap-1.5"
-                    style={{ 
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                      borderColor: 'rgba(255, 255, 255, 0.1)',
-                      flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row',
-                    }}
-                  >
-                    <Sparkles size={12} color={themeColors.accent} />
-                    <Text style={{ color: '#FFFFFF', fontFamily: 'Assistant-SemiBold' }} className="text-xs font-medium">
-                      {themeColors.moodNarrative}
-                    </Text>
-                  </View>
-                ) : null}
               </View>
             </View>
           </View>
