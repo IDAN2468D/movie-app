@@ -3,6 +3,16 @@ import { Platform } from 'react-native';
 import * as Speech from 'expo-speech';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+export interface MovieVisualDNA {
+  primary: string;
+  secondary: string;
+  accent: string;
+  blurIntensity: number;
+  glassOpacity: number;
+  animationSpeed: number;
+  moodNarrative: string;
+}
+
 interface AIInsight {
   pros: string[];
   cons: string[];
@@ -120,6 +130,57 @@ export class AIService {
     } catch (error) {
       console.error("AIService Error (Insights):", error);
       return this.simulateInsights(movieTitle);
+    }
+  }
+
+  // ─── FEATURE 3: Movie Visual DNA (VibeShift) ───────────────────────────────
+
+  /**
+   * Generates dynamic visual DNA for a movie based on its overview using AI
+   */
+  static async getMovieVisualDNA(movieTitle: string, overview: string): Promise<MovieVisualDNA> {
+    const model = this.getModel();
+    if (!model) {
+      console.warn("AIService: API key missing, using visual DNA simulation.");
+      return this.simulateVisualDNA(movieTitle);
+    }
+
+    try {
+      return await this.withRetry(async () => {
+        const prompt = `אתה מעצב ממשקים (UI/UX) מומחה המומחה בעיצוב קולנועי מתקדם בסגנון "Liquid Glass" (זכוכית מומסת).
+עבור הסרט "${movieTitle}" עם התקציר הבא: "${overview}", התאם פרופיל עיצוב המבוסס על מצב הרוח והז'אנר של הסרט.
+החזר אובייקט JSON בלבד, ללא הערות, ללא קוד MD, ללא הקדמות.
+מבנה ה-JSON חייב להיות בדיוק כזה:
+{
+  "primary": "קוד צבע ניאון ראשי המתאים לאווירה בפורמט Hex, למשל #FF1464 לאקשן/אימה, #00FFFF למדב/פנטזיה",
+  "secondary": "קוד צבע משני המשלים את הצבע הראשי בפורמט Hex ליצירת ניגודיות ומעבר צבעים יפה",
+  "accent": "קוד צבע שלישי זוהר במיוחד להדגשות בפורמט Hex (למשל צהוב זוהר #E5FF00 או ירוק ניאון)",
+  "blurIntensity": מספר בין 40 ל-80 המייצג את רמת הטשטוש של אלמנטי הזכוכית (טשטוש גבוה לסרטים איטיים/דרמטיים, נמוך לאקשן מהיר),
+  "glassOpacity": מספר עשרוני בין 0.08 ל-0.25 המייצג את שקיפות הזכוכית,
+  "animationSpeed": מספר במילישניות בין 1200 ל-2500 המייצג את מהירות מעברי הצבעים בהתאם לקצב הסרט,
+  "moodNarrative": "משפט קצר וקולע בעברית המתאר את האווירה הדרמטית של הסרט, למשל 'מתח פסיכולוגי אפל ומסתורי' או 'מסע הרפתקאות קוסמי מרהיב' (עד 12 מילים)"
+}
+הקפד להחזיר JSON תקין ומלא בלבד.`;
+
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+
+        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(jsonStr);
+        return {
+          primary: parsed.primary || '#FF1464',
+          secondary: parsed.secondary || '#9B1B30',
+          accent: parsed.accent || '#E5FF00',
+          blurIntensity: typeof parsed.blurIntensity === 'number' ? parsed.blurIntensity : 60,
+          glassOpacity: typeof parsed.glassOpacity === 'number' ? parsed.glassOpacity : 0.15,
+          animationSpeed: typeof parsed.animationSpeed === 'number' ? parsed.animationSpeed : 1500,
+          moodNarrative: parsed.moodNarrative || 'חוויה קולנועית סוחפת',
+        };
+      });
+    } catch (error) {
+      console.error("AIService Error (Visual DNA):", error);
+      return this.simulateVisualDNA(movieTitle);
     }
   }
 
@@ -872,6 +933,41 @@ ${watchlistInfo}
       ],
       behindTheScenes: 'צוות ההפקה עבד יותר מ-12 שעות ביום כדי ליצור את האפקטים המיוחדים',
       funFact: 'אחד השחקנים הראשיים כמעט ויתר על התפקיד לפני שקרא את התסריט הסופי! 😲',
+    };
+  }
+
+  private static simulateVisualDNA(movieTitle: string): MovieVisualDNA {
+    const lower = movieTitle.toLowerCase();
+    if (lower.includes('gladiator') || lower.includes('מלחמה') || lower.includes('דם') || lower.includes('קרב')) {
+      return {
+        primary: '#FF3B30',
+        secondary: '#5856D6',
+        accent: '#FFCC00',
+        blurIntensity: 50,
+        glassOpacity: 0.12,
+        animationSpeed: 1400,
+        moodNarrative: 'דרמת מלחמה אפית ועוצרת נשימה',
+      };
+    }
+    if (lower.includes('moana') || lower.includes('ים') || lower.includes('הרפתק') || lower.includes('רוח')) {
+      return {
+        primary: '#34C759',
+        secondary: '#007AFF',
+        accent: '#FFD60A',
+        blurIntensity: 70,
+        glassOpacity: 0.18,
+        animationSpeed: 2000,
+        moodNarrative: 'מסע הרפתקאות צבעוני ומרגש לכל המשפחה',
+      };
+    }
+    return {
+      primary: '#FF1464',
+      secondary: '#9B1B30',
+      accent: '#E5FF00',
+      blurIntensity: 60,
+      glassOpacity: 0.15,
+      animationSpeed: 1500,
+      moodNarrative: 'חוויה קולנועית סוחפת ומרגשת',
     };
   }
 }

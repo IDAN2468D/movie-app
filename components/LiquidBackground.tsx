@@ -28,6 +28,17 @@ const LiquidBackground: React.FC<LiquidBackgroundProps> = ({
   const blob2X = useSharedValue(0);
   const blob2Y = useSharedValue(0);
 
+  const color1 = useSharedValue(primaryColor);
+  const color2 = useSharedValue(secondaryColor);
+
+  useEffect(() => {
+    color1.value = withTiming(primaryColor, { duration: 1500 });
+  }, [primaryColor]);
+
+  useEffect(() => {
+    color2.value = withTiming(secondaryColor, { duration: 1500 });
+  }, [secondaryColor]);
+
   useEffect(() => {
     blob1X.value = withRepeat(withTiming(width * 0.3, { duration: 8000 }), -1, true);
     blob1Y.value = withRepeat(withTiming(height * 0.2, { duration: 10000 }), -1, true);
@@ -42,7 +53,7 @@ const LiquidBackground: React.FC<LiquidBackgroundProps> = ({
       { translateY: blob1Y.value },
       { scale: interpolate(blob1X.value, [0, width * 0.3], [1, 1.2], Extrapolate.CLAMP) }
     ],
-    backgroundColor: primaryColor,
+    backgroundColor: color1.value,
   }));
 
   const style2 = useAnimatedStyle(() => ({
@@ -51,8 +62,9 @@ const LiquidBackground: React.FC<LiquidBackgroundProps> = ({
       { translateY: blob2Y.value },
       { scale: interpolate(blob2Y.value, [0, height * 0.1], [1, 1.3], Extrapolate.CLAMP) }
     ],
-    backgroundColor: secondaryColor,
+    backgroundColor: color2.value,
   }));
+
 
   return (
     <View style={StyleSheet.absoluteFill}>

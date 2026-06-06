@@ -175,6 +175,25 @@ export default function MovieDetailsScreen() {
     return { opacity };
   });
 
+  // Dynamic VibeShift Animated Styles
+  const progressBgStyle = useAnimatedStyle(() => {
+    return {
+      backgroundColor: themeColors.accentShared.value,
+    };
+  });
+
+  const storyLineStyle = useAnimatedStyle(() => {
+    return {
+      backgroundColor: themeColors.primaryShared.value,
+    };
+  });
+
+  const headerGlowStyle = useAnimatedStyle(() => {
+    return {
+      backgroundColor: themeColors.primaryShared.value,
+    };
+  });
+
   if (loading || !movie) {
     return (
       <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
@@ -206,10 +225,10 @@ export default function MovieDetailsScreen() {
             top: insets.top,
             left: 0,
             height: 3,
-            backgroundColor: '#E5FF00', // Secondary system color
             zIndex: 110,
           },
-          progressBarStyle
+          progressBarStyle,
+          progressBgStyle
         ]}
       />
 
@@ -317,6 +336,19 @@ export default function MovieDetailsScreen() {
             {movie.title}
           </Text>
         </View>
+        <Animated.View 
+          style={[
+            {
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: 1.5,
+              opacity: 0.3,
+            },
+            headerGlowStyle
+          ]}
+        />
       </Animated.View>
 
       {/* Floating buttons */}
@@ -432,6 +464,22 @@ export default function MovieDetailsScreen() {
                 >
                   <Text style={{ color: themeColors.primary }} className="text-xs font-bold">{movie.genres[0]?.name || 'כללי'}</Text>
                 </View>
+                
+                {themeColors.moodNarrative ? (
+                  <View 
+                    className="px-3 py-1.5 rounded-xl border flex-row items-center gap-1.5"
+                    style={{ 
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      borderColor: 'rgba(255, 255, 255, 0.1)',
+                      flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row',
+                    }}
+                  >
+                    <Sparkles size={12} color={themeColors.accent} />
+                    <Text style={{ color: '#FFFFFF', fontFamily: 'Assistant-SemiBold' }} className="text-xs font-medium">
+                      {themeColors.moodNarrative}
+                    </Text>
+                  </View>
+                ) : null}
               </View>
             </View>
           </View>
@@ -471,17 +519,19 @@ export default function MovieDetailsScreen() {
                     minHeight: 24
                   }}
                 >
-                  <View 
-                    style={{ 
-                      position: 'absolute',
-                      left: 0,
-                      top: '50%',
-                      transform: [{ translateY: -12 }],
-                      width: 6,
-                      height: 24,
-                      backgroundColor: themeColors.primary,
-                      borderRadius: 999 
-                    }} 
+                  <Animated.View 
+                    style={[
+                      { 
+                        position: 'absolute',
+                        start: 0,
+                        top: '50%',
+                        transform: [{ translateY: -12 }],
+                        width: 6,
+                        height: 24,
+                        borderRadius: 999 
+                      },
+                      storyLineStyle
+                    ]} 
                   />
                   <Text 
                     className="text-h2 text-white font-display"
@@ -521,14 +571,28 @@ export default function MovieDetailsScreen() {
           {insights ? (
             <ScrollEntrance scrollY={scrollY}>
               <View 
-                className="mt-8 p-6 rounded-[32px] border"
-                style={{
-                  backgroundColor: `${themeColors.primary}0D`,
-                  borderColor: `${themeColors.primary}1A`
-                }}
+                className="mt-8 p-6 rounded-[32px] border border-white/10 overflow-hidden relative"
               >
+                <Animated.View 
+                  style={[
+                    StyleSheet.absoluteFill,
+                    {
+                      backgroundColor: themeColors.primaryShared.value,
+                      opacity: 0.08,
+                    }
+                  ]}
+                />
                 <View className="flex-row items-center mb-6 gap-3" style={{ flexDirection: 'row' }}>
-                  <View style={{ backgroundColor: `${themeColors.primary}33` }} className="p-2 rounded-xl">
+                  <View className="p-2 rounded-xl overflow-hidden relative">
+                    <Animated.View 
+                      style={[
+                        StyleSheet.absoluteFill,
+                        {
+                          backgroundColor: themeColors.primaryShared.value,
+                          opacity: 0.2,
+                        }
+                      ]}
+                    />
                     <Sparkles size={20} color={themeColors.primary} />
                   </View>
                   <Text className="text-h2 text-white font-display">תובנות AI</Text>
