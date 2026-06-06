@@ -8,23 +8,43 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
-import { Popcorn, Clapperboard, Star, Camera } from 'lucide-react-native';
 import { Colors } from '@/constants/Theme';
 import { Sensors } from '@/utils/SafeModules';
+import { getMovieTheme } from '../utils/movieTheme';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface GyroLiquidTicketProps {
+  movieTitle?: string;
   primaryColor?: string;
   secondaryColor?: string;
+  tiltX?: SharedValue<number>;
+  tiltY?: SharedValue<number>;
 }
 
 const GyroLiquidTicket: React.FC<GyroLiquidTicketProps> = ({ 
-  primaryColor = Colors.primary,
-  secondaryColor = Colors.secondary 
+  movieTitle,
+  primaryColor,
+  secondaryColor,
+  tiltX: passedTiltX,
+  tiltY: passedTiltY
 }) => {
-  const tiltX = useSharedValue(0);
-  const tiltY = useSharedValue(0);
+  // Use passed shared values or fall back to local ones
+  const localTiltX = useSharedValue(0);
+  const localTiltY = useSharedValue(0);
+
+  const tiltX = passedTiltX || localTiltX;
+  const tiltY = passedTiltY || localTiltY;
+
+  // Resolve theme settings from title
+  const resolvedTheme = getMovieTheme(movieTitle);
+  const themePrimary = primaryColor || resolvedTheme.primaryColor;
+  const themeSecondary = secondaryColor || resolvedTheme.secondaryColor;
+  const themeIcons = resolvedTheme.icons;
 
   useEffect(() => {
+    // Only subscribe to gyroscope if we are NOT using passed-in shared values
+    if (passedTiltX && passedTiltY) return;
+
     let subscription: { remove: () => void } | null = null;
     let isMounted = true;
     
@@ -65,50 +85,87 @@ const GyroLiquidTicket: React.FC<GyroLiquidTicketProps> = ({
       isMounted = false;
       if (subscription) subscription.remove();
     };
-  }, [tiltX, tiltY]);
+  }, [passedTiltX, passedTiltY, tiltX, tiltY]);
 
+  // Blobs style transitions
   const blobStyle1 = useAnimatedStyle(() => ({
     transform: [
-      { translateX: tiltX.value * 2 },
-      { translateY: tiltY.value * 2 },
+      { translateX: tiltX.value * 2.5 },
+      { translateY: tiltY.value * 2.5 },
     ]
   }));
 
   const blobStyle2 = useAnimatedStyle(() => ({
     transform: [
-      { translateX: -tiltX.value * 1.5 },
-      { translateY: -tiltY.value * 1.5 },
+      { translateX: -tiltX.value * 1.8 },
+      { translateY: -tiltY.value * 1.8 },
     ]
   }));
 
+  // Shiny glass glare overlay animation style
+  const glareStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: tiltX.value * 8 - 100 },
+      { translateY: tiltY.value * 8 - 100 },
+    ],
+    opacity: withSpring(Math.max(0.08, Math.min(0.28, 0.16 + (tiltX.value + tiltY.value) / 150)))
+  }));
+
+  // Define static layout positions for 3 icons
+  const iconPositions = [
+    { top: '22%', start: '18%', speed: 3.5 },
+    { top: '55%', end: '22%', speed: 2.2 },
+    { bottom: '18%', start: '32%', speed: 4.8 }
+  ];
+
   return (
-    <View style={StyleSheet.absoluteFill} className="bg-[#0A0A0C] overflow-hidden">
+    <View style={StyleSheet.absoluteFill} className="bg-[#09090B] overflow-hidden">
+      {/* Liquid Glass Blobs */}
       <Animated.View 
-        style={[styles.blob, { backgroundColor: primaryColor, opacity: 0.3 }, blobStyle1]} 
-        className="absolute -top-20 -left-20 w-[400px] h-[400px] rounded-full"
+        style={[styles.blob, { backgroundColor: themePrimary, opacity: 0.25 }, blobStyle1]} 
+        className="absolute -top-28 -left-28 w-[420px] h-[420px] rounded-full"
       />
       <Animated.View 
-        style={[styles.blob, { backgroundColor: secondaryColor, opacity: 0.2 }, blobStyle2]} 
-        className="absolute -bottom-20 -right-20 w-[350px] h-[350px] rounded-full"
+        style={[styles.blob, { backgroundColor: themeSecondary, opacity: 0.18 }, blobStyle2]} 
+        className="absolute -bottom-28 -right-28 w-[380px] h-[380px] rounded-full"
       />
 
-      <FloatingIcon tiltX={tiltX} tiltY={tiltY} speed={4} style={{ top: '20%', start: '15%' }}>
-        <Popcorn color="white" size={24} opacity={0.15} />
-      </FloatingIcon>
-      
-      <FloatingIcon tiltX={tiltX} tiltY={tiltY} speed={3} style={{ top: '60%', end: '20%' }}>
-        <Clapperboard color="white" size={28} opacity={0.1} />
-      </FloatingIcon>
-      
-      <FloatingIcon tiltX={tiltX} tiltY={tiltY} speed={5} style={{ bottom: '15%', start: '30%' }}>
-        <Star color={Colors.secondary} size={20} opacity={0.2} />
-      </FloatingIcon>
-      
-      <FloatingIcon tiltX={tiltX} tiltY={tiltY} speed={2} style={{ top: '40%', end: '10%' }}>
-        <Camera color="white" size={22} opacity={0.1} />
-      </FloatingIcon>
+      {/* Dynamic Thematic Floating Icons */}
+      {themeIcons.slice(0, 3).map((IconComponent, idx) => {
+        const pos = iconPositions[idx] || iconPositions[0];
+        return (
+          <FloatingIcon 
+            key={`floating-icon-${idx}`}
+            tiltX={tiltX} 
+            tiltY={tiltY} 
+            speed={pos.speed} 
+            style={{ 
+              position: 'absolute', 
+              top: (pos as any).top, 
+              bottom: (pos as any).bottom, 
+              start: (pos as any).start, 
+              end: (pos as any).end 
+            }}
+          >
+            <IconComponent color="white" size={26} opacity={0.12} />
+          </FloatingIcon>
+        );
+      })}
 
-      <View style={StyleSheet.absoluteFill} className="opacity-[0.03] bg-white/10" />
+      {/* Ambient noise/reflection texture */}
+      <View style={StyleSheet.absoluteFill} className="opacity-[0.02] bg-white" />
+
+      {/* Reflective Glare Overlay */}
+      <Animated.View 
+        style={[{ position: 'absolute', top: -150, bottom: -150, width: 220, transform: [{ rotate: '25deg' }] }, glareStyle]}
+      >
+        <LinearGradient
+          colors={['transparent', 'rgba(255, 255, 255, 0.35)', 'transparent']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={{ flex: 1 }}
+        />
+      </Animated.View>
     </View>
   );
 };
@@ -137,7 +194,9 @@ const FloatingIcon: React.FC<FloatingIconProps> = ({ tiltX, tiltY, speed, style,
 };
 
 const styles = StyleSheet.create({
-  blob: {},
+  blob: {
+    // Filter blur standard (if supported)
+  },
   floatingIcon: {
     position: 'absolute',
   }

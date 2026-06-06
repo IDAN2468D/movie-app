@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Modal, Pressable, ScrollView, Image, Share, Alert, ActivityIndicator } from 'react-native';
 import { X, CreditCard, Share2, Cloud } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
@@ -6,7 +6,18 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BookedTicket } from '@/store/useBookingStore';
 import { Colors } from '@/constants/Theme';
 import GyroLiquidTicket from './GyroLiquidTicket';
-import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
+import Animated, { 
+  FadeIn, 
+  FadeInDown, 
+  ZoomIn, 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withSpring, 
+  withRepeat, 
+  withTiming 
+} from 'react-native-reanimated';
+import { Sensors } from '@/utils/SafeModules';
+import { getMovieTheme } from '@/utils/movieTheme';
 import { GoogleDriveService } from '@/services/GoogleDriveService';
 
 interface TicketDetailModalProps {
@@ -19,7 +30,66 @@ export default function TicketDetailModal({ ticket, isVisible, onClose }: Ticket
   const insets = useSafeAreaInsets();
   const [isSavingToDrive, setIsSavingToDrive] = useState(false);
 
+  const tiltX = useSharedValue(0);
+  const tiltY = useSharedValue(0);
+
+  useEffect(() => {
+    if (!isVisible) return;
+    
+    let subscription: { remove: () => void } | null = null;
+    let isMounted = true;
+    
+    const startGyro = async () => {
+      const Gyroscope = Sensors?.Gyroscope;
+      if (!Gyroscope) {
+        if (isMounted) {
+          tiltX.value = withRepeat(withTiming(15, { duration: 4000 }), -1, true);
+          tiltY.value = withRepeat(withTiming(12, { duration: 5000 }), -1, true);
+        }
+        return;
+      }
+      try {
+        const isAvailable = await Gyroscope.isAvailableAsync();
+        if (!isAvailable || !isMounted) throw new Error('Not available');
+
+        Gyroscope.setUpdateInterval(16);
+        subscription = Gyroscope.addListener((data: { x: number; y: number }) => {
+          if (isMounted) {
+            tiltX.value = withSpring(data.y * 30, { damping: 20, stiffness: 80, mass: 1.0 });
+            tiltY.value = withSpring(data.x * 30, { damping: 20, stiffness: 80, mass: 1.0 });
+          }
+        });
+      } catch {
+        if (isMounted) {
+          tiltX.value = withRepeat(withTiming(15, { duration: 4000 }), -1, true);
+          tiltY.value = withRepeat(withTiming(12, { duration: 5000 }), -1, true);
+        }
+      }
+    };
+
+    startGyro();
+
+    return () => {
+      isMounted = false;
+      if (subscription) subscription.remove();
+      tiltX.value = 0;
+      tiltY.value = 0;
+    };
+  }, [isVisible]);
+
+  const tiltStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        { perspective: 1000 },
+        { rotateX: `${tiltY.value * 0.12}deg` },
+        { rotateY: `${tiltX.value * 0.12}deg` },
+      ]
+    };
+  });
+
   if (!ticket) return null;
+
+  const movieTheme = getMovieTheme(ticket.movieTitle);
 
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${ticket.id}&color=${Colors.background.replace('#', '')}&bgcolor=FFFFFF`;
 
@@ -107,11 +177,16 @@ export default function TicketDetailModal({ ticket, isVisible, onClose }: Ticket
               {/* Ticket Body */}
               <Animated.View 
                 entering={FadeInDown.springify().damping(18).stiffness(120).mass(1.0)}
+                style={tiltStyle}
                 className="bg-surfaceLight rounded-[48px] overflow-hidden border border-white/10 shadow-2xl relative"
               >
                 {/* Liquid Background Layer */}
                 <View className="absolute inset-0">
-                  <GyroLiquidTicket primaryColor={Colors.secondary} secondaryColor={Colors.primary} />
+                  <GyroLiquidTicket 
+                    movieTitle={ticket.movieTitle}
+                    tiltX={tiltX} 
+                    tiltY={tiltY} 
+                  />
                 </View>
 
                 {/* Movie Header */}
@@ -162,7 +237,7 @@ export default function TicketDetailModal({ ticket, isVisible, onClose }: Ticket
                   <View className="flex-row-reverse flex-wrap justify-between gap-y-8">
                     <DetailItem label="תאריך" value={ticket.date} />
                     <DetailItem label="שעה" value={ticket.showtime?.time || '--:--'} />
-                    <DetailItem label="מושבים" value={ticket.seats?.map(s => `${s.row}${s.number}`).join(', ') || 'N/A'} color={Colors.secondary} />
+                    <DetailItem label="מושבים" value={ticket.seats?.map(s => `${s.row}${s.number}`).join(', ') || 'N/A'} color={movieTheme.secondaryColor} />
                     <DetailItem label="סטטוס" value="מאושר" color="#22c55e" />
                   </View>
 
