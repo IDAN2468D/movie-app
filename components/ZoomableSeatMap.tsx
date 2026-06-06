@@ -11,6 +11,8 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '@/constants/Theme';
 import { useBookingStore } from '@/store/useBookingStore';
+import { useSquadBookingStore } from '@/store/useSquadBookingStore';
+import { useAuthStore } from '@/store/useAuthStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -23,12 +25,20 @@ const SeatIcon = ({
   isTaken, 
   isVIP, 
   isSweetSpot,
+  friendColor,
+  isHoveredByFriend,
+  onPressIn,
+  onPressOut,
   onPress 
 }: { 
   isSelected: boolean; 
   isTaken: boolean; 
   isVIP: boolean; 
   isSweetSpot: boolean;
+  friendColor: string | null;
+  isHoveredByFriend: string | null;
+  onPressIn?: () => void;
+  onPressOut?: () => void;
   onPress: () => void;
 }) => {
   const scale = useSharedValue(1);
@@ -40,12 +50,14 @@ const SeatIcon = ({
   const handlePressIn = () => {
     if (isTaken) return;
     scale.value = 0.9;
+    if (onPressIn) onPressIn();
   };
 
   const handlePressOut = () => {
     if (isTaken) return;
     scale.value = 1;
     onPress();
+    if (onPressOut) onPressOut();
   };
 
   // Premium design styling based on seat state
@@ -60,6 +72,9 @@ const SeatIcon = ({
   } else if (isSelected) {
     fillColor = Colors.seatSelected; // Neon Yellow/Green
     strokeColor = '#FFFFFF';
+  } else if (friendColor) {
+    fillColor = friendColor; // Friend selection color
+    strokeColor = '#FFFFFF';
   } else if (isVIP) {
     fillColor = Colors.seatVIP; // Pink/Red
     strokeColor = 'rgba(255, 255, 255, 0.35)';
@@ -72,18 +87,18 @@ const SeatIcon = ({
       onPressOut={handlePressOut}
     >
       {/* Selected Seat Glow */}
-      {isSelected && (
+      {(isSelected || friendColor) && (
         <Rect 
           x={-3} y={-3} 
           width={30} height={34} 
           rx={8} 
-          fill={Colors.seatSelected} 
+          fill={isSelected ? Colors.seatSelected : friendColor!} 
           opacity={0.3} 
         />
       )}
 
       {/* Sweet Spot Aura */}
-      {isSweetSpot && !isTaken && !isSelected && (
+      {isSweetSpot && !isTaken && !isSelected && !friendColor && (
         <Rect 
           x={-2} y={-2} 
           width={28} height={32} 
@@ -123,7 +138,7 @@ const SeatIcon = ({
       <Rect x={20} y={12} width={4} height={12} rx={2} fill={fillColor} opacity={isTaken ? 0.2 : 0.6} />
 
       {/* VIP Crown Icon Path */}
-      {isVIP && !isTaken && !isSelected && (
+      {isVIP && !isTaken && !isSelected && !friendColor && (
         <Path 
           d="M8 9 L10 7 L12 9 L14 7 L16 9" 
           stroke="white" 
@@ -132,12 +147,53 @@ const SeatIcon = ({
           opacity={0.65}
         />
       )}
+
+      {/* Friend Hover Indicator */}
+      {isHoveredByFriend && (
+        <G>
+          <Rect 
+            x={-1} y={-1} 
+            width={26} height={30} 
+            rx={7} 
+            fill="none" 
+            stroke={friendColor || Colors.secondary} 
+            strokeWidth={1.5} 
+            opacity={0.8}
+          />
+          {/* Small user initials badge */}
+          <Rect
+            x={2} y={-8}
+            width={20} height={10}
+            rx={3}
+            fill={friendColor || Colors.secondary}
+          />
+          <SvgText
+            x={12} y={0}
+            fill="#09090B"
+            fontSize={7}
+            fontWeight="bold"
+            textAnchor="middle"
+          >
+            {isHoveredByFriend.substring(0, 2)}
+          </SvgText>
+        </G>
+      )}
     </AnimatedG>
   );
 };
 
 export default function ZoomableSeatMap() {
   const { seats, toggleSeat, selectedSeats, selectedShowtime } = useBookingStore();
+  const { squadCode, sessionDetails, hovers, toggleSquadSeat, sendSeatHover } = useSquadBookingStore();
+  const user = useAuthStore(state => state.user);
+
+  const getMemberColor = (userId: string) => {
+    if (!sessionDetails) return '#00E5FF';
+    const idx = sessionDetails.members.findIndex(m => m.userId === userId);
+    if (idx === -1) return '#00E5FF';
+    const colors = ['#00E5FF', '#FFC107', '#E040FB', '#00E676', '#FF5252'];
+    return colors[idx % colors.length];
+  };
   
   const ROW_HEIGHT = 45;
   const COL_WIDTH = 32;
@@ -452,16 +508,49 @@ export default function ZoomableSeatMap() {
                             const isSweetSpotCol = colIndex >= Math.floor(cols * 0.3) && colIndex <= Math.floor(cols * 0.7);
                             const isSweetSpot = isSweetSpotRow && isSweetSpotCol;
 
+                            // Squad Sync Selection Logic
+                            const lockedSeat = sessionDetails?.lockedSeats.find(s => s.row === seat.row && s.number === seat.number);
+                            const isSelected = squadCode 
+                              ? (lockedSeat?.userId === user?.id)
+                              : seat.status === 'selected';
+                            
+                            const isTaken = seat.status === 'taken';
+                            
+                            const friendColor = (squadCode && lockedSeat && lockedSeat.userId !== user?.id)
+                              ? getMemberColor(lockedSeat.userId)
+                              : null;
+
+                            const hoverInfo = hovers[`${seat.row}-${seat.number}`];
+                            const isHoveredByFriend = (squadCode && hoverInfo && hoverInfo.userId !== user?.id)
+                              ? hoverInfo.userName
+                              : null;
+
                             return (
                               <SeatIcon 
-                                isSelected={seat.status === 'selected'}
-                                isTaken={seat.status === 'taken'}
+                                isSelected={isSelected}
+                                isTaken={isTaken}
                                 isVIP={seat.type === 'vip'}
                                 isSweetSpot={isSweetSpot}
+                                friendColor={friendColor}
+                                isHoveredByFriend={isHoveredByFriend}
+                                onPressIn={() => {
+                                  if (squadCode && !isTaken) {
+                                    sendSeatHover(seat.row, seat.number, true);
+                                  }
+                                }}
+                                onPressOut={() => {
+                                  if (squadCode && !isTaken) {
+                                    sendSeatHover(seat.row, seat.number, false);
+                                  }
+                                }}
                                 onPress={() => {
-                                  if (seat.status !== 'taken') {
+                                  if (!isTaken) {
                                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                                    toggleSeat(seat.row, seat.number);
+                                    if (squadCode) {
+                                      toggleSquadSeat(seat.row, seat.number);
+                                    } else {
+                                      toggleSeat(seat.row, seat.number);
+                                    }
                                   }
                                 }}
                               />

@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Pressable, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import { ChevronRight, Ticket, Info } from 'lucide-react-native';
+import { ChevronRight, Ticket, Info, Users } from 'lucide-react-native';
 import { Colors } from '@/constants/Theme';
 import SeatMap from '@/components/ZoomableSeatMap';
 import Animated, { 
@@ -14,6 +14,8 @@ import Animated, {
 import { useSeats } from '@/hooks/useSeats';
 import PredictiveSeatSelector from '@/components/PredictiveSeatSelector';
 import VipSeatConfiguratorModal from '@/components/VipSeatConfiguratorModal';
+import SquadInviteModal from '@/components/SquadInviteModal';
+import { useSquadBookingStore } from '@/store/useSquadBookingStore';
 import { useVipCustomStore } from '@/store/useVipCustomStore';
 import { Seat } from '@/store/useBookingStore';
 
@@ -35,6 +37,15 @@ export default function SeatsScreen() {
 
   const { hasCustomization } = useVipCustomStore();
   const [configuratorSeat, setConfiguratorSeat] = useState<Seat | null>(null);
+
+  const [squadModalVisible, setSquadModalVisible] = useState(false);
+  const { squadCode, sessionDetails, leaveSquad } = useSquadBookingStore();
+
+  useEffect(() => {
+    return () => {
+      leaveSquad();
+    };
+  }, [leaveSquad]);
 
   return (
     <View className="flex-1 bg-background">
@@ -77,7 +88,51 @@ export default function SeatsScreen() {
             </Text>
           </View>
         </View>
+
+        {/* SquadSync Button */}
+        <Pressable 
+          onPress={() => setSquadModalVisible(true)} 
+          className={`w-12 h-12 rounded-2xl justify-center items-center border ${
+            squadCode 
+              ? 'bg-secondary/20 border-secondary' 
+              : 'bg-white/10 border-white/20'
+          }`}
+        >
+          <Users size={22} color={squadCode ? Colors.secondary : 'white'} />
+        </Pressable>
       </View>
+
+      {/* Active Squad Members list bar */}
+      {squadCode && sessionDetails && (
+        <Animated.View entering={FadeInRight} className="px-6 pb-2 z-20">
+          <BlurView 
+            intensity={20} 
+            tint="dark" 
+            className="flex-row items-center justify-between px-4 py-2.5 rounded-2xl bg-white/5 border border-white/10"
+            style={{ flexDirection: 'row-reverse' }}
+          >
+            <View className="flex-row items-center gap-2" style={{ flexDirection: 'row-reverse' }}>
+              <Text className="text-[10px] text-secondary font-bold font-display">קבוצה פעילה: {squadCode}</Text>
+              <View className="w-1.5 h-1.5 rounded-full bg-secondary" />
+            </View>
+            
+            <View className="flex-row items-center" style={{ flexDirection: 'row-reverse' }}>
+              {sessionDetails.members.map((member, idx) => (
+                <View 
+                  key={member.userId} 
+                  className="w-6 h-6 rounded-full bg-primary/25 border border-primary/45 items-center justify-center"
+                  style={{
+                    marginRight: idx > 0 ? -6 : 0,
+                    zIndex: sessionDetails.members.length - idx
+                  }}
+                >
+                  <Text className="text-[8px] text-primary font-bold">{member.name.substring(0, 1)}</Text>
+                </View>
+              ))}
+            </View>
+          </BlurView>
+        </Animated.View>
+      )}
 
       {/* Seat Map Container */}
       <View className="flex-1">
@@ -219,6 +274,12 @@ export default function SeatsScreen() {
         visible={configuratorSeat !== null}
         seat={configuratorSeat}
         onClose={() => setConfiguratorSeat(null)}
+      />
+
+      {/* SquadSync Invite Modal */}
+      <SquadInviteModal
+        visible={squadModalVisible}
+        onClose={() => setSquadModalVisible(false)}
       />
     </View>
   );
