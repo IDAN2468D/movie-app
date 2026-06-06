@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Modal, Pressable, ScrollView, Image, Share, Alert, ActivityIndicator } from 'react-native';
-import { X, CreditCard, Share2, Cloud } from 'lucide-react-native';
+import { X, CreditCard, Share2, Cloud, Navigation } from 'lucide-react-native';
+import * as Location from 'expo-location';
+import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BookedTicket } from '@/store/useBookingStore';
@@ -28,6 +30,7 @@ interface TicketDetailModalProps {
 
 export default function TicketDetailModal({ ticket, isVisible, onClose }: TicketDetailModalProps) {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const [isSavingToDrive, setIsSavingToDrive] = useState(false);
 
   const tiltX = useSharedValue(0);
@@ -149,6 +152,89 @@ export default function TicketDetailModal({ ticket, isVisible, onClose }: Ticket
     }
   };
 
+  const handleARWayfinding = async () => {
+    if (!ticket) return;
+
+    try {
+      // 1. Request Location Permissions
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'דרושה הרשאת מיקום',
+          'כדי לבדוק אם אתה נמצא בקולנוע ולכוון אותך, עליך לאשר גישה למיקום המכשיר.',
+          [{ text: 'הבנתי', style: 'default' }]
+        );
+        return;
+      }
+
+      // 2. Get user current location
+      const userLocation = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      const { latitude, longitude } = userLocation.coords;
+
+      // 3. Validate Geofence with server
+      const response = await fetch('https://movie-app-server-olet.onrender.com/api/cinema/validate-geofence', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          latitude,
+          longitude,
+          branchId: 'glilot', // default branch
+        }),
+      });
+
+      if (!response.ok) throw new Error();
+      const validation = await response.json();
+
+      if (validation.isInside) {
+        // User is physically at the cinema, launch AR Wayfinding!
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        onClose();
+        router.push(`/movie/wayfinding?branchId=glilot`);
+      } else {
+        // User is not inside geofence - prompt Dev Bypass or alert
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        Alert.alert(
+          'אינך נמצא בקולנוע',
+          `סניף "${validation.branchName}" ממוקם במרחק של ${(validation.distance / 1000).toFixed(1)} ק"מ ממך. ניווט AR מיועד לשימוש בתוך המתחם.`,
+          [
+            {
+              text: 'מעקף פיתוח (Dev Bypass)',
+              onPress: async () => {
+                await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                onClose();
+                router.push(`/movie/wayfinding?branchId=glilot`);
+              },
+              style: 'destructive',
+            },
+            {
+              text: 'סגור',
+              style: 'cancel',
+            },
+          ]
+        );
+      }
+    } catch (error) {
+      // Offline / Connection Error Fallback
+      Alert.alert(
+        'שגיאת חיבור',
+        'לא ניתן ליצור קשר עם שרת המיקומים של סינבוק. האם תרצה להשתמש במעקף הניווט?',
+        [
+          {
+            text: 'כן, הפעל סימולציה',
+            onPress: () => {
+              onClose();
+              router.push(`/movie/wayfinding?branchId=glilot`);
+            },
+          },
+          { text: 'ביטול', style: 'cancel' }
+        ]
+      );
+    }
+  };
+
   return (
     <Modal
       animationType="slide"
@@ -245,6 +331,14 @@ export default function TicketDetailModal({ ticket, isVisible, onClose }: Ticket
 
                   {/* Actions */}
                   <View className="gap-4">
+                    <Pressable 
+                      onPress={handleARWayfinding}
+                      className="flex-row-reverse items-center justify-center bg-secondary h-16 rounded-[24px] gap-3 shadow-xl active:opacity-90"
+                    >
+                      <Navigation color="black" size={20} />
+                      <Text className="text-label text-black font-bold font-display uppercase tracking-wider">ניווט AR לקולנוע</Text>
+                    </Pressable>
+
                     <Pressable 
                       onPress={handleAddToWallet}
                       className="flex-row-reverse items-center justify-center bg-white h-16 rounded-[24px] gap-3 shadow-xl active:bg-gray-100"
