@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#A1A1AA',
     fontFamily: 'Assistant-Regular',
-    textAlign: 'right',
+    textAlign: 'left',
     writingDirection: 'rtl',
     lineHeight: 18,
   },

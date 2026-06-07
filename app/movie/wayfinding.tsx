@@ -9,7 +9,7 @@ import {
   ActivityIndicator
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { Magnetometer } from 'expo-sensors';
+import { Magnetometer, Accelerometer } from 'expo-sensors';
 import * as Haptics from 'expo-haptics';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { BlurView } from 'expo-blur';
@@ -21,7 +21,8 @@ import Animated, {
   withSpring,
   withRepeat,
   withSequence,
-  cancelAnimation
+  cancelAnimation,
+  Easing
 } from 'react-native-reanimated';
 import { 
   X, 
@@ -35,6 +36,7 @@ import {
   Info
 } from 'lucide-react-native';
 import { Colors } from '../../constants/Theme';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -72,8 +74,17 @@ export default function ARWayfindingScreen() {
   const markerOpacity = useSharedValue(0);
   const pulseScale = useSharedValue(1);
 
-  // Magnetometer subscription ref
+  // Immersive HUD animations
+  const reticleScale = useSharedValue(1.2);
+  const reticleRotate = useSharedValue(0);
+  const reticleOpacity = useSharedValue(0.4);
+  const lidarY = useSharedValue(0);
+  const accelX = useSharedValue(0);
+  const accelY = useSharedValue(0);
+
+  // Sensor subscription refs
   const subscriptionRef = useRef<any>(null);
+  const accelSubscriptionRef = useRef<any>(null);
 
   // 1. Fetch layout waypoints
   useEffect(() => {
@@ -153,16 +164,27 @@ export default function ARWayfindingScreen() {
     }
   }, [permission]);
 
-  // 3. Sensor Magnetometer listener
+  // 3. Sensor listeners & background sweeps
   useEffect(() => {
     Magnetometer.setUpdateInterval(100);
-    
     subscriptionRef.current = Magnetometer.addListener((data) => {
-      // Calculate angle from North using magnetic field vectors
       let angle = Math.atan2(data.y, data.x) * (180 / Math.PI);
       angle = (angle + 360) % 360;
       setHeading(angle);
     });
+
+    Accelerometer.setUpdateInterval(50);
+    accelSubscriptionRef.current = Accelerometer.addListener((data) => {
+      accelX.value = withSpring(-data.x * 20, { damping: 15, stiffness: 100 });
+      accelY.value = withSpring(data.y * 20, { damping: 15, stiffness: 100 });
+    });
+
+    // LiDAR horizontal sweep line
+    lidarY.value = withRepeat(
+      withTiming(SCREEN_HEIGHT, { duration: 3200, easing: Easing.linear }),
+      -1,
+      false
+    );
 
     // Pulse animation for directional alignment indicator
     pulseScale.value = withRepeat(
@@ -178,7 +200,11 @@ export default function ARWayfindingScreen() {
       if (subscriptionRef.current) {
         subscriptionRef.current.remove();
       }
+      if (accelSubscriptionRef.current) {
+        accelSubscriptionRef.current.remove();
+      }
       cancelAnimation(pulseScale);
+      cancelAnimation(lidarY);
     };
   }, []);
 
@@ -186,34 +212,39 @@ export default function ARWayfindingScreen() {
   useEffect(() => {
     if (!selectedWaypoint) return;
 
-    // Relative angle between waypoint target bearing and user current heading
-    // 0 degrees relative means user is looking directly at the target
     const relative = (selectedWaypoint.bearingAngle - heading + 360) % 360;
     
-    // Animate compass rotation to align with current facing angle
     compassRotation.value = withTiming(-heading, { duration: 100 });
-    // Animate arrow pointing towards relative waypoint direction
     arrowRotation.value = withTiming(relative, { duration: 100 });
 
-    // Show floating AR marker overlay if phone is pointed within 20 degrees of target bearing
     const isPointingAt = relative < 25 || relative > 335;
     if (isPointingAt && !arMarkerVisible) {
       setArMarkerVisible(true);
       markerScale.value = withSpring(1, { damping: 12 });
       markerOpacity.value = withTiming(1, { duration: 200 });
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+      // Tighten reticle and spin
+      reticleScale.value = withSpring(0.7, { damping: 12, stiffness: 90 });
+      reticleRotate.value = withTiming(360, { duration: 1500, easing: Easing.bezier(0.25, 0.1, 0.25, 1) });
+      reticleOpacity.value = withTiming(1, { duration: 300 });
+
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     } else if (!isPointingAt && arMarkerVisible) {
       setArMarkerVisible(false);
       markerScale.value = withTiming(0, { duration: 200 });
       markerOpacity.value = withTiming(0, { duration: 200 });
+
+      // Loosen reticle
+      reticleScale.value = withSpring(1.2, { damping: 12 });
+      reticleRotate.value = withTiming(0, { duration: 500 });
+      reticleOpacity.value = withTiming(0.4, { duration: 300 });
     }
 
-    // Upsell popup trigger when approaching snacks counter
     if (selectedWaypoint.type === 'snacks' && distance < 8) {
       if (!showUpsell) {
         setShowUpsell(true);
         upsellTranslateY.value = withSpring(0, { damping: 15, stiffness: 100 });
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       }
     } else {
       if (showUpsell) {
@@ -227,17 +258,16 @@ export default function ARWayfindingScreen() {
   useEffect(() => {
     if (!selectedWaypoint) return;
 
-    // Reset distance on waypoint change
     setDistance(14 + Math.floor(Math.random() * 5));
 
     const interval = setInterval(() => {
       setDistance(prev => {
         if (prev <= 1) {
           clearInterval(interval);
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          return 0; // reached destination
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+          return 0;
         }
-        return prev - 1; // simulated walk closer
+        return prev - 1;
       });
     }, 2500);
 
@@ -265,6 +295,30 @@ export default function ARWayfindingScreen() {
   const pulseStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pulseScale.value }],
   }));
+
+  const animatedReticleStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scale: reticleScale.value },
+      { rotate: `${reticleRotate.value}deg` }
+    ],
+    opacity: reticleOpacity.value,
+  }));
+
+  const lidarStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: lidarY.value }],
+  }));
+
+  const levelDotStyle = useAnimatedStyle(() => {
+    const isCentered = Math.abs(accelX.value) < 4 && Math.abs(accelY.value) < 4;
+    return {
+      transform: [
+        { translateX: accelX.value },
+        { translateY: accelY.value }
+      ],
+      backgroundColor: isCentered ? '#E5FF00' : '#00F2FF',
+      shadowColor: isCentered ? '#E5FF00' : '#00F2FF',
+    };
+  });
 
   if (loading || !selectedWaypoint) {
     return (
@@ -297,6 +351,25 @@ export default function ARWayfindingScreen() {
   return (
     <View style={styles.container}>
       <CameraView style={StyleSheet.absoluteFill} facing="back" />
+
+      {/* ─── LiDAR SCANNER SWEEP LINE ─── */}
+      <Animated.View style={[styles.lidarLine, lidarStyle]}>
+        <LinearGradient
+          colors={['rgba(0, 242, 255, 0)', 'rgba(0, 242, 255, 0.45)', 'rgba(0, 242, 255, 0)']}
+          style={StyleSheet.absoluteFill}
+        />
+      </Animated.View>
+
+      {/* ─── DYNAMIC TARGET-LOCKING RETICLE ─── */}
+      <Animated.View style={[styles.reticleContainer, animatedReticleStyle]} pointerEvents="none">
+        <View style={styles.bracketTL} />
+        <View style={styles.bracketTR} />
+        <View style={styles.bracketBL} />
+        <View style={styles.bracketBR} />
+        
+        {/* Tiny Center Dot */}
+        <View className="w-1.5 h-1.5 rounded-full bg-secondary/60" />
+      </Animated.View>
 
       {/* Dynamic AR Perspective Marker Overlay */}
       <Animated.View 
@@ -377,6 +450,23 @@ export default function ARWayfindingScreen() {
           <ChevronLeft size={28} color="white" style={{ transform: [{ scaleX: I18nManager.isRTL ? -1 : 1 }] }} />
         </BlurView>
       </TouchableOpacity>
+
+      {/* Gyro/Accelerometer-based Horizon Leveler */}
+      <View 
+        style={{ 
+          position: 'absolute', 
+          bottom: insets.bottom + 20, 
+          end: 20, 
+          zIndex: 20 
+        }}
+      >
+        <BlurView intensity={40} tint="dark" className="w-12 h-12 rounded-full border border-white/10 items-center justify-center bg-black/30 overflow-hidden">
+          <View style={{ position: 'absolute', width: '100%', height: 0.5, backgroundColor: 'rgba(255, 255, 255, 0.15)' }} />
+          <View style={{ position: 'absolute', height: '100%', width: 0.5, backgroundColor: 'rgba(255, 255, 255, 0.15)' }} />
+          <View style={{ position: 'absolute', width: 18, height: 18, borderRadius: 9, borderWidth: 0.5, borderColor: 'rgba(255, 255, 255, 0.15)' }} />
+          <Animated.View style={[styles.levelDot, levelDotStyle]} />
+        </BlurView>
+      </View>
 
       {/* Center 3D HUD Navigation HUD */}
       <View style={styles.hudContainer} pointerEvents="none">
@@ -524,5 +614,70 @@ const styles = StyleSheet.create({
     bottom: 40,
     alignSelf: 'center',
     width: '90%',
+  },
+  lidarLine: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 60,
+    zIndex: 2,
+  },
+  reticleContainer: {
+    position: 'absolute',
+    width: 110,
+    height: 110,
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
+    top: SCREEN_HEIGHT * 0.45 - 55,
+    zIndex: 7,
+  },
+  bracketTL: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: 22,
+    height: 22,
+    borderTopWidth: 2,
+    borderLeftWidth: 2,
+    borderColor: '#00F2FF',
+  },
+  bracketTR: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 22,
+    height: 22,
+    borderTopWidth: 2,
+    borderRightWidth: 2,
+    borderColor: '#00F2FF',
+  },
+  bracketBL: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    width: 22,
+    height: 22,
+    borderBottomWidth: 2,
+    borderLeftWidth: 2,
+    borderColor: '#00F2FF',
+  },
+  bracketBR: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 22,
+    height: 22,
+    borderBottomWidth: 2,
+    borderRightWidth: 2,
+    borderColor: '#00F2FF',
+  },
+  levelDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 6,
   },
 });
