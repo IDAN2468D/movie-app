@@ -19,7 +19,10 @@ export const useCheckout = () => {
     selectedSeats, 
     totalPrice,
     bookCurrentSelection,
-    clearBooking
+    clearBooking,
+    deliveryMode,
+    setDeliveryMode,
+    myTickets
   } = useBookingStore();
   const { authenticateBiometrics } = useAuthStore();
   const { cart, items, getTotalPrice, clearCart } = useSnacksStore();
@@ -27,6 +30,10 @@ export const useCheckout = () => {
   // Business Logic States
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  
+  const bookedTicketId = useMemo(() => {
+    return myTickets[0]?.id || (myTickets[0] as any)?._id || '';
+  }, [myTickets]);
 
   // UI Logic States
   const [showAnimation, setShowAnimation] = useState(false);
@@ -152,6 +159,21 @@ export const useCheckout = () => {
                   selectedMovieId || undefined,
                   selectedShowtime.hall
                 );
+
+                if (deliveryMode === 'pre-sync' && snacksInCart.length > 0) {
+                  // Schedule delivery exactly 15 minutes after showtimeDate
+                  const deliveryDate = new Date(showtimeDate.getTime() + 15 * 60 * 1000);
+                  const firstSeat = selectedSeats[0];
+                  if (firstSeat) {
+                    NotificationService.scheduleSnackDeliveryReminder(
+                      selectedMovieTitle,
+                      deliveryDate,
+                      selectedShowtime.hall,
+                      firstSeat.row,
+                      firstSeat.number
+                    );
+                  }
+                }
               }
             }
           }
@@ -195,5 +217,8 @@ export const useCheckout = () => {
     handlePayment,
     handleFinish,
     goBack,
+    deliveryMode,
+    setDeliveryMode,
+    bookedTicketId,
   };
 };

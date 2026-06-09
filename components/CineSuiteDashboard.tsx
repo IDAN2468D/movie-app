@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Trophy, Moon, Sparkles, ChevronLeft } from 'lucide-react-native';
+import { Trophy, Moon, Sparkles, ChevronLeft, Popcorn, Clock } from 'lucide-react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Animated, { 
@@ -10,15 +10,66 @@ import Animated, {
   useAnimatedStyle, 
   withRepeat, 
   withSequence, 
-  withTiming 
+  withTiming,
+  FadeInDown
 } from 'react-native-reanimated';
 import { Colors } from '@/constants/Theme';
 import { useLoyalty } from '@/hooks/useLoyalty';
 import { usePremiumStore } from '@/store/usePremiumStore';
+import { useBookingStore } from '@/store/useBookingStore';
 
 export default function CineSuiteDashboard() {
   const { points, currentTier, nextTier, pointsRemaining, progressPercent } = useLoyalty();
   const { isInTheaterMode, toggleInTheaterMode } = usePremiumStore();
+  const { myTickets, fetchMyTickets } = useBookingStore();
+
+  useEffect(() => {
+    fetchMyTickets();
+  }, [fetchMyTickets]);
+
+  const activePreSyncTicket = React.useMemo(() => {
+    return myTickets.find(t => 
+      t.deliveryMode === 'pre-sync' && 
+      t.snacks && 
+      t.snacks.length > 0 && 
+      t.targetDeliveryTime && 
+      new Date(t.targetDeliveryTime).getTime() > Date.now()
+    );
+  }, [myTickets]);
+
+  const [timeLeftStr, setTimeLeftStr] = useState('');
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    if (!activePreSyncTicket || !activePreSyncTicket.targetDeliveryTime) return;
+
+    const targetTime = new Date(activePreSyncTicket.targetDeliveryTime).getTime();
+    const startTime = new Date(activePreSyncTicket.bookingDate || Date.now()).getTime();
+
+    const updateTimer = () => {
+      const now = Date.now();
+      const totalDuration = targetTime - startTime;
+      const elapsed = now - startTime;
+      
+      let currentProgress = totalDuration > 0 ? elapsed / totalDuration : 0;
+      currentProgress = Math.max(0, Math.min(1, currentProgress));
+      setProgress(currentProgress);
+
+      const remaining = targetTime - now;
+      if (remaining <= 0) {
+        setTimeLeftStr('מוגש כעת! 🍿');
+      } else {
+        const minutes = Math.floor(remaining / 60000);
+        const seconds = Math.floor((remaining % 60000) / 1000);
+        setTimeLeftStr(`הגשה בעוד ${minutes}:${seconds.toString().padStart(2, '0')} דק'`);
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+
+    return () => clearInterval(interval);
+  }, [activePreSyncTicket]);
 
   // Pulse animation for Active Theater Mode
   const pulseOpacity = useSharedValue(0.4);
@@ -84,6 +135,55 @@ export default function CineSuiteDashboard() {
           </Text>
         </View>
       </View>
+
+      {/* Dynamic Snack Pre-Sync Progress Card */}
+      {!!activePreSyncTicket && (
+        <Animated.View 
+          entering={FadeInDown.duration(600).springify()}
+          className="rounded-[28px] overflow-hidden border border-secondary/35 shadow-lg shadow-secondary/15"
+        >
+          <BlurView intensity={35} tint="dark" className="p-5 bg-[#E5FF00]/5">
+            <View className="flex-row justify-between items-start mb-3">
+              <View className="items-start flex-1">
+                <View className="flex-row items-center gap-2 mb-1">
+                  <Clock size={12} color={Colors.secondary} />
+                  <Text className="text-secondary text-xs font-bold font-assistant">
+                    משלוח חטיפים מתוזמן (Pre-Sync)
+                  </Text>
+                </View>
+                <Text 
+                  className="text-white text-lg font-bold font-assistant text-left"
+                  numberOfLines={1}
+                >
+                  {activePreSyncTicket.movieTitle}
+                </Text>
+              </View>
+              <View className="w-10 h-10 rounded-2xl bg-secondary/15 border border-secondary/25 items-center justify-center">
+                <Popcorn size={20} color={Colors.secondary} />
+              </View>
+            </View>
+
+            {/* Liquid-styled Progress bar */}
+            <View className="h-4 w-full bg-white/10 rounded-full overflow-hidden mb-2 relative">
+              <LinearGradient
+                colors={['#E5FF00', '#1B9B53']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{ height: '100%', width: `${progress * 100}%`, borderRadius: 99 }}
+              />
+              {/* Liquid Wave Refraction Lines */}
+              <View className="absolute inset-0 bg-white/5 opacity-40 flex-row items-center overflow-hidden">
+                <View className="w-[150%] h-[300%] bg-white/10 opacity-30 rounded-full" style={{ position: 'absolute', top: '-100%', left: '-25%', transform: [{ rotate: '15deg' }] }} />
+              </View>
+            </View>
+
+            <View className="flex-row justify-between items-center w-full mt-1">
+              <Text className="text-white/45 text-[11px] font-medium font-assistant">מושב {activePreSyncTicket.seats[0]?.row}{activePreSyncTicket.seats[0]?.number}</Text>
+              <Text className="text-secondary text-xs font-bold font-assistant">{timeLeftStr}</Text>
+            </View>
+          </BlurView>
+        </Animated.View>
+      )}
 
       {/* CinePass Loyalty Progress Card */}
       <Pressable 

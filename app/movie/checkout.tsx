@@ -3,7 +3,7 @@
  * Checkout Screen - Final order summary and payment
  */
 import * as React from 'react';
-import { View, Text, Image, Pressable, ScrollView, Modal } from 'react-native';
+import { View, Text, Image, Pressable, ScrollView, Modal, Linking, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ArrowLeft, CreditCard, ShieldCheck, Ticket, CheckCircle2, Sparkles, Popcorn } from 'lucide-react-native';
@@ -51,6 +51,9 @@ export default function CheckoutScreen() {
     handlePayment,
     handleFinish,
     goBack,
+    deliveryMode,
+    setDeliveryMode,
+    bookedTicketId,
   } = useCheckout();
   const { items, addItem } = useSnacksStore();
   const { user, addVirtualCard } = useAuthStore();
@@ -153,6 +156,36 @@ export default function CheckoutScreen() {
                   </View>
                 </View>
               ))}
+            </View>
+          </View>
+        )}
+
+        {/* Snack Delivery Mode Toggle */}
+        {snacksInCart.length > 0 && (
+          <View className="mt-6 items-start w-full">
+            <Text className="text-h3 text-white mb-3 font-display">אופן הגשת הכיבוד</Text>
+            <View className="w-full flex-row gap-3">
+              <Pressable 
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setDeliveryMode('immediate');
+                }}
+                className={`flex-1 p-4 rounded-2xl border ${deliveryMode === 'immediate' ? 'bg-primary/10 border-primary shadow-lg shadow-primary/20' : 'bg-surfaceLight border-white/5'} items-center`}
+              >
+                <Text style={{ fontFamily: 'Rubik-Bold', fontSize: 14, color: deliveryMode === 'immediate' ? Colors.primary : 'white' }}>איסוף עצמי 🍿</Text>
+                <Text style={{ fontFamily: 'Assistant-Regular', fontSize: 10, color: '#A1A1AA', marginTop: 4, textAlign: 'center' }}>איסוף מהיר מהדלפק</Text>
+              </Pressable>
+              
+              <Pressable 
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setDeliveryMode('pre-sync');
+                }}
+                className={`flex-1 p-4 rounded-2xl border ${deliveryMode === 'pre-sync' ? 'bg-secondary/10 border-secondary shadow-lg shadow-secondary/20' : 'bg-surfaceLight border-white/5'} items-center`}
+              >
+                <Text style={{ fontFamily: 'Rubik-Bold', fontSize: 14, color: deliveryMode === 'pre-sync' ? Colors.secondary : 'white' }}>משלוח לכיסא 🛋️</Text>
+                <Text style={{ fontFamily: 'Assistant-Regular', fontSize: 10, color: '#A1A1AA', marginTop: 4, textAlign: 'center' }}>יוגש עם סיום הטריילרים</Text>
+              </Pressable>
             </View>
           </View>
         )}
@@ -444,6 +477,22 @@ export default function CheckoutScreen() {
               שלחנו לך גם אימייל עם קוד ה-QR לסריקה מהירה בכניסה.
             </Text>
             
+            {/* Add to Wallet Button */}
+            <Pressable 
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                if (bookedTicketId) {
+                  const API_URL = require('@/constants/Config').API_BASE_URL;
+                  Linking.openURL(`${API_URL}/tickets/${bookedTicketId}/wallet/pass`);
+                } else {
+                  Alert.alert('שגיאה', 'מפתח כרטיס לא נמצא.');
+                }
+              }}
+              className="w-full h-14 bg-[#1E1E21] border border-white/10 rounded-2xl items-center justify-center mb-3 flex-row gap-2"
+            >
+              <Text className="text-white font-bold text-h3 font-display">הוסף ל-Apple / Google Wallet 💳</Text>
+            </Pressable>
+
             <Pressable 
               onPress={handleFinish}
               className="w-full h-14 bg-white rounded-2xl items-center justify-center"

@@ -171,6 +171,34 @@ class NotificationService {
   }
 
   /**
+   * Schedule a reminder for snack delivery.
+   */
+  async scheduleSnackDeliveryReminder(movieTitle: string, deliveryDate: Date, hallName: string, seatRow: string, seatNumber: number) {
+    if (!this.hasNativeSupport || !Notifications) return null;
+
+    if (!deliveryDate || !(deliveryDate instanceof Date) || isNaN(deliveryDate.getTime())) {
+      console.warn('[NotificationService] Invalid deliveryDate provided to scheduleSnackDeliveryReminder.');
+      return null;
+    }
+
+    if (deliveryDate < new Date() || isNaN(deliveryDate.getTime())) return null;
+
+    return await Notifications.scheduleNotificationAsync({
+      content: {
+        title: '🍿 הנשנושים שלך בדרך למושב!',
+        body: `הכיבוד שלך יוצא כעת מדלפק הקיוסק ומובא ישירות למושב ${seatRow}${seatNumber} באולם "${hallName}". בתאבון!`,
+        data: { screen: 'tickets' },
+        sound: true,
+      },
+      trigger: {
+        type: 'date',
+        date: deliveryDate,
+        channelId: 'default',
+      } as any,
+    });
+  }
+
+  /**
    * Notify about a new movie.
    */
   async notifyNewMovie(movieTitle: string, movieId?: number) {

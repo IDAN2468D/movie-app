@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Modal, Pressable, ScrollView, Image, Share, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, Modal, Pressable, ScrollView, Image, Share, Alert, ActivityIndicator, Linking } from 'react-native';
 import { X, CreditCard, Share2, Cloud, Navigation } from 'lucide-react-native';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
@@ -7,6 +7,7 @@ import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BookedTicket } from '@/store/useBookingStore';
 import { Colors } from '@/constants/Theme';
+import { API_BASE_URL } from '@/constants/Config';
 import GyroLiquidTicket from './GyroLiquidTicket';
 import Animated, { 
   FadeIn, 
@@ -115,14 +116,24 @@ export default function TicketDetailModal({ ticket, isVisible, onClose }: Ticket
     if (!ticket) return;
     try {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      
-      Alert.alert(
-        'נוסף לארנק הדיגיטלי',
-        `הכרטיס לסרט "${ticket.movieTitle}" נוסף בהצלחה לארנק שלך.`,
-        [{ text: 'מעולה', style: 'default' }]
-      );
+      const url = `${API_BASE_URL}/tickets/${ticket.id}/wallet/pass`;
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert(
+          'שגיאה',
+          'לא ניתן לפתוח את קישור הארנק הדיגיטלי.',
+          [{ text: 'אישור', style: 'default' }]
+        );
+      }
     } catch (error) {
       console.error('Error adding to wallet:', error);
+      Alert.alert(
+        'שגיאה',
+        'אירעה שגיאה בעת הניסיון להוסיף את הכרטיס לארנק.',
+        [{ text: 'אישור', style: 'default' }]
+      );
     }
   };
 

@@ -111,6 +111,14 @@ export default function ProfileScreen() {
           />
 
           <MenuItem 
+            icon={Sparkles} 
+            title="כספת הישגים — CineVault" 
+            description="אוסף גבישי זכוכית תלת-ממדיים לכל סרט שראיתם!"
+            color="#00E5FF" 
+            onPress={() => router.push('/settings/vault' as any)} 
+          />
+
+          <MenuItem 
             icon={MapIcon} 
             title="סניפים ומפה" 
             color="#10B981" 

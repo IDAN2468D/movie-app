@@ -44,12 +44,16 @@ interface BookingState {
   // Tickets
   myTickets: BookedTicket[];
 
+  // Delivery
+  deliveryMode: 'immediate' | 'pre-sync';
+
   // Actions
   selectMovie: (id: number, title: string, poster: string) => void;
   selectDate: (date: string) => void;
   selectShowtime: (showtime: Showtime) => void;
   toggleSeat: (row: string, number: number) => void;
   selectSeatCluster: (seatsToSelect: { row: string; number: number }[]) => void;
+  setDeliveryMode: (mode: 'immediate' | 'pre-sync') => void;
   bookCurrentSelection: (snacks?: SnackBookingItem[]) => Promise<void>;
   clearBooking: () => void;
   generateSeats: (rows: number, cols: number) => void;
@@ -75,6 +79,8 @@ export interface BookedTicket {
   snacks?: SnackBookingItem[];
   totalPrice: number;
   bookingDate: string;
+  deliveryMode?: 'immediate' | 'pre-sync';
+  targetDeliveryTime?: string | Date;
 }
 
 const ROW_LABELS = 'ABCDEFGHIJKLMNOP'.split('');
@@ -91,6 +97,9 @@ export const useBookingStore = create<BookingState>()(
   selectedSeats: [],
   totalPrice: 0,
   myTickets: [],
+  deliveryMode: 'immediate',
+
+  setDeliveryMode: (mode) => set({ deliveryMode: mode }),
 
   selectMovie: (id, title, poster) => {
     const state = get();
@@ -189,7 +198,7 @@ export const useBookingStore = create<BookingState>()(
   },
 
   bookCurrentSelection: async (snacks) => {
-    const { selectedMovieId, selectedMovieTitle, selectedMoviePoster, selectedDate, selectedShowtime, selectedSeats, totalPrice } = get();
+    const { selectedMovieId, selectedMovieTitle, selectedMoviePoster, selectedDate, selectedShowtime, selectedSeats, totalPrice, deliveryMode } = get();
     if (!selectedMovieId || !selectedShowtime || selectedSeats.length === 0) return;
 
     try {
@@ -198,6 +207,19 @@ export const useBookingStore = create<BookingState>()(
       if (!token) {
         console.error('No auth token found');
         return;
+      }
+
+      // Calculate target delivery time (showtime + 15 minutes for trailers)
+      let targetDeliveryTime: Date | undefined = undefined;
+      if (deliveryMode === 'pre-sync' && selectedShowtime) {
+        try {
+          const [hours, minutes] = selectedShowtime.time.split(':').map(Number);
+          const showDate = new Date(selectedDate);
+          showDate.setHours(hours, minutes, 0, 0);
+          targetDeliveryTime = new Date(showDate.getTime() + 15 * 60 * 1000);
+        } catch (e) {
+          console.warn('Failed to parse target delivery time:', e);
+        }
       }
 
       const result = await safeFetch(`${API_BASE_URL}/tickets`, {
@@ -214,7 +236,9 @@ export const useBookingStore = create<BookingState>()(
           showtime: selectedShowtime,
           seats: selectedSeats,
           snacks: snacks || [],
-          totalPrice
+          totalPrice,
+          deliveryMode,
+          targetDeliveryTime
         }),
       });
       
@@ -272,6 +296,7 @@ export const useBookingStore = create<BookingState>()(
       seats: [],
       selectedSeats: [],
       totalPrice: 0,
+      deliveryMode: 'immediate',
     }),
     }),
     {
