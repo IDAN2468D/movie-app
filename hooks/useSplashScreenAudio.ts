@@ -15,7 +15,7 @@ export const useSplashScreenAudio = () => {
     const playRoar = async () => {
       console.log('[useSplashScreenAudio] Initializing splash screen audio hook...');
       try {
-        const assetSource = require('../assets/audio/lion_roar.mp3');
+        const assetSource = require('../assets/audio/cinematic_whoosh.mp3');
         console.log('[useSplashScreenAudio] Audio asset resolved to:', assetSource);
 
         // Set audio mode so it plays on iOS even in silent mode
@@ -35,7 +35,7 @@ export const useSplashScreenAudio = () => {
         console.log('[useSplashScreenAudio] Loading sound asset...');
         const { sound, status } = await Audio.Sound.createAsync(
           assetSource,
-          { volume: 0.8, shouldPlay: false }
+          { volume: 1.0, shouldPlay: false }
         );
 
         console.log('[useSplashScreenAudio] Audio asset loaded. status.isLoaded:', status?.isLoaded);
