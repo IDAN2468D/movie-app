@@ -35,7 +35,7 @@ export const useSplashScreenAudio = () => {
         console.log('[useSplashScreenAudio] Loading sound asset...');
         const { sound, status } = await Audio.Sound.createAsync(
           assetSource,
-          { volume: 1.0, shouldPlay: false }
+          { volume: 0.8, shouldPlay: false }
         );
 
         console.log('[useSplashScreenAudio] Audio asset loaded. status.isLoaded:', status?.isLoaded);

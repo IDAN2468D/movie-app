@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Modal, Pressable, ScrollView, Image, Share, Alert, ActivityIndicator, Linking } from 'react-native';
+import { View, Text, Modal, Pressable, ScrollView, Image, Share, Alert, ActivityIndicator, Linking, StyleSheet } from 'react-native';
 import { X, CreditCard, Share2, Cloud, Navigation } from 'lucide-react-native';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
@@ -10,6 +10,7 @@ import { Colors } from '@/constants/Theme';
 import { API_BASE_URL } from '@/constants/Config';
 import GyroLiquidTicket from './GyroLiquidTicket';
 import MorphicTicketOverlay from './MorphicTicketOverlay';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { 
   FadeIn, 
   FadeInDown, 
@@ -18,8 +19,12 @@ import Animated, {
   useAnimatedStyle, 
   withSpring, 
   withRepeat, 
-  withTiming 
+  withTiming,
+  withSequence,
+  interpolate,
+  runOnJS
 } from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Sensors } from '@/utils/SafeModules';
 import { getMovieTheme } from '@/utils/movieTheme';
 import { GoogleDriveService } from '@/services/GoogleDriveService';
@@ -38,6 +43,25 @@ export default function TicketDetailModal({ ticket, isVisible, onClose }: Ticket
 
   const tiltX = useSharedValue(0);
   const tiltY = useSharedValue(0);
+
+  const [isActivated, setIsActivated] = useState(false);
+  const pinchScale = useSharedValue(1);
+  const laserY = useSharedValue(0);
+
+  useEffect(() => {
+    if (isActivated) {
+      laserY.value = withRepeat(
+        withSequence(
+          withTiming(1, { duration: 2000 }),
+          withTiming(0, { duration: 2000 })
+        ),
+        -1,
+        true
+      );
+    } else {
+      laserY.value = 0;
+    }
+  }, [isActivated]);
 
   useEffect(() => {
     if (!isVisible) return;
@@ -80,16 +104,57 @@ export default function TicketDetailModal({ ticket, isVisible, onClose }: Ticket
       if (subscription) subscription.remove();
       tiltX.value = 0;
       tiltY.value = 0;
+      setIsActivated(false);
     };
   }, [isVisible]);
 
-  const tiltStyle = useAnimatedStyle(() => {
+  const handleActivation = () => {
+    if (isActivated) return;
+    setIsActivated(true);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  };
+
+  const pinchGesture = Gesture.Pinch()
+    .onUpdate((e) => {
+      pinchScale.value = Math.max(0.75, Math.min(1.25, e.scale));
+      if (e.scale < 0.85 && !isActivated) {
+        runOnJS(handleActivation)();
+      }
+    })
+    .onEnd(() => {
+      pinchScale.value = withSpring(1, { damping: 12, stiffness: 120 });
+    });
+
+  const cardAnimatedStyle = useAnimatedStyle(() => {
     return {
       transform: [
         { perspective: 1000 },
         { rotateX: `${tiltY.value * 0.12}deg` },
         { rotateY: `${tiltX.value * 0.12}deg` },
+        { scale: pinchScale.value },
       ]
+    };
+  });
+
+  const hologramStyle = useAnimatedStyle(() => {
+    return {
+      opacity: isActivated ? withSpring(0.18) : 0,
+      transform: [
+        { translateX: tiltX.value * 1.5 },
+        { translateY: tiltY.value * 1.5 },
+      ]
+    };
+  });
+
+  const laserStyle = useAnimatedStyle(() => {
+    const translateY = interpolate(
+      laserY.value,
+      [0, 1],
+      [0, 520]
+    );
+    return {
+      transform: [{ translateY }],
+      opacity: isActivated ? 1 : 0,
     };
   });
 
@@ -273,10 +338,11 @@ export default function TicketDetailModal({ ticket, isVisible, onClose }: Ticket
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+            <GestureDetector gesture={pinchGesture}>
               {/* Ticket Body */}
               <Animated.View 
                 entering={FadeInDown.springify().damping(18).stiffness(120).mass(1.0)}
-                style={tiltStyle}
+                style={cardAnimatedStyle}
                 className="bg-surfaceLight rounded-[48px] overflow-hidden border border-white/10 shadow-2xl relative"
               >
                 {/* Liquid Background Layer */}
@@ -294,6 +360,40 @@ export default function TicketDetailModal({ ticket, isVisible, onClose }: Ticket
                   showtimeDate={ticket.date}
                   showtimeTime={ticket.showtime?.time}
                   compact={false}
+                />
+
+                {/* Holographic PrismPass Overlay */}
+                <Animated.View 
+                  style={[StyleSheet.absoluteFill, hologramStyle]} 
+                  pointerEvents="none"
+                >
+                  <LinearGradient
+                    colors={['#FF1464', '#00E5FF', '#E5FF00', '#FF1464']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={StyleSheet.absoluteFill}
+                  />
+                </Animated.View>
+
+                {/* Active Scanning Laser Line */}
+                <Animated.View 
+                  style={[
+                    {
+                      position: 'absolute',
+                      left: 0,
+                      right: 0,
+                      height: 2.5,
+                      backgroundColor: Colors.secondary,
+                      shadowColor: Colors.secondary,
+                      shadowOffset: { width: 0, height: 0 },
+                      shadowOpacity: 0.9,
+                      shadowRadius: 12,
+                      elevation: 10,
+                      zIndex: 50,
+                    },
+                    laserStyle
+                  ]}
+                  pointerEvents="none"
                 />
 
                 {/* Movie Header */}
@@ -330,6 +430,13 @@ export default function TicketDetailModal({ ticket, isVisible, onClose }: Ticket
                   >
                     REF: {ticket.id.split('-')[0].toUpperCase()}
                   </Animated.Text>
+                  {/* Activation Hint */}
+                  <Text 
+                    style={{ fontFamily: 'Rubik-Medium' }} 
+                    className={`text-center text-xs mt-4 px-4 ${isActivated ? 'text-secondary/80' : 'text-white/40 animate-pulse'}`}
+                  >
+                    {isActivated ? '✓ כרטיס פריזמה הולוגרפי מופעל ומאומת' : 'צבט (Pinch) את הכרטיס עם 2 אצבעות להפעלה'}
+                  </Text>
                 </View>
 
                 {/* Perforation Line - Custom Glass Effect */}
@@ -345,7 +452,11 @@ export default function TicketDetailModal({ ticket, isVisible, onClose }: Ticket
                     <DetailItem label="תאריך" value={ticket.date} />
                     <DetailItem label="שעה" value={ticket.showtime?.time || '--:--'} />
                     <DetailItem label="מושבים" value={ticket.seats?.map(s => `${s.row}${s.number}`).join(', ') || 'N/A'} color={movieTheme.secondaryColor} />
-                    <DetailItem label="סטטוס" value="מאושר" color="#22c55e" />
+                    <DetailItem 
+                      label="סטטוס" 
+                      value={isActivated ? "✓ פעיל ומאומת" : "צבט להפעלה"} 
+                      color={isActivated ? "#22c55e" : Colors.primary} 
+                    />
                   </View>
 
                   <View className="h-[1px] bg-white/10 my-8" />
@@ -391,6 +502,7 @@ export default function TicketDetailModal({ ticket, isVisible, onClose }: Ticket
                   </View>
                 </View>
               </Animated.View>
+            </GestureDetector>
 
               {/* CineSymphony — סימפוניה קולנועית */}
               <View className="mt-6">

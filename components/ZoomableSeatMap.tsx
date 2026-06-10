@@ -13,6 +13,7 @@ import { Colors } from '@/constants/Theme';
 import { useBookingStore } from '@/store/useBookingStore';
 import { useSquadBookingStore } from '@/store/useSquadBookingStore';
 import { useAuthStore } from '@/store/useAuthStore';
+import CineEchoesSeatingOverlay from './CineEchoesSeatingOverlay';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -27,6 +28,7 @@ const SeatIcon = ({
   isSweetSpot,
   friendColor,
   isHoveredByFriend,
+  hasEcho,
   onPressIn,
   onPressOut,
   onPress 
@@ -37,6 +39,7 @@ const SeatIcon = ({
   isSweetSpot: boolean;
   friendColor: string | null;
   isHoveredByFriend: string | null;
+  hasEcho?: boolean;
   onPressIn?: () => void;
   onPressOut?: () => void;
   onPress: () => void;
@@ -108,6 +111,19 @@ const SeatIcon = ({
           stroke={Colors.secondary}
           strokeWidth={0.5}
           strokeDasharray="2,2"
+        />
+      )}
+      
+      {/* CineEcho pulsing ring */}
+      {hasEcho && !isTaken && !isSelected && !friendColor && (
+        <Rect 
+          x={-2} y={-2} 
+          width={28} height={32} 
+          rx={8} 
+          fill="none" 
+          stroke={Colors.primary} 
+          strokeWidth={1.5} 
+          opacity={0.8}
         />
       )}
       
@@ -186,6 +202,20 @@ export default function ZoomableSeatMap() {
   const { seats, toggleSeat, selectedSeats, selectedShowtime } = useBookingStore();
   const { squadCode, sessionDetails, hovers, toggleSquadSeat, sendSeatHover } = useSquadBookingStore();
   const user = useAuthStore(state => state.user);
+
+  const [echos, setEchos] = useState<Record<string, { uri: string; userName: string; duration: string }>>({
+    'D-4': { uri: 'mock-audio-1.m4a', userName: 'רועי', duration: '0:05' },
+    'E-6': { uri: 'mock-audio-2.m4a', userName: 'מיה', duration: '0:08' },
+    'C-8': { uri: 'mock-audio-3.m4a', userName: 'איתי', duration: '0:04' },
+  });
+  const [selectedEchoSeat, setSelectedEchoSeat] = useState<string | null>(null);
+
+  const handleSaveEcho = (seatId: string, uri: string) => {
+    setEchos(prev => ({
+      ...prev,
+      [seatId]: { uri, userName: user?.name || 'חבר קהילה', duration: '0:10' }
+    }));
+  };
 
   const getMemberColor = (userId: string) => {
     if (!sessionDetails) return '#00E5FF';
@@ -525,6 +555,9 @@ export default function ZoomableSeatMap() {
                               ? hoverInfo.userName
                               : null;
 
+                            const seatKey = `${seat.row}-${seat.number}`;
+                            const hasEcho = !!echos[seatKey];
+
                             return (
                               <SeatIcon 
                                 isSelected={isSelected}
@@ -533,6 +566,7 @@ export default function ZoomableSeatMap() {
                                 isSweetSpot={isSweetSpot}
                                 friendColor={friendColor}
                                 isHoveredByFriend={isHoveredByFriend}
+                                hasEcho={hasEcho}
                                 onPressIn={() => {
                                   if (squadCode && !isTaken) {
                                     sendSeatHover(seat.row, seat.number, true);
@@ -544,6 +578,16 @@ export default function ZoomableSeatMap() {
                                   }
                                 }}
                                 onPress={() => {
+                                  if (hasEcho) {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                    setSelectedEchoSeat(seatKey);
+                                    return;
+                                  }
+                                  if (isSelected) {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                    setSelectedEchoSeat(seatKey);
+                                    return;
+                                  }
                                   if (!isTaken) {
                                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                                     if (squadCode) {
@@ -635,6 +679,14 @@ export default function ZoomableSeatMap() {
         </BlurView>
       </View>
       
+      {selectedEchoSeat && (
+        <CineEchoesSeatingOverlay
+          seatId={selectedEchoSeat}
+          echoData={echos[selectedEchoSeat] || null}
+          onClose={() => setSelectedEchoSeat(null)}
+          onSaveEcho={handleSaveEcho}
+        />
+      )}
     </View>
   );
 }

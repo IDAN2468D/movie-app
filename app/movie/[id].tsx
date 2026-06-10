@@ -61,6 +61,7 @@ import MovieReviews from '@/components/MovieReviews';
 import ScrollEntrance from '@/components/ScrollEntrance';
 import MovieTrivia from '@/components/MovieTrivia';
 import CinePrism from '@/components/CinePrism';
+import AuraSyncBackground from '@/components/AuraSyncBackground';
 import CineSymphony from '@/components/CineSymphony';
 
 // Interop external components to support NativeWind className
@@ -255,14 +256,14 @@ export default function MovieDetailsScreen() {
               isActive={isPrismActive}
             />
           ) : (
-            <View className="absolute inset-0 bg-background">
-              <LiquidBackground 
-                primaryColor={themeColors.primary} 
-                secondaryColor={themeColors.secondary} 
+            <View style={StyleSheet.absoluteFill} className="bg-background">
+              <AuraSyncBackground 
+                primaryColorShared={themeColors.primaryShared} 
+                secondaryColorShared={themeColors.secondaryShared} 
               />
               
               {backdropSource && (
-                <Animated.View className="absolute inset-0 opacity-60">
+                <Animated.View className="absolute inset-0 opacity-40">
                   <Image
                     source={backdropSource}
                     className="w-full h-full"
@@ -271,7 +272,7 @@ export default function MovieDetailsScreen() {
                   />
                 </Animated.View>
               )}
-              <BlurView intensity={100} tint="dark" className="absolute inset-0" />
+              <BlurView intensity={70} tint="dark" className="absolute inset-0" />
             </View>
           )}
 
