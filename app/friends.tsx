@@ -32,6 +32,7 @@ import {
   Search,
   Trash2,
   ChevronRight,
+  ChevronLeft,
   ChevronDown,
   ChevronUp,
   Award,
@@ -44,6 +45,30 @@ import {
 
 import { useSocialStore, IFriend } from '@/store/useSocialStore';
 import { Colors, Typography, POSTER_SIZES } from '@/constants/Theme';
+import { getImageSource } from '@/utils/ImageUtils';
+
+// Robust Watchlist Item component to support both posterPath/poster_path and handle image load errors
+const WatchlistItem = ({ movie }: { movie: { id: number; title: string; posterPath?: string; poster_path?: string } }) => {
+  const path = movie.posterPath || movie.poster_path;
+  const [source, setSource] = useState(getImageSource(path, 'poster', 'small'));
+
+  useEffect(() => {
+    setSource(getImageSource(path, 'poster', 'small'));
+  }, [path]);
+
+  return (
+    <View className="w-24 items-center bg-black/20 p-2 rounded-xl border border-white/5">
+      <Image
+        source={source}
+        style={{ width: 64, height: 96, borderRadius: 8 }}
+        className="mb-1.5"
+        resizeMode="cover"
+        onError={() => setSource(getImageSource(null, 'poster', 'small'))}
+      />
+      <Text className="text-[9px] text-white/90 text-center font-body" numberOfLines={1}>{movie.title}</Text>
+    </View>
+  );
+};
 
 export default function FriendsScreen() {
   const insets = useSafeAreaInsets();
@@ -134,13 +159,13 @@ export default function FriendsScreen() {
       {/* Header */}
       <View 
         className="flex-row items-center px-5 py-4 border-b border-white/5 relative z-10" 
-        style={{ paddingTop: insets.top + 10, flexDirection: 'row-reverse' }}
+        style={{ paddingTop: insets.top + 10 }}
       >
         <Pressable 
           onPress={goBack} 
           className="w-10 h-10 rounded-full bg-white/5 border border-white/10 justify-center items-center"
         >
-          <ChevronRight size={22} color="white" style={{ transform: [{ scaleX: isRTL ? 1 : -1 }] }} />
+          {isRTL ? <ChevronRight size={22} color="white" /> : <ChevronLeft size={22} color="white" />}
         </Pressable>
         <View className="flex-1 items-end pe-4">
           <Text className="text-h2 text-white font-display text-right" style={{ writingDirection: 'rtl' }}>מועדון חברים וקהילה</Text>
@@ -154,10 +179,14 @@ export default function FriendsScreen() {
         contentContainerStyle={{ paddingBottom: 100 }}
       >
         {/* Search / Add Friend Container */}
-        <Animated.View entering={FadeInUp.duration(600).springify()} className="mb-8">
-          <Text className="text-body font-bold text-white mb-3 text-right" style={{ writingDirection: 'rtl' }}>הוסף חבר חדש</Text>
+        <Animated.View 
+          entering={FadeInUp.duration(600).springify()} 
+          className="mb-8"
+          style={{ alignItems: isRTL ? 'flex-start' : 'flex-end' }}
+        >
+          <Text className="text-body font-bold text-white mb-3 text-right" style={{ textAlign: 'right', writingDirection: 'rtl' }}>הוסף חבר חדש</Text>
           
-          <View className="flex-row items-center bg-surfaceLight/30 border border-white/8 rounded-2xl px-4 py-3 relative overflow-hidden" style={{ flexDirection: 'row-reverse' }}>
+          <View className="flex-row items-center bg-surfaceLight/30 border border-white/8 rounded-2xl px-4 py-3 relative overflow-hidden w-full" style={{ flexDirection: isRTL ? 'row' : 'row-reverse' }}>
             <Search size={18} color="rgba(255,255,255,0.4)" />
             <TextInput
               value={searchQuery}
@@ -165,7 +194,7 @@ export default function FriendsScreen() {
               placeholder="חיפוש לפי אימייל או שם משתמש..."
               placeholderTextColor="rgba(255,255,255,0.3)"
               className="flex-1 text-white font-body px-3 text-right"
-              style={{ writingDirection: 'rtl' }}
+              style={{ textAlign: 'right', writingDirection: 'rtl' }}
             />
             {searchQuery.length > 0 && (
               <Pressable onPress={() => handleSearch('')} hitSlop={10}>
@@ -176,7 +205,7 @@ export default function FriendsScreen() {
 
           {/* Success feedback toast */}
           {successMessage && (
-            <Animated.View entering={FadeInDown} exiting={FadeOut} className="mt-3 bg-secondary/10 border border-secondary/20 p-3 rounded-xl flex-row items-center gap-2" style={{ flexDirection: 'row-reverse' }}>
+            <Animated.View entering={FadeInDown} exiting={FadeOut} className="mt-3 bg-secondary/10 border border-secondary/20 p-3 rounded-xl flex-row items-center gap-2">
               <Sparkles size={16} color={Colors.secondary} />
               <Text className="text-caption font-bold text-secondary flex-1 text-right" style={{ writingDirection: 'rtl' }}>{successMessage}</Text>
             </Animated.View>
@@ -198,15 +227,15 @@ export default function FriendsScreen() {
                   <View 
                     key={result.id} 
                     className="flex-row items-center justify-between p-4 border-b border-white/5 last:border-b-0 w-full"
-                    style={{ flexDirection: 'row-reverse' }}
+                    style={{ flexDirection: isRTL ? 'row' : 'row-reverse' }}
                   >
-                    <View className="flex-row items-center gap-3" style={{ flexDirection: 'row-reverse' }}>
+                    <View className="flex-row items-center gap-3" style={{ flexDirection: isRTL ? 'row' : 'row-reverse' }}>
                       <View className="w-10 h-10 rounded-full bg-primary/20 items-center justify-center border border-white/10">
                         <User size={18} color={Colors.primary} />
                       </View>
-                      <View style={{ alignItems: 'flex-end' }}>
-                        <Text className="text-body font-bold text-white text-right">{result.name}</Text>
-                        <Text className="text-[10px] text-white/40 mt-0.5 text-right">{result.email}</Text>
+                      <View style={{ alignItems: isRTL ? 'flex-start' : 'flex-end' }}>
+                        <Text className="text-body font-bold text-white text-right" style={{ textAlign: 'right', writingDirection: 'rtl' }}>{result.name}</Text>
+                        <Text className="text-[10px] text-white/40 mt-0.5 text-right" style={{ textAlign: 'right' }}>{result.email}</Text>
                       </View>
                     </View>
                     <Pressable
@@ -223,22 +252,32 @@ export default function FriendsScreen() {
         </Animated.View>
 
         {/* Info Box Bento */}
-        <Animated.View entering={FadeInDown.delay(100).duration(600)} className="mb-8 rounded-3xl overflow-hidden border border-white/8 bg-surfaceLight/25 p-5 relative">
+        <Animated.View 
+          entering={FadeInDown.delay(100).duration(600)} 
+          className="mb-8 rounded-3xl overflow-hidden border border-white/8 bg-surfaceLight/25 p-5 relative"
+          style={{ alignItems: isRTL ? 'flex-start' : 'flex-end' }}
+        >
           <BlurView intensity={10} tint="dark" className="absolute inset-0" />
-          <View className="flex-row items-center gap-3 mb-2" style={{ flexDirection: 'row-reverse' }}>
+          <View className="flex-row items-center gap-3 mb-3" style={{ flexDirection: isRTL ? 'row' : 'row-reverse' }}>
             <Award size={20} color={Colors.secondary} />
-            <Text className="text-body font-bold text-white text-right" style={{ writingDirection: 'rtl' }}>מועדון חברים חכם</Text>
+            <Text className="text-body font-bold text-white text-right" style={{ textAlign: 'right', writingDirection: 'rtl' }}>מועדון חברים חכם</Text>
           </View>
-          <Text className="text-caption text-white/60 leading-relaxed text-right" style={{ writingDirection: 'rtl' }}>
+          <Text 
+            className="text-caption text-white/60 leading-relaxed" 
+            style={{ textAlign: 'left', writingDirection: 'rtl', alignSelf: 'stretch', marginTop: 8 }}
+          >
             עקבו אחר החברים שלכם כדי לתאם מושבים צמודים, לשתף המלצות סרטים בלחיצה ולראות באילו סרטים הם הכי רוצים לצפות כעת!
           </Text>
         </Animated.View>
 
         {/* Friends List Title */}
-        <View className="flex-row items-center justify-between mb-4 px-1" style={{ flexDirection: 'row-reverse' }}>
-          <View className="flex-row items-center gap-2.5" style={{ flexDirection: 'row-reverse' }}>
+        <View 
+          className="flex-row items-center justify-between mb-4 px-1"
+          style={{ flexDirection: isRTL ? 'row' : 'row-reverse' }}
+        >
+          <View className="flex-row items-center gap-2.5" style={{ flexDirection: isRTL ? 'row' : 'row-reverse' }}>
             <Users size={18} color={Colors.primary} />
-            <Text className="text-h3 text-white font-display text-right" style={{ writingDirection: 'rtl' }}>החברים שלי ({friends.length})</Text>
+            <Text className="text-h3 text-white font-display text-right" style={{ textAlign: 'right', writingDirection: 'rtl' }}>החברים שלי ({friends.length})</Text>
           </View>
         </View>
 
@@ -267,9 +306,9 @@ export default function FriendsScreen() {
                   <Pressable
                     onPress={() => toggleExpandFriend(friend.id)}
                     className="p-5 flex-row items-center justify-between"
-                    style={{ flexDirection: 'row-reverse' }}
+                    style={{ flexDirection: isRTL ? 'row' : 'row-reverse' }}
                   >
-                    <View className="flex-row items-center gap-3.5" style={{ flexDirection: 'row-reverse' }}>
+                    <View className="flex-row items-center gap-3.5" style={{ flexDirection: isRTL ? 'row' : 'row-reverse' }}>
                       {friend.profileImage ? (
                         <Image source={{ uri: friend.profileImage }} className="w-12 h-12 rounded-full border border-white/10" resizeMode="cover" />
                       ) : (
@@ -278,16 +317,16 @@ export default function FriendsScreen() {
                         </View>
                       )}
                       
-                      <View style={{ alignItems: 'flex-end' }}>
-                        <Text className="text-body font-bold text-white leading-tight">{friend.name}</Text>
-                        <View className="flex-row items-center gap-1.5 mt-1" style={{ flexDirection: 'row-reverse' }}>
+                      <View style={{ alignItems: isRTL ? 'flex-start' : 'flex-end' }}>
+                        <Text className="text-body font-bold text-white leading-tight" style={{ textAlign: 'right', writingDirection: 'rtl' }}>{friend.name}</Text>
+                        <View className="flex-row items-center gap-1.5 mt-1" style={{ flexDirection: isRTL ? 'row' : 'row-reverse' }}>
                           <Award size={12} color={Colors.secondary} />
                           <Text className="text-[10px] font-bold text-secondary">{friend.loyaltyPoints} נקודות</Text>
                         </View>
                       </View>
                     </View>
 
-                    <View className="flex-row items-center gap-3" style={{ flexDirection: 'row-reverse' }}>
+                    <View className="flex-row items-center gap-3" style={{ flexDirection: isRTL ? 'row' : 'row-reverse' }}>
                       <Pressable
                         onPress={() => handleRemoveFriend(friend.id, friend.name)}
                         hitSlop={12}
@@ -310,31 +349,27 @@ export default function FriendsScreen() {
                     <Animated.View 
                       entering={FadeInUp.duration(300)}
                       className="px-5 pb-5 border-t border-white/5 pt-4"
+                      style={{ alignItems: isRTL ? 'flex-start' : 'flex-end' }}
                     >
                       {/* Active Watchlist */}
                       {friend.watchlist && friend.watchlist.length > 0 && (
-                        <View className="mb-4 items-end">
-                          <View className="flex-row items-center gap-1.5 mb-2.5" style={{ flexDirection: 'row-reverse' }}>
+                        <View 
+                          className="mb-4 w-full"
+                          style={{ alignItems: isRTL ? 'flex-start' : 'flex-end' }}
+                        >
+                          <View className="flex-row items-center gap-1.5 mb-2.5" style={{ flexDirection: isRTL ? 'row' : 'row-reverse' }}>
                             <Heart size={12} color={Colors.primary} />
-                            <Text className="text-caption font-bold text-white/80">רשימת מעקב של {friend.name}</Text>
+                            <Text className="text-caption font-bold text-white/80" style={{ textAlign: 'right', writingDirection: 'rtl' }}>רשימת מעקב של {friend.name}</Text>
                           </View>
                           
-                          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row -mx-5 px-5" contentContainerStyle={{ gap: 12, flexDirection: 'row-reverse' }}>
+                          <ScrollView 
+                            horizontal 
+                            showsHorizontalScrollIndicator={false} 
+                            className="w-full -mx-5 px-5" 
+                            contentContainerStyle={{ gap: 12, flexDirection: isRTL ? 'row' : 'row-reverse' }}
+                          >
                             {friend.watchlist.map((movie) => (
-                              <View key={movie.id} className="w-24 items-center bg-black/20 p-2 rounded-xl border border-white/5">
-                                {movie.posterPath ? (
-                                  <Image
-                                    source={{ uri: `${POSTER_SIZES.small}${movie.posterPath}` }}
-                                    className="w-16 h-24 rounded-lg mb-1.5"
-                                    resizeMode="cover"
-                                  />
-                                ) : (
-                                  <View className="w-16 h-24 bg-white/5 rounded-lg mb-1.5 items-center justify-center">
-                                    <Sparkles size={16} color="rgba(255,255,255,0.2)" />
-                                  </View>
-                                )}
-                                <Text className="text-[9px] text-white/90 text-center font-body" numberOfLines={1}>{movie.title}</Text>
-                              </View>
+                              <WatchlistItem key={movie.id} movie={movie} />
                             ))}
                           </ScrollView>
                         </View>
@@ -342,23 +377,40 @@ export default function FriendsScreen() {
 
                       {/* Recent Activities */}
                       {friend.recentActivity && friend.recentActivity.length > 0 && (
-                        <View className="items-end">
-                          <View className="flex-row items-center gap-1.5 mb-2" style={{ flexDirection: 'row-reverse' }}>
+                        <View 
+                          className="w-full"
+                          style={{ alignItems: isRTL ? 'flex-start' : 'flex-end' }}
+                        >
+                          <View className="flex-row items-center gap-1.5 mb-2.5" style={{ flexDirection: isRTL ? 'row' : 'row-reverse' }}>
                             <Clock size={12} color="rgba(255,255,255,0.4)" />
-                            <Text className="text-caption font-bold text-white/50">פעילות קולנועית אחרונה</Text>
+                            <Text className="text-caption font-bold text-white/50" style={{ textAlign: 'right', writingDirection: 'rtl' }}>פעילות קולנועית אחרונה</Text>
                           </View>
                           
                           <View className="w-full gap-2 bg-black/10 rounded-2xl p-3 border border-white/5">
                             {friend.recentActivity.map((activity, idx) => (
                               <View 
                                 key={idx} 
-                                className="flex-row items-center justify-between py-1 border-b border-white/5 last:border-b-0"
-                                style={{ flexDirection: 'row-reverse' }}
+                                className="flex-row items-center justify-between py-1 border-b border-white/5 last:border-b-0 w-full"
                               >
-                                <Text className="text-[10px] text-white/80 text-right flex-1 pe-2" style={{ writingDirection: 'rtl' }}>
-                                  {activity.action}
-                                </Text>
-                                <Text className="text-[9px] text-white/30 font-mono">{activity.time}</Text>
+                                {isRTL ? (
+                                  <>
+                                    <Text className="text-[9px] text-white/30 font-mono" style={{ textAlign: 'right' }}>
+                                      {activity.time}
+                                    </Text>
+                                    <Text className="text-[10px] text-white/80 flex-1 text-left" style={{ textAlign: 'left', writingDirection: 'rtl', marginStart: 16 }}>
+                                      {activity.action}
+                                    </Text>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Text className="text-[10px] text-white/80 flex-1 text-left" style={{ textAlign: 'left', writingDirection: 'rtl', marginEnd: 16 }}>
+                                      {activity.action}
+                                    </Text>
+                                    <Text className="text-[9px] text-white/30 font-mono" style={{ textAlign: 'right' }}>
+                                      {activity.time}
+                                    </Text>
+                                  </>
+                                )}
                               </View>
                             ))}
                           </View>

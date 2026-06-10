@@ -8,7 +8,8 @@ import { useSnacksStore } from '@/store/useSnacksStore';
 export type SnackCategory = 'All' | 'Popcorn' | 'Drinks' | 'Combos' | 'Candy';
 
 export const useSnacks = () => {
-  const { selectedMoviePoster, totalPrice: ticketsTotal } = useBookingStore();
+  const selectedMoviePoster = useBookingStore(state => state.selectedMoviePoster);
+  const ticketsTotal = useBookingStore(state => state.totalPrice);
   const { items, cart, addItem: addItemToStore, removeItem: removeItemFromStore, getTotalPrice, clearCart: clearCartStore } = useSnacksStore();
   
   const [activeCategory, setActiveCategory] = useState<SnackCategory>('All');

@@ -17,6 +17,7 @@ import {
   Navigation, 
   Phone, 
   ChevronRight,
+  ChevronLeft,
   Sparkles
 } from 'lucide-react-native';
 import { Colors } from '@/constants/Theme';
@@ -223,7 +224,7 @@ export default function CinemaMapScreen() {
               }}
               style={styles.backBtn}
             >
-              <ChevronRight size={20} color="white" style={{ transform: [{ scaleX: I18nManager.isRTL ? 1 : -1 }] }} />
+              {I18nManager.isRTL ? <ChevronRight size={20} color="white" /> : <ChevronLeft size={20} color="white" />}
             </Pressable>
             
             {/* Header title block */}

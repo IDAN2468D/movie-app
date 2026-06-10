@@ -32,7 +32,9 @@ import {
   Sparkles, 
   Coffee, 
   ChevronLeft,
+  ChevronRight,
   ArrowRight,
+  ArrowLeft,
   Info
 } from 'lucide-react-native';
 import { Colors } from '../../constants/Theme';
@@ -411,7 +413,7 @@ export default function ARWayfindingScreen() {
               const isActive = selectedWaypoint.type === wp.type;
               let icon = <MapPin size={14} color={isActive ? Colors.background : 'white'} />;
               if (wp.type === 'snacks') icon = <Coffee size={14} color={isActive ? Colors.background : 'white'} />;
-              if (wp.type === 'entrance') icon = <ArrowRight size={14} color={isActive ? Colors.background : 'white'} style={{ transform: [{ scaleX: I18nManager.isRTL ? -1 : 1 }] }} />;
+              if (wp.type === 'entrance') icon = I18nManager.isRTL ? <ArrowLeft size={14} color={isActive ? Colors.background : 'white'} /> : <ArrowRight size={14} color={isActive ? Colors.background : 'white'} />;
 
               return (
                 <TouchableOpacity
@@ -447,7 +449,7 @@ export default function ARWayfindingScreen() {
         }}
       >
         <BlurView intensity={40} tint="dark" className="w-12 h-12 rounded-full overflow-hidden border border-white/10 items-center justify-center bg-black/30">
-          <ChevronLeft size={28} color="white" style={{ transform: [{ scaleX: I18nManager.isRTL ? -1 : 1 }] }} />
+          {I18nManager.isRTL ? <ChevronRight size={28} color="white" /> : <ChevronLeft size={28} color="white" />}
         </BlurView>
       </TouchableOpacity>
 

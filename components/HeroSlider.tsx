@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -28,7 +28,7 @@ interface HeroSliderProps {
 
 const VIEWABILITY_CONFIG = { viewAreaCoveragePercentThreshold: 50 };
 
-const HeroItem = ({ item, scrollY }: { item: TMDBMovie; scrollY?: SharedValue<number> }) => {
+const HeroItem = React.memo(({ item, scrollY }: { item: TMDBMovie; scrollY?: SharedValue<number> }) => {
   const [imgSource, setImgSource] = useState(getImageSource(item.backdrop_path, 'backdrop', 'large'));
 
   useEffect(() => {
@@ -128,13 +128,13 @@ const HeroItem = ({ item, scrollY }: { item: TMDBMovie; scrollY?: SharedValue<nu
       </Animated.View>
     </Pressable>
   );
-};
+});
 
-export default function HeroSlider({ movies, scrollY, onActiveMovieChange }: HeroSliderProps) {
+const HeroSlider = React.memo(function HeroSlider({ movies, scrollY, onActiveMovieChange }: HeroSliderProps) {
   const flatListRef = useRef<FlatList>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const heroMovies = movies.slice(0, 5);
+  const heroMovies = useMemo(() => movies.slice(0, 5), [movies]);
 
   // Auto-scroll
   useEffect(() => {
@@ -164,6 +164,10 @@ export default function HeroSlider({ movies, scrollY, onActiveMovieChange }: Her
     [heroMovies, onActiveMovieChange]
   );
 
+  const renderItem = useCallback(({ item }: { item: TMDBMovie }) => (
+    <HeroItem item={item} scrollY={scrollY} />
+  ), [scrollY]);
+
   return (
     <View className="h-[380px] mb-2">
       <FlatList
@@ -172,14 +176,14 @@ export default function HeroSlider({ movies, scrollY, onActiveMovieChange }: Her
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        renderItem={({ item }) => <HeroItem item={item} scrollY={scrollY} />}
+        renderItem={renderItem}
         keyExtractor={(item) => item.id.toString()}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={VIEWABILITY_CONFIG}
       />
       {/* Dot indicators */}
       <View className="flex-row-reverse justify-center gap-1.5 absolute bottom-3 start-0 end-0">
-        {heroMovies.map((_, i) => (
+        {heroMovies.map((item: TMDBMovie, i: number) => (
           <View
             key={i}
             className={`h-1 rounded-full ${
@@ -192,4 +196,6 @@ export default function HeroSlider({ movies, scrollY, onActiveMovieChange }: Her
       </View>
     </View>
   );
-}
+});
+
+export default HeroSlider;

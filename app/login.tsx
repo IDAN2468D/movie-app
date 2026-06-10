@@ -9,9 +9,10 @@ import {
   ScrollView, 
   Image,
   Pressable,
-  ActivityIndicator
+  ActivityIndicator,
+  I18nManager
 } from 'react-native';
-import { Mail, Lock, User, Eye, EyeOff, ArrowLeft } from 'lucide-react-native';
+import { Mail, Lock, User, Eye, EyeOff, ArrowLeft, ArrowRight } from 'lucide-react-native';
 import { Colors } from '@/constants/Theme';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -183,7 +184,7 @@ export default function LoginScreen() {
                       <Text className="text-black text-xl font-bold ml-2" style={{ fontFamily: 'Rubik-Bold' }}>
                         התחברות
                       </Text>
-                      <ArrowLeft size={22} color="black" />
+                      {I18nManager.isRTL ? <ArrowLeft size={22} color="black" /> : <ArrowRight size={22} color="black" />}
                     </TouchableOpacity>
 
                     <View className="flex-row items-center my-8 w-full">

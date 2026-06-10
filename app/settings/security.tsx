@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, Pressable, ScrollView, Switch } from 'react-native';
-import { ChevronRight, Shield, Fingerprint, KeyRound, Smartphone } from 'lucide-react-native';
+import { View, Text, Pressable, ScrollView, Switch, I18nManager } from 'react-native';
+import { ChevronRight, ChevronLeft, Shield, Fingerprint, KeyRound, Smartphone } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Typography } from '@/constants/Theme';
 import { ChangePasswordModal, TwoFactorSetupModal } from '@/components/SecurityModals';
@@ -27,7 +27,7 @@ export default function SecurityScreen() {
       {/* Header */}
       <View className="flex-row items-center px-4 py-4 border-b border-white/10 relative">
         <Pressable onPress={goBack} className="w-10 h-10 rounded-full bg-white/5 justify-center items-center z-10">
-          <ChevronRight size={24} color={Colors.text} />
+          {I18nManager.isRTL ? <ChevronRight size={24} color={Colors.text} /> : <ChevronLeft size={24} color={Colors.text} />}
         </Pressable>
         <View className="absolute inset-0 justify-center items-center">
           <Text style={[Typography.h2, { fontFamily: 'Rubik-Bold' }]} className="text-white">
@@ -91,7 +91,7 @@ export default function SecurityScreen() {
                 <Text style={{ fontFamily: 'Rubik-Regular', fontSize: 12, color: 'rgba(255,255,255,0.5)', textAlign: 'right', writingDirection: 'rtl' }}>עדכון סיסמת ההתחברות שלך</Text>
               </View>
             </View>
-            <ChevronRight size={16} color="rgba(255,255,255,0.3)" style={{ transform: [{ scaleX: -1 }] }} />
+            {I18nManager.isRTL ? <ChevronLeft size={16} color="rgba(255,255,255,0.3)" /> : <ChevronRight size={16} color="rgba(255,255,255,0.3)" />}
           </Pressable>
         </View>
       </ScrollView>

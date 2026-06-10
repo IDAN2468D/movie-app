@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import React, { useState } from 'react';
 import { View, Text, Pressable, Alert, ActivityIndicator, Image } from 'react-native';
-import { useState } from 'react';
 import { API_BASE_URL } from '@/constants/Config';
 import { Calendar as CalendarIcon, Mail, CheckCircle2, QrCode, ArrowRightLeft } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 import Animated, { ZoomIn, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import MorphicTicketOverlay from './MorphicTicketOverlay';
 
 import type { BookedTicket } from '@/store/useBookingStore';
 import { Colors } from '@/constants/Theme';
@@ -21,7 +22,7 @@ interface TicketCardProps {
   index?: number;
 }
 
-export default function TicketCard({ ticket, onPress, index = 0 }: TicketCardProps) {
+const TicketCard = React.memo(function TicketCard({ ticket, onPress, index = 0 }: TicketCardProps) {
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [rewardsModalVisible, setRewardsModalVisible] = useState(false);
@@ -120,6 +121,13 @@ export default function TicketCard({ ticket, onPress, index = 0 }: TicketCardPro
       >
         <BlurView intensity={20} tint="dark" className="rounded-[32px] overflow-hidden border border-white/10 shadow-2xl">
         <View>
+          {/* Morphic Ticket Overlay — כרטיס מורפי */}
+          <MorphicTicketOverlay
+            movieTitle={ticket.movieTitle}
+            showtimeDate={ticket.date}
+            showtimeTime={ticket.showtime?.time}
+            compact={true}
+          />
           {/* Top Section - Movie Info */}
           <View className="p-5">
             <View className="flex-row justify-between items-start mb-4">
@@ -243,6 +251,8 @@ export default function TicketCard({ ticket, onPress, index = 0 }: TicketCardPro
       </Pressable>
     </Animated.View>
   );
-}
+});
+
+export default TicketCard;
 
 // NativeWind migration complete - styles object removed

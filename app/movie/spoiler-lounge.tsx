@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, ScrollView, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, ScrollView, Pressable, KeyboardAvoidingView, Platform, I18nManager } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Send, Clock, AlertTriangle, ChevronRight } from 'lucide-react-native';
+import { Send, Clock, AlertTriangle, ChevronRight, ChevronLeft } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeIn, LinearTransition, useAnimatedStyle, withSpring, withTiming } from 'react-native-reanimated';
 import { Colors, Typography } from '@/constants/Theme';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -130,7 +130,7 @@ export default function SpoilerLoungeScreen() {
                 onPress={() => router.back()} 
                 className="w-10 h-10 rounded-full bg-white/10 border border-white/20 justify-center items-center"
               >
-                <ChevronRight color="white" size={24} />
+                {I18nManager.isRTL ? <ChevronRight color="white" size={24} /> : <ChevronLeft color="white" size={24} />}
               </Pressable>
 
               {/* Title - Absolutely centered */}

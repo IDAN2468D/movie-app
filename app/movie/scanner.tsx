@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, I18nManager } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
-import { X, Zap, ZapOff, Camera, ArrowLeft, Aperture } from 'lucide-react-native';
+import { X, Zap, ZapOff, Camera, ArrowLeft, ArrowRight, Aperture } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Theme';
@@ -74,7 +74,11 @@ export default function ScannerScreen() {
             className="mt-6 flex-row items-center" 
             onPress={() => router.back()}
           >
-            <ArrowLeft color={Colors.textSecondary} size={16} style={{ marginRight: 6 }} />
+            {I18nManager.isRTL ? (
+              <ArrowRight color={Colors.textSecondary} size={16} style={{ marginStart: 6 }} />
+            ) : (
+              <ArrowLeft color={Colors.textSecondary} size={16} style={{ marginEnd: 6 }} />
+            )}
             <Text className="text-textSecondary font-assistant text-sm">חזור למסך הבית</Text>
           </TouchableOpacity>
         </BlurView>

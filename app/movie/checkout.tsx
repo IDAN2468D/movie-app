@@ -3,10 +3,10 @@
  * Checkout Screen - Final order summary and payment
  */
 import * as React from 'react';
-import { View, Text, Image, Pressable, ScrollView, Modal, Linking, Alert } from 'react-native';
+import { View, Text, Image, Pressable, ScrollView, Modal, Linking, Alert, I18nManager } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ArrowLeft, CreditCard, ShieldCheck, Ticket, CheckCircle2, Sparkles, Popcorn } from 'lucide-react-native';
+import { ArrowLeft, ArrowRight, CreditCard, ShieldCheck, Ticket, CheckCircle2, Sparkles, Popcorn } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useSnacksStore } from '@/store/useSnacksStore';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -67,7 +67,7 @@ export default function CheckoutScreen() {
       {/* Header */}
       <View className="flex-row items-center px-4 py-2 gap-3">
         <Pressable onPress={goBack} className="w-10 h-10 rounded-full bg-surface justify-center items-center">
-          <ArrowLeft size={22} color={Colors.text} />
+          {I18nManager.isRTL ? <ArrowRight size={22} color={Colors.text} /> : <ArrowLeft size={22} color={Colors.text} />}
         </Pressable>
         <Text className="text-h3 text-white font-display">סיכום הזמנה</Text>
       </View>

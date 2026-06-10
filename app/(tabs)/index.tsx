@@ -145,6 +145,10 @@ export default function HomeScreen() {
     }
   }, [handleActiveMovieChange]);
 
+  const renderMovieItem = React.useCallback(({ item, index }: { item: any; index: number }) => (
+    <MovieCard movie={item} index={index} />
+  ), []);
+
   // Cache mapped arrays using useMemo to avoid re-calculating lists and creating new array references on every render
   const storiesData = useMemo(() => {
     return nowPlaying.map(m => ({ id: m.id, title: m.title, poster: m.poster_path || '' }));
@@ -345,7 +349,7 @@ export default function HomeScreen() {
             data={nowPlaying}
             horizontal
             showsHorizontalScrollIndicator={false}
-            renderItem={({ item, index }) => <MovieCard movie={item} index={index} />}
+            renderItem={renderMovieItem}
             keyExtractor={(item) => `np-${item.id}`}
             contentContainerStyle={{ paddingHorizontal: 20 }}
             scrollEnabled
@@ -366,7 +370,7 @@ export default function HomeScreen() {
             data={popular}
             horizontal
             showsHorizontalScrollIndicator={false}
-            renderItem={({ item, index }) => <MovieCard movie={item} index={index} />}
+            renderItem={renderMovieItem}
             keyExtractor={(item) => `pop-${item.id}`}
             contentContainerStyle={{ paddingHorizontal: 20 }}
             scrollEnabled
@@ -387,7 +391,7 @@ export default function HomeScreen() {
             data={topRated}
             horizontal
             showsHorizontalScrollIndicator={false}
-            renderItem={({ item, index }) => <MovieCard movie={item} index={index} />}
+            renderItem={renderMovieItem}
             keyExtractor={(item) => `tr-${item.id}`}
             contentContainerStyle={{ paddingHorizontal: 20 }}
             scrollEnabled

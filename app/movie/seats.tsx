@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Pressable, Image } from 'react-native';
+import { View, Text, ScrollView, Pressable, Image, I18nManager } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import { ChevronRight, Ticket, Info, Users } from 'lucide-react-native';
+import { ChevronRight, ChevronLeft, Ticket, Info, Users } from 'lucide-react-native';
 import { Colors } from '@/constants/Theme';
 import SeatMap from '@/components/ZoomableSeatMap';
 import Animated, { 
@@ -72,7 +72,7 @@ export default function SeatsScreen() {
           onPress={goBack} 
           className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 justify-center items-center"
         >
-          <ChevronRight size={24} color="white" />
+          {I18nManager.isRTL ? <ChevronRight size={24} color="white" /> : <ChevronLeft size={24} color="white" />}
         </Pressable>
         
         <View className="flex-1 items-start">

@@ -35,14 +35,14 @@ export const useTickets = () => {
     setRefreshing(false);
   }, [refetch]);
 
-  const handleViewTicket = async (ticket: BookedTicket) => {
+  const handleViewTicket = useCallback(async (ticket: BookedTicket) => {
     if (biometricsEnabled) {
       const success = await authenticateBiometrics(`אימות ביומטרי נדרש לצפייה בכרטיס ל-${ticket.movieTitle}`);
       if (!success) return;
     }
     setSelectedTicket(ticket);
     setIsModalVisible(true);
-  };
+  }, [biometricsEnabled, authenticateBiometrics]);
 
   const handleScan = (data: string) => {
     setIsScannerVisible(false);

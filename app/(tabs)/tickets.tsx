@@ -11,6 +11,7 @@ import TicketCard from '@/components/TicketCard';
 import TicketDetailModal from '@/components/TicketDetailModal';
 import TicketScannerModal from '@/components/TicketScannerModal';
 import { useTickets } from '@/hooks/useTickets';
+import type { BookedTicket } from '@/store/useBookingStore';
 
 export default function TicketsScreen() {
   const insets = useSafeAreaInsets();
@@ -28,6 +29,10 @@ export default function TicketsScreen() {
     setModalVisible,
     manualUnlock,
   } = useTickets();
+
+  const renderTicketItem = React.useCallback(({ item, index }: { item: BookedTicket; index: number }) => (
+    <TicketCard ticket={item} index={index} onPress={() => handleViewTicket(item)} />
+  ), [handleViewTicket]);
 
   if (!isUnlocked) {
     return (
@@ -55,9 +60,7 @@ export default function TicketsScreen() {
               <MarkerHighlight text="הכרטיסים שלי" className="text-h1 text-text" color={Colors.secondary} />
             </View>
           }
-          renderItem={({ item, index }) => (
-            <TicketCard ticket={item} index={index} onPress={() => handleViewTicket(item)} />
-          )}
+          renderItem={renderTicketItem}
           contentContainerStyle={{ 
             paddingBottom: insets.bottom + 120,
             gap: 20

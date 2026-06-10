@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   StyleSheet,
   Dimensions,
+  I18nManager,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
@@ -55,7 +56,7 @@ export default function LoungeScreen() {
           onPress={goBack}
           className="w-10 h-10 rounded-full border border-white/10 items-center justify-center bg-black/35"
         >
-          <Ionicons name="chevron-back" size={22} color={Colors.white} />
+          <Ionicons name={I18nManager.isRTL ? "chevron-forward" : "chevron-back"} size={22} color={Colors.white} />
         </Pressable>
         <Text className="text-white text-xl font-bold font-assistant text-left" style={{ writingDirection: 'ltr' }}>
           🎧 טרקלין סאונד מרחבי

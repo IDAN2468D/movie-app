@@ -3,9 +3,9 @@
  * Profile Screen - Premium Liquid Glass Redesign
  */
 import React, { useState } from 'react';
-import { View, Text, Pressable, ScrollView, TouchableOpacity, ImageBackground, StyleSheet, Dimensions, Image } from 'react-native';
+import { View, Text, Pressable, ScrollView, TouchableOpacity, ImageBackground, StyleSheet, Dimensions, Image, I18nManager } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { User, Bell, CreditCard, Shield, ChevronLeft, LogOut, Ticket, Heart, History, TrendingUp, Moon, Trophy, Map as MapIcon, Sparkles, Headphones, Users } from 'lucide-react-native';
+import { User, Bell, CreditCard, Shield, ChevronLeft, ChevronRight, LogOut, Ticket, Heart, History, TrendingUp, Moon, Trophy, Map as MapIcon, Sparkles, Headphones, Users } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { router } from 'expo-router';
@@ -245,7 +245,7 @@ function MenuItem({ icon: Icon, title, description, color, onPress }: { icon: an
         ) : null}
       </View>
       <View className="w-8 h-8 rounded-full bg-white/5 items-center justify-center">
-        <ChevronLeft size={16} color="rgba(255,255,255,0.5)" />
+        {I18nManager.isRTL ? <ChevronLeft size={16} color="rgba(255,255,255,0.5)" /> : <ChevronRight size={16} color="rgba(255,255,255,0.5)" />}
       </View>
     </Pressable>
   );

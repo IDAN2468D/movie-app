@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, Pressable, ScrollView, Switch } from 'react-native';
-import { ChevronRight, Bell, Calendar, Tag } from 'lucide-react-native';
+import { View, Text, Pressable, ScrollView, Switch, I18nManager } from 'react-native';
+import { ChevronRight, ChevronLeft, Bell, Calendar, Tag } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Typography } from '@/constants/Theme';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -14,7 +14,7 @@ export default function NotificationsScreen() {
       {/* Header */}
       <View className="flex-row items-center px-4 py-4 border-b border-white/10 relative">
         <Pressable onPress={goBack} className="w-10 h-10 rounded-full bg-white/5 justify-center items-center z-10">
-          <ChevronRight size={24} color={Colors.text} />
+          {I18nManager.isRTL ? <ChevronRight size={24} color={Colors.text} /> : <ChevronLeft size={24} color={Colors.text} />}
         </Pressable>
         <View className="absolute inset-0 justify-center items-center">
           <Text style={[Typography.h2, { fontFamily: 'Rubik-Bold' }]} className="text-white">

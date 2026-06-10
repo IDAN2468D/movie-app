@@ -13,9 +13,10 @@ import {
   ScrollView, 
   ImageBackground,
   StyleSheet,
-  ActivityIndicator
+  ActivityIndicator,
+  I18nManager
 } from 'react-native';
-import { Mail, ChevronLeft } from 'lucide-react-native';
+import { Mail, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { Typography } from '@/constants/Theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -47,12 +48,12 @@ export default function ForgotPasswordScreen() {
         />
       </ImageBackground>
 
-      <View className="absolute top-12 left-6 z-10">
+      <View className="absolute top-12 start-6 z-10">
         <TouchableOpacity 
           onPress={navigateBack}
           className="w-12 h-12 bg-white/10 rounded-full items-center justify-center border border-white/20 backdrop-blur-md"
         >
-          <ChevronLeft size={24} color="white" />
+          {I18nManager.isRTL ? <ChevronRight size={24} color="white" /> : <ChevronLeft size={24} color="white" />}
         </TouchableOpacity>
       </View>
 
@@ -114,7 +115,7 @@ export default function ForgotPasswordScreen() {
                       style={{ shadowColor: '#E50914', shadowOpacity: 0.3 }}
                     >
                       <Text style={[Typography.h3, { fontFamily: 'Rubik-Bold', marginRight: 8 }]} className="text-white">שליחת קישור</Text>
-                      <ChevronLeft size={20} color="white" />
+                      {I18nManager.isRTL ? <ChevronLeft size={20} color="white" /> : <ChevronRight size={20} color="white" />}
                     </TouchableOpacity>
                   </View>
                 )}

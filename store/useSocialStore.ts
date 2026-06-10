@@ -35,8 +35,8 @@ const PREMIUM_MOCK_FRIENDS: IFriend[] = [
     profileImage: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop',
     loyaltyPoints: 340,
     watchlist: [
-      { id: 933268, title: 'גלדיאטור 2', posterPath: '/vQ55458Q6K6Z8gV14yeeoHh172g.jpg' },
-      { id: 402431, title: 'רשע (Wicked)', posterPath: '/36L8L4Gj5mBvE8D25K9p8N9f8L8.jpg' }
+      { id: 933268, title: 'גלדיאטור 2', posterPath: '/2cxhvwyEwRlysAmRH4iodkvo0z5.jpg' },
+      { id: 402431, title: 'רשע (Wicked)', posterPath: '/xDGbZ0JJ3mYaGKy4Nzd9Kph6M9L.jpg' }
     ],
     recentActivity: [
       { action: 'הזמין כרטיס לגלדיאטור 2 באולם VIP', time: 'לפני שעה' },
@@ -50,7 +50,7 @@ const PREMIUM_MOCK_FRIENDS: IFriend[] = [
     profileImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop',
     loyaltyPoints: 180,
     watchlist: [
-      { id: 533535, title: 'דדפול & וולברין', posterPath: '/8cdWv6Z6kK9dRM45B1cOmqC4n6D.jpg' }
+      { id: 533535, title: 'דדפול & וולברין', posterPath: '/en971MEXui9diirXlogOrPKmsEn.jpg' }
     ],
     recentActivity: [
       { action: 'רכש פופקורן ענק בדלפק המהיר', time: 'לפני 3 שעות' },
@@ -64,8 +64,8 @@ const PREMIUM_MOCK_FRIENDS: IFriend[] = [
     profileImage: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200&auto=format&fit=crop',
     loyaltyPoints: 520,
     watchlist: [
-      { id: 1022789, title: 'מואנה 2', posterPath: '/62LgD5mBvE8D25K9p8N9f8L8Qh.jpg' },
-      { id: 933268, title: 'גלדיאטור 2', posterPath: '/vQ55458Q6K6Z8gV14yeeoHh172g.jpg' }
+      { id: 1022789, title: 'מואנה 2', posterPath: '/4YZpsylmjHbqeWzjKpUEF8gcLNW.jpg' },
+      { id: 933268, title: 'גלדיאטור 2', posterPath: '/2cxhvwyEwRlysAmRH4iodkvo0z5.jpg' }
     ],
     recentActivity: [
       { action: 'עלתה לדרגת VIP Gold במועדון CinePass', time: 'אתמול' }
@@ -165,7 +165,7 @@ export const useSocialStore = create<SocialState>((set, get) => ({
           profileImage: `https://images.unsplash.com/photo-${1500000000000 + Math.floor(Math.random() * 99999)}?q=80&w=200&auto=format&fit=crop`,
           loyaltyPoints: Math.floor(Math.random() * 400) + 50,
           watchlist: [
-            { id: 933268, title: 'גלדיאטור 2', posterPath: '/vQ55458Q6K6Z8gV14yeeoHh172g.jpg' }
+            { id: 933268, title: 'גלדיאטור 2', posterPath: '/2cxhvwyEwRlysAmRH4iodkvo0z5.jpg' }
           ],
           recentActivity: [
             { action: 'הצטרף למועדון החברים שלך ב-CineBook!', time: 'עכשיו' }

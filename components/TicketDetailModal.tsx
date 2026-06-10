@@ -9,6 +9,7 @@ import type { BookedTicket } from '@/store/useBookingStore';
 import { Colors } from '@/constants/Theme';
 import { API_BASE_URL } from '@/constants/Config';
 import GyroLiquidTicket from './GyroLiquidTicket';
+import MorphicTicketOverlay from './MorphicTicketOverlay';
 import Animated, { 
   FadeIn, 
   FadeInDown, 
@@ -22,6 +23,7 @@ import Animated, {
 import { Sensors } from '@/utils/SafeModules';
 import { getMovieTheme } from '@/utils/movieTheme';
 import { GoogleDriveService } from '@/services/GoogleDriveService';
+import CineSymphony from './CineSymphony';
 
 interface TicketDetailModalProps {
   ticket: BookedTicket | null;
@@ -286,8 +288,16 @@ export default function TicketDetailModal({ ticket, isVisible, onClose }: Ticket
                   />
                 </View>
 
+                {/* Morphic Ticket Overlay — כרטיס מורפי */}
+                <MorphicTicketOverlay
+                  movieTitle={ticket.movieTitle}
+                  showtimeDate={ticket.date}
+                  showtimeTime={ticket.showtime?.time}
+                  compact={false}
+                />
+
                 {/* Movie Header */}
-                <View className="p-8 items-center border-b border-white/10 bg-black/40">
+                <View className="pt-16 pb-8 px-8 items-center border-b border-white/10 bg-black/40">
                   <Animated.Text 
                     entering={FadeIn.delay(300)}
                     className="text-h1 text-white font-display text-center leading-tight mb-2"
@@ -381,6 +391,14 @@ export default function TicketDetailModal({ ticket, isVisible, onClose }: Ticket
                   </View>
                 </View>
               </Animated.View>
+
+              {/* CineSymphony — סימפוניה קולנועית */}
+              <View className="mt-6">
+                <CineSymphony
+                  movieTitle={ticket.movieTitle}
+                  compact={false}
+                />
+              </View>
 
               {/* Safety Message */}
               <View className="mt-8 items-center opacity-60">

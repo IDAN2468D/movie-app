@@ -4,7 +4,8 @@ import { router } from 'expo-router';
 import { useBookingStore } from '@/store/useBookingStore';
 
 export const useHistory = () => {
-  const { myTickets, fetchMyTickets } = useBookingStore();
+  const myTickets = useBookingStore(state => state.myTickets);
+  const fetchMyTickets = useBookingStore(state => state.fetchMyTickets);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {

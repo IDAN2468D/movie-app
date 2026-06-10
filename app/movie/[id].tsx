@@ -14,6 +14,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import React, { useState, useEffect } from 'react';
+import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 import LiquidBackground from '@/components/LiquidBackground';
 import { useLocalSearchParams } from 'expo-router';
@@ -59,6 +60,8 @@ import { getImageSource, handleImageError } from '@/utils/ImageUtils';
 import MovieReviews from '@/components/MovieReviews';
 import ScrollEntrance from '@/components/ScrollEntrance';
 import MovieTrivia from '@/components/MovieTrivia';
+import CinePrism from '@/components/CinePrism';
+import CineSymphony from '@/components/CineSymphony';
 
 // Interop external components to support NativeWind className
 cssInterop(LinearGradient, { className: 'style' });
@@ -76,6 +79,7 @@ const MOCK_SHOWTIMES: Showtime[] = [
 export default function MovieDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
+  const [isPrismActive, setIsPrismActive] = useState(false);
   
   const {
     movie,
@@ -242,25 +246,34 @@ export default function MovieDetailsScreen() {
       >
         {/* Header with Parallax */}
         <Animated.View className="h-[450px] w-full overflow-hidden" style={headerAnimatedStyle}>
-          {/* Dynamic Liquid Glass Background */}
-          <View className="absolute inset-0 bg-background">
-            <LiquidBackground 
-              primaryColor={themeColors.primary} 
-              secondaryColor={themeColors.secondary} 
+          {/* Dynamic Liquid Glass Background or CinePrism Parallax */}
+          {isPrismActive ? (
+            <CinePrism 
+              backdropUrl={backdropSource && (backdropSource as any).uri ? (backdropSource as any).uri : undefined}
+              movieTitle={movie.title}
+              themeColors={{ primary: themeColors.primary, secondary: themeColors.secondary }}
+              isActive={isPrismActive}
             />
-            
-            {backdropSource && (
-              <Animated.View className="absolute inset-0 opacity-60">
-                <Image
-                  source={backdropSource}
-                  className="w-full h-full"
-                  resizeMode="cover"
-                  onError={() => handleImageError(setBackdropSource, 'backdrop')}
-                />
-              </Animated.View>
-            )}
-            <BlurView intensity={100} tint="dark" className="absolute inset-0" />
-          </View>
+          ) : (
+            <View className="absolute inset-0 bg-background">
+              <LiquidBackground 
+                primaryColor={themeColors.primary} 
+                secondaryColor={themeColors.secondary} 
+              />
+              
+              {backdropSource && (
+                <Animated.View className="absolute inset-0 opacity-60">
+                  <Image
+                    source={backdropSource}
+                    className="w-full h-full"
+                    resizeMode="cover"
+                    onError={() => handleImageError(setBackdropSource, 'backdrop')}
+                  />
+                </Animated.View>
+              )}
+              <BlurView intensity={100} tint="dark" className="absolute inset-0" />
+            </View>
+          )}
 
           {/* Cinematic Background Video Layer */}
           {Video?.VideoView && player ? (
@@ -362,19 +375,23 @@ export default function MovieDetailsScreen() {
       </Animated.View>
 
       {/* Floating buttons */}
-      <View className="absolute top-0 left-0 right-0 z-20">
+      <View className="absolute top-0 start-0 end-0 z-20">
         <Pressable
-          className="absolute left-4"
+          className="absolute start-4"
           style={{ top: insets.top + 10 }}
           onPress={handleBack}
         >
           <BlurView intensity={40} tint="dark" className="w-11 h-11 rounded-full overflow-hidden border border-white/10 items-center justify-center bg-black/25">
-            <ChevronLeft size={24} color="white" style={{ transform: [{ scaleX: I18nManager.isRTL ? -1 : 1 }] }} />
+            {I18nManager.isRTL ? (
+              <ChevronRight size={24} color="white" />
+            ) : (
+              <ChevronLeft size={24} color="white" />
+            )}
           </BlurView>
         </Pressable>
 
         <Pressable
-          className="absolute right-4"
+          className="absolute end-4"
           style={{ top: insets.top + 10 }}
           onPress={handleToggleFavorite}
         >
@@ -388,7 +405,7 @@ export default function MovieDetailsScreen() {
         </Pressable>
 
         <Pressable
-          className="absolute right-16"
+          className="absolute end-16"
           style={{ top: insets.top + 10 }}
           onPress={handleGroupWatchPress}
         >
@@ -398,8 +415,24 @@ export default function MovieDetailsScreen() {
               color={isGroupWatchActive ? Colors.secondary : "white"}
             />
             {isGroupWatchActive && (
-              <View className="absolute top-0 right-0 w-2.5 h-2.5 bg-secondary rounded-full border border-white" />
+              <View className="absolute top-0 end-0 w-2.5 h-2.5 bg-secondary rounded-full border border-white" />
              )}
+          </BlurView>
+        </Pressable>
+
+        <Pressable
+          className="absolute end-28"
+          style={{ top: insets.top + 10 }}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            setIsPrismActive(prev => !prev);
+          }}
+        >
+          <BlurView intensity={40} tint="dark" className="w-11 h-11 rounded-full overflow-hidden border border-white/10 items-center justify-center bg-black/25">
+            <Sparkles
+              size={20}
+              color={isPrismActive ? Colors.secondary : "white"}
+            />
           </BlurView>
         </Pressable>
       </View>
@@ -531,6 +564,17 @@ export default function MovieDetailsScreen() {
               <Text className="text-white font-display text-h3 uppercase">{movie.original_language}</Text>
             </View>
           </View>
+
+          {/* CineSymphony — סימפוניה קולנועית */}
+          <ScrollEntrance scrollY={scrollY}>
+            <View className="mt-6">
+              <CineSymphony
+                movieTitle={movie.title}
+                compact={false}
+              />
+            </View>
+          </ScrollEntrance>
+
           {movie.overview ? (
             <ScrollEntrance scrollY={scrollY}>
               <View className="mt-8">

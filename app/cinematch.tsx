@@ -10,6 +10,7 @@ import {
   Modal,
   ScrollView,
   TextInput,
+  I18nManager,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
@@ -53,7 +54,7 @@ export default function CineMatchScreen() {
           onPress={goBack}
           className="w-10 h-10 rounded-full border border-white/10 bg-surfaceLight/40 items-center justify-center"
         >
-          <Ionicons name="chevron-back" size={20} color="white" />
+          <Ionicons name={I18nManager.isRTL ? "chevron-forward" : "chevron-back"} size={20} color="white" />
         </Pressable>
 
         <Text className="text-white text-xl font-bold font-assistant text-center">

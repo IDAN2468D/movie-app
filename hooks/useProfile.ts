@@ -7,8 +7,14 @@ import { useBookingStore } from '@/store/useBookingStore';
 import { API_BASE_URL } from '@/constants/Config';
 
 export const useProfile = () => {
-  const { user, isAuthenticated, logout, token, resetOnboarding } = useAuthStore();
-  const { myTickets, fetchMyTickets } = useBookingStore();
+  const user = useAuthStore(state => state.user);
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+  const logout = useAuthStore(state => state.logout);
+  const token = useAuthStore(state => state.token);
+  const resetOnboarding = useAuthStore(state => state.resetOnboarding);
+
+  const myTickets = useBookingStore(state => state.myTickets);
+  const fetchMyTickets = useBookingStore(state => state.fetchMyTickets);
 
   useEffect(() => {
     if (isAuthenticated) {

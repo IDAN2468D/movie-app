@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Modal, Pressable, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Modal, Pressable, StyleSheet, ScrollView, I18nManager } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { X, Sparkles, Droplet, Smartphone, Star, Check } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -83,10 +83,18 @@ export default function CineEffectsSelector({ visible, onClose }: CineEffectsSel
           <View style={styles.handle} className="bg-white/20" />
 
           {/* Header */}
-          <View className="flex-row justify-between items-center px-6 pt-4 pb-2" style={{ flexDirection: 'row-reverse' }}>
-            <View className="items-end">
-              <Text className="text-white text-xl font-bold font-assistant text-right">אפקטים קולנועיים</Text>
-              <Text className="text-textSecondary text-xs font-assistant mt-1 text-right">
+          <View className="flex-row justify-between items-center px-6 pt-4 pb-2">
+            <View style={{ alignItems: 'flex-start' }}>
+              <Text 
+                className="text-white text-xl font-bold font-assistant"
+                style={{ textAlign: 'left' }}
+              >
+                אפקטים קולנועיים
+              </Text>
+              <Text 
+                className="text-textSecondary text-xs font-assistant mt-1"
+                style={{ textAlign: 'left' }}
+              >
                 בחר את סגנון הרקע והאווירה של מסך הבית
               </Text>
             </View>
@@ -125,7 +133,40 @@ export default function CineEffectsSelector({ visible, onClose }: CineEffectsSel
                           },
                     ]}
                   >
-                    {/* Checkmark indicator (Left aligned) */}
+                    {/* Icon block */}
+                    <View
+                      className="w-10 h-10 rounded-xl items-center justify-center border border-white/10"
+                      style={{ backgroundColor: isActive ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.03)' }}
+                    >
+                      <IconComp size={20} color={isActive ? option.color : 'rgba(255,255,255,0.6)'} />
+                    </View>
+
+                    {/* Option Details */}
+                    <View 
+                      className="flex-1 px-4" 
+                      style={{ alignItems: 'flex-start' }}
+                    >
+                      <Text
+                        className="text-white text-[15px] font-semibold"
+                        style={{ 
+                          fontFamily: 'Rubik-Medium',
+                          textAlign: 'left'
+                        }}
+                      >
+                        {option.title}
+                      </Text>
+                      <Text
+                        className="text-textSecondary text-[12px] mt-1"
+                        style={{ 
+                          fontFamily: 'Assistant-Regular',
+                          textAlign: 'left'
+                        }}
+                      >
+                        {option.subtitle}
+                      </Text>
+                    </View>
+
+                    {/* Checkmark indicator */}
                     <View className="w-6 h-6 rounded-full items-center justify-center">
                       {isActive && (
                         <View
@@ -140,30 +181,6 @@ export default function CineEffectsSelector({ visible, onClose }: CineEffectsSel
                           <Check size={12} color="white" strokeWidth={3} />
                         </View>
                       )}
-                    </View>
-
-                    {/* Option Details (Right aligned, text flow RTL) */}
-                    <View className="flex-1 px-4 items-end">
-                      <Text
-                        className="text-white text-[15px] font-semibold text-right"
-                        style={{ fontFamily: 'Rubik-Medium' }}
-                      >
-                        {option.title}
-                      </Text>
-                      <Text
-                        className="text-textSecondary text-[12px] mt-1 text-right"
-                        style={{ fontFamily: 'Assistant-Regular' }}
-                      >
-                        {option.subtitle}
-                      </Text>
-                    </View>
-
-                    {/* Icon block (Right aligned) */}
-                    <View
-                      className="w-10 h-10 rounded-xl items-center justify-center border border-white/10"
-                      style={{ backgroundColor: isActive ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.03)' }}
-                    >
-                      <IconComp size={20} color={isActive ? option.color : 'rgba(255,255,255,0.6)'} />
                     </View>
                   </Pressable>
                 </Animated.View>

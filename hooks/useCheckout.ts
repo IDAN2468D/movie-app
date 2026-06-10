@@ -10,20 +10,18 @@ import NotificationService from '@/services/NotificationService';
 import { Video } from '@/utils/SafeModules';
 
 export const useCheckout = () => {
-  const { 
-    selectedMovieId,
-    selectedMovieTitle, 
-    selectedMoviePoster, 
-    selectedShowtime, 
-    selectedDate, 
-    selectedSeats, 
-    totalPrice,
-    bookCurrentSelection,
-    clearBooking,
-    deliveryMode,
-    setDeliveryMode,
-    myTickets
-  } = useBookingStore();
+  const selectedMovieId = useBookingStore(state => state.selectedMovieId);
+  const selectedMovieTitle = useBookingStore(state => state.selectedMovieTitle);
+  const selectedMoviePoster = useBookingStore(state => state.selectedMoviePoster);
+  const selectedShowtime = useBookingStore(state => state.selectedShowtime);
+  const selectedDate = useBookingStore(state => state.selectedDate);
+  const selectedSeats = useBookingStore(state => state.selectedSeats);
+  const totalPrice = useBookingStore(state => state.totalPrice);
+  const bookCurrentSelection = useBookingStore(state => state.bookCurrentSelection);
+  const clearBooking = useBookingStore(state => state.clearBooking);
+  const deliveryMode = useBookingStore(state => state.deliveryMode);
+  const setDeliveryMode = useBookingStore(state => state.setDeliveryMode);
+  const myTickets = useBookingStore(state => state.myTickets);
   const { authenticateBiometrics } = useAuthStore();
   const { cart, items, getTotalPrice, clearCart } = useSnacksStore();
   

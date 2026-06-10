@@ -13,6 +13,7 @@ import {
   StyleSheet,
   ScrollView,
   Modal,
+  I18nManager,
 } from 'react-native';
 import Reanimated, {
   FadeInRight,
@@ -35,6 +36,7 @@ import {
   Sparkles,
   Calendar,
   ChevronLeft,
+  ChevronRight,
   Mic
 } from 'lucide-react-native';
 import { useVoiceRecording } from '@/hooks/useVoiceRecording';
@@ -276,7 +278,7 @@ export default function SearchScreen() {
                 <View className="bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-xl">
                   <Text className="text-primary text-[11px] font-bold" style={{ fontFamily: 'Rubik-Bold' }}>פרטים נוספים</Text>
                 </View>
-                <ChevronLeft size={18} color={Colors.textMuted} />
+                {I18nManager.isRTL ? <ChevronLeft size={18} color={Colors.textMuted} /> : <ChevronRight size={18} color={Colors.textMuted} />}
               </View>
             </View>
           </View>
