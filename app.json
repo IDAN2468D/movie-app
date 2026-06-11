@@ -42,7 +42,7 @@
           "cameraPermission": "אפשר לסינבוק גישה למצלמה כדי לסרוק כרטיסים."
         }
       ],
-      "react-native-maps",
+
       [
         "expo-location",
         {

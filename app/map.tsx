@@ -8,8 +8,7 @@ import {
   Image, 
   Linking, 
   Alert, 
-  I18nManager,
-  Platform
+  I18nManager
 } from 'react-native';
 import { useHaptics } from '@/lib/useHaptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -21,10 +20,8 @@ import {
   ChevronLeft,
   Sparkles,
   X,
-  EyeOff,
-  Eye
+  EyeOff
 } from 'lucide-react-native';
-import { Colors } from '@/constants/Theme';
 import { router } from 'expo-router';
 import * as Location from 'expo-location';
 import { BlurView } from 'expo-blur';
@@ -35,21 +32,10 @@ import { useSocialStore, IFriendLocation } from '@/store/useSocialStore';
 import { getImageSource } from '@/utils/ImageUtils';
 import { BRANCHES as GLOBAL_BRANCHES } from '@/constants/Branches';
 
-// Safe conditional import for react-native-maps to prevent web crashes or simulator link crashes
-let MapView: any = null;
-let Marker: any = null;
-let PROVIDER_DEFAULT: any = null;
-
-if (Platform.OS !== 'web') {
-  try {
-    const Maps = require('react-native-maps');
-    MapView = Maps.default;
-    Marker = Maps.Marker;
-    PROVIDER_DEFAULT = Maps.PROVIDER_DEFAULT;
-  } catch (e) {
-    console.warn('react-native-maps failed to load:', e);
-  }
-}
+// Native maps disabled due to dependency removal (using simulated radar maps)
+const MapView: any = null;
+const Marker: any = null;
+const PROVIDER_DEFAULT: any = null;
 
 const BRANCHES = GLOBAL_BRANCHES.map(b => ({
   id: b.id,
@@ -84,7 +70,6 @@ export default function CinemaMapScreen() {
   const [selectedBranch, setSelectedBranch] = useState(BRANCHES[0]);
   const [userLocation, setUserLocation] = useState<Location.LocationObject | null>(null);
   const [selectedFriend, setSelectedFriend] = useState<IFriendLocation | null>(null);
-  const [useNativeAndroidMap, setUseNativeAndroidMap] = useState(false);
 
   const { friendLocations, isGhostMode, fetchFriendLocations, toggleGhostMode } = useSocialStore();
 
@@ -110,10 +95,8 @@ export default function CinemaMapScreen() {
   useEffect(() => {
     if (activeTab === 'friends') {
       fetchFriendLocations();
-    } else {
-      setSelectedFriend(null);
     }
-  }, [activeTab]);
+  }, [activeTab, fetchFriendLocations]);
 
   const calculateDistance = (lat: number, lng: number) => {
     if (!userLocation) return null;
@@ -260,8 +243,8 @@ export default function CinemaMapScreen() {
   };
 
   const renderMapView = () => {
-    // Failsafe fallback: if we are on Web or if react-native-maps is not loaded/fails
-    const canUseNativeMap = (Platform.OS === 'ios' || (Platform.OS === 'android' && useNativeAndroidMap)) && MapView && Marker;
+    // Failsafe fallback: since react-native-maps was uninstalled, always use simulated map
+    const canUseNativeMap = false;
 
     if (!canUseNativeMap) {
       return (
@@ -420,6 +403,7 @@ export default function CinemaMapScreen() {
               onPress={() => {
                 impactLight();
                 setActiveTab('branches');
+                setSelectedFriend(null);
               }}
             >
               <Text style={[styles.tabText, activeTab === 'branches' && styles.activeTabText]}>
@@ -488,33 +472,6 @@ export default function CinemaMapScreen() {
                 <View style={[styles.ghostModeSwitchKnob, isGhostMode ? styles.ghostModeSwitchKnobActive : styles.ghostModeSwitchKnobInactive]} />
               </Pressable>
             </View>
-
-            {Platform.OS === 'android' && (
-              <View style={[styles.ghostModeRow, { borderTopWidth: 1, borderTopColor: 'rgba(255, 255, 255, 0.05)' }]}>
-                <MapPin size={16} color={useNativeAndroidMap ? '#FF1464' : '#A1A1AA'} style={{ marginEnd: 8 }} />
-                <Text style={styles.ghostModeLabel}>מפת גוגל נייטיבית (בטא)</Text>
-                <Pressable
-                  style={[styles.ghostModeSwitch, useNativeAndroidMap ? styles.ghostModeSwitchActive : styles.ghostModeSwitchInactive]}
-                  onPress={() => {
-                    impactLight();
-                    if (!useNativeAndroidMap) {
-                      Alert.alert(
-                        'הפעלת מפה נייטיבית',
-                        'שים לב: מפה נייטיבית דורשת הגדרת מפתח Google Maps תקין ב-app.json. אם המפתח לא מוגדר כראוי, האפליקציה עלולה לקרוס.',
-                        [
-                          { text: 'ביטול', style: 'cancel' },
-                          { text: 'הפעל בכל זאת', onPress: () => setUseNativeAndroidMap(true) }
-                        ]
-                      );
-                    } else {
-                      setUseNativeAndroidMap(false);
-                    }
-                  }}
-                >
-                  <View style={[styles.ghostModeSwitchKnob, useNativeAndroidMap ? styles.ghostModeSwitchKnobActive : styles.ghostModeSwitchKnobInactive]} />
-                </Pressable>
-              </View>
-            )}
           </BlurView>
 
           {/* Friend Details Card */}

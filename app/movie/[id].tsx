@@ -200,6 +200,18 @@ export default function MovieDetailsScreen() {
     };
   });
 
+  const aiInsightsBgStyle = useAnimatedStyle(() => {
+    return {
+      backgroundColor: themeColors.primaryShared.value,
+    };
+  });
+
+  const aiInsightsIconBgStyle = useAnimatedStyle(() => {
+    return {
+      backgroundColor: themeColors.primaryShared.value,
+    };
+  });
+
   if (loading || !movie) {
     return (
       <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
@@ -645,8 +657,8 @@ export default function MovieDetailsScreen() {
                 <Animated.View 
                   style={[
                     StyleSheet.absoluteFill,
+                    aiInsightsBgStyle,
                     {
-                      backgroundColor: themeColors.primaryShared.value,
                       opacity: 0.08,
                     }
                   ]}
@@ -656,8 +668,8 @@ export default function MovieDetailsScreen() {
                     <Animated.View 
                       style={[
                         StyleSheet.absoluteFill,
+                        aiInsightsIconBgStyle,
                         {
-                          backgroundColor: themeColors.primaryShared.value,
                           opacity: 0.2,
                         }
                       ]}

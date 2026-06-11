@@ -340,167 +340,168 @@ export default function TicketDetailModal({ ticket, isVisible, onClose }: Ticket
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
             <GestureDetector gesture={pinchGesture}>
               {/* Ticket Body */}
-              <Animated.View 
-                entering={FadeInDown.springify().damping(18).stiffness(120).mass(1.0)}
-                style={cardAnimatedStyle}
-                className="bg-surfaceLight rounded-[48px] overflow-hidden border border-white/10 shadow-2xl relative"
-              >
-                {/* Liquid Background Layer */}
-                <View className="absolute inset-0">
-                  <GyroLiquidTicket 
-                    movieTitle={ticket.movieTitle}
-                    tiltX={tiltX} 
-                    tiltY={tiltY} 
-                  />
-                </View>
-
-                {/* Morphic Ticket Overlay — כרטיס מורפי */}
-                <MorphicTicketOverlay
-                  movieTitle={ticket.movieTitle}
-                  showtimeDate={ticket.date}
-                  showtimeTime={ticket.showtime?.time}
-                  compact={false}
-                />
-
-                {/* Holographic PrismPass Overlay */}
+              <Animated.View entering={FadeInDown.springify().damping(18).stiffness(120).mass(1.0)}>
                 <Animated.View 
-                  style={[StyleSheet.absoluteFill, hologramStyle]} 
-                  pointerEvents="none"
+                  style={cardAnimatedStyle}
+                  className="bg-surfaceLight rounded-[48px] overflow-hidden border border-white/10 shadow-2xl relative"
                 >
-                  <LinearGradient
-                    colors={['#FF1464', '#00E5FF', '#E5FF00', '#FF1464']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={StyleSheet.absoluteFill}
-                  />
-                </Animated.View>
-
-                {/* Active Scanning Laser Line */}
-                <Animated.View 
-                  style={[
-                    {
-                      position: 'absolute',
-                      left: 0,
-                      right: 0,
-                      height: 2.5,
-                      backgroundColor: Colors.secondary,
-                      shadowColor: Colors.secondary,
-                      shadowOffset: { width: 0, height: 0 },
-                      shadowOpacity: 0.9,
-                      shadowRadius: 12,
-                      elevation: 10,
-                      zIndex: 50,
-                    },
-                    laserStyle
-                  ]}
-                  pointerEvents="none"
-                />
-
-                {/* Movie Header */}
-                <View className="pt-16 pb-8 px-8 items-center border-b border-white/10 bg-black/40">
-                  <Animated.Text 
-                    entering={FadeIn.delay(300)}
-                    className="text-h1 text-white font-display text-center leading-tight mb-2"
-                    style={{ writingDirection: 'ltr' }}
-                  >
-                    {ticket.movieTitle}
-                  </Animated.Text>
-                  <View className="flex-row-reverse items-center opacity-60">
-                    <Text className="text-label text-white font-body">{ticket.showtime?.hall || 'אולם'}</Text>
-                    <View className="w-1 h-1 rounded-full bg-white mx-3" />
-                    <Text className="text-label text-white font-body uppercase tracking-widest">{ticket.showtime?.format || 'רגיל'}</Text>
+                  {/* Liquid Background Layer */}
+                  <View className="absolute inset-0">
+                    <GyroLiquidTicket 
+                      movieTitle={ticket.movieTitle}
+                      tiltX={tiltX} 
+                      tiltY={tiltY} 
+                    />
                   </View>
-                </View>
 
-                {/* Main QR Code Section */}
-                <View className="p-10 items-center">
+                  {/* Morphic Ticket Overlay — כרטיס מורפי */}
+                  <MorphicTicketOverlay
+                    movieTitle={ticket.movieTitle}
+                    showtimeDate={ticket.date}
+                    showtimeTime={ticket.showtime?.time}
+                    compact={false}
+                  />
+
+                  {/* Holographic PrismPass Overlay */}
                   <Animated.View 
-                    entering={ZoomIn.delay(500)}
-                    className="p-6 bg-white rounded-[40px] shadow-2xl border-8 border-white/10"
+                    style={[StyleSheet.absoluteFill, hologramStyle]} 
+                    pointerEvents="none"
                   >
-                    <Image 
-                      source={{ uri: qrUrl }}
-                      style={{ width: 180, height: 180 }}
-                      resizeMode="contain"
+                    <LinearGradient
+                      colors={['#FF1464', '#00E5FF', '#E5FF00', '#FF1464']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={StyleSheet.absoluteFill}
                     />
                   </Animated.View>
-                  <Animated.Text 
-                    entering={FadeIn.delay(700)}
-                    className="mt-8 text-caption text-white/30 font-mono tracking-[6px] uppercase"
-                  >
-                    REF: {ticket.id.split('-')[0].toUpperCase()}
-                  </Animated.Text>
-                  {/* Activation Hint */}
-                  <Text 
-                    style={{ fontFamily: 'Rubik-Medium' }} 
-                    className={`text-center text-xs mt-4 px-4 ${isActivated ? 'text-secondary/80' : 'text-white/40 animate-pulse'}`}
-                  >
-                    {isActivated ? '✓ כרטיס פריזמה הולוגרפי מופעל ומאומת' : 'צבט (Pinch) את הכרטיס עם 2 אצבעות להפעלה'}
-                  </Text>
-                </View>
 
-                {/* Perforation Line - Custom Glass Effect */}
-                <View className="flex-row items-center h-6 overflow-hidden px-1">
-                  <View className="w-10 h-10 rounded-full bg-background -ms-6 border border-white/10" />
-                  <View className="flex-1 border-dashed border-white/20 mx-2 border-t-2" />
-                  <View className="w-10 h-10 rounded-full bg-background -me-6 border border-white/10" />
-                </View>
+                  {/* Active Scanning Laser Line */}
+                  <Animated.View 
+                    style={[
+                      {
+                        position: 'absolute',
+                        left: 0,
+                        right: 0,
+                        height: 2.5,
+                        backgroundColor: Colors.secondary,
+                        shadowColor: Colors.secondary,
+                        shadowOffset: { width: 0, height: 0 },
+                        shadowOpacity: 0.9,
+                        shadowRadius: 12,
+                        elevation: 10,
+                        zIndex: 50,
+                      },
+                      laserStyle
+                    ]}
+                    pointerEvents="none"
+                  />
 
-                {/* Ticket Details Grid */}
-                <View className="p-8 pt-6 bg-white/5">
-                  <View className="flex-row-reverse flex-wrap justify-between gap-y-8">
-                    <DetailItem label="תאריך" value={ticket.date} />
-                    <DetailItem label="שעה" value={ticket.showtime?.time || '--:--'} />
-                    <DetailItem label="מושבים" value={ticket.seats?.map(s => `${s.row}${s.number}`).join(', ') || 'N/A'} color={movieTheme.secondaryColor} />
-                    <DetailItem 
-                      label="סטטוס" 
-                      value={isActivated ? "✓ פעיל ומאומת" : "צבט להפעלה"} 
-                      color={isActivated ? "#22c55e" : Colors.primary} 
-                    />
+                  {/* Movie Header */}
+                  <View className="pt-16 pb-8 px-8 items-center border-b border-white/10 bg-black/40">
+                    <Animated.Text 
+                      entering={FadeIn.delay(300)}
+                      className="text-h1 text-white font-display text-center leading-tight mb-2"
+                      style={{ writingDirection: 'ltr' }}
+                    >
+                      {ticket.movieTitle}
+                    </Animated.Text>
+                    <View className="flex-row-reverse items-center opacity-60">
+                      <Text className="text-label text-white font-body">{ticket.showtime?.hall || 'אולם'}</Text>
+                      <View className="w-1 h-1 rounded-full bg-white mx-3" />
+                      <Text className="text-label text-white font-body uppercase tracking-widest">{ticket.showtime?.format || 'רגיל'}</Text>
+                    </View>
                   </View>
 
-                  <View className="h-[1px] bg-white/10 my-8" />
-
-                  {/* Actions */}
-                  <View className="gap-4">
-                    <Pressable 
-                      onPress={handleARWayfinding}
-                      className="flex-row-reverse items-center justify-center bg-secondary h-16 rounded-[24px] gap-3 shadow-xl active:opacity-90"
+                  {/* Main QR Code Section */}
+                  <View className="p-10 items-center">
+                    <Animated.View 
+                      entering={ZoomIn.delay(500)}
+                      className="p-6 bg-white rounded-[40px] shadow-2xl border-8 border-white/10"
                     >
-                      <Navigation color="black" size={20} />
-                      <Text className="text-label text-black font-bold font-display uppercase tracking-wider">ניווט AR לקולנוע</Text>
-                    </Pressable>
-
-                    <Pressable 
-                      onPress={handleAddToWallet}
-                      className="flex-row-reverse items-center justify-center bg-white h-16 rounded-[24px] gap-3 shadow-xl active:bg-gray-100"
+                      <Image 
+                        source={{ uri: qrUrl }}
+                        style={{ width: 180, height: 180 }}
+                        resizeMode="contain"
+                      />
+                    </Animated.View>
+                    <Animated.Text 
+                      entering={FadeIn.delay(700)}
+                      className="mt-8 text-caption text-white/30 font-mono tracking-[6px] uppercase"
                     >
-                      <CreditCard color="black" size={20} />
-                      <Text className="text-label text-black font-bold font-display uppercase tracking-wider">הוסף לארנק</Text>
-                    </Pressable>
-                    <Pressable 
-                      onPress={handleSaveToDrive}
-                      disabled={isSavingToDrive}
-                      className="flex-row-reverse items-center justify-center bg-white/5 border border-white/10 h-16 rounded-[24px] gap-3 active:bg-white/10"
+                      REF: {ticket.id.split('-')[0].toUpperCase()}
+                    </Animated.Text>
+                    {/* Activation Hint */}
+                    <Text 
+                      style={{ fontFamily: 'Rubik-Medium' }} 
+                      className={`text-center text-xs mt-4 px-4 ${isActivated ? 'text-secondary/80' : 'text-white/40 animate-pulse'}`}
                     >
-                      {isSavingToDrive ? (
-                        <ActivityIndicator color="white" />
-                      ) : (
-                        <Cloud color="white" size={20} />
-                      )}
-                      <Text className="text-label text-white font-bold font-display">
-                        {isSavingToDrive ? 'שומר ב-Drive...' : 'שמור ב-Google Drive'}
-                      </Text>
-                    </Pressable>
-                    <Pressable 
-                      onPress={handleShare}
-                      className="flex-row-reverse items-center justify-center bg-white/5 border border-white/10 h-16 rounded-[24px] gap-3 active:bg-white/10"
-                    >
-                      <Share2 color="white" size={20} />
-                      <Text className="text-label text-white font-bold font-display">שתף עם חברים</Text>
-                    </Pressable>
+                      {isActivated ? '✓ כרטיס פריזמה הולוגרפי מופעל ומאומת' : 'צבט (Pinch) את הכרטיס עם 2 אצבעות להפעלה'}
+                    </Text>
                   </View>
-                </View>
+
+                  {/* Perforation Line - Custom Glass Effect */}
+                  <View className="flex-row items-center h-6 overflow-hidden px-1">
+                    <View className="w-10 h-10 rounded-full bg-background -ms-6 border border-white/10" />
+                    <View className="flex-1 border-dashed border-white/20 mx-2 border-t-2" />
+                    <View className="w-10 h-10 rounded-full bg-background -me-6 border border-white/10" />
+                  </View>
+
+                  {/* Ticket Details Grid */}
+                  <View className="p-8 pt-6 bg-white/5">
+                    <View className="flex-row-reverse flex-wrap justify-between gap-y-8">
+                      <DetailItem label="תאריך" value={ticket.date} />
+                      <DetailItem label="שעה" value={ticket.showtime?.time || '--:--'} />
+                      <DetailItem label="מושבים" value={ticket.seats?.map(s => `${s.row}${s.number}`).join(', ') || 'N/A'} color={movieTheme.secondaryColor} />
+                      <DetailItem 
+                        label="סטטוס" 
+                        value={isActivated ? "✓ פעיל ומאומת" : "צבט להפעלה"} 
+                        color={isActivated ? "#22c55e" : Colors.primary} 
+                      />
+                    </View>
+
+                    <View className="h-[1px] bg-white/10 my-8" />
+
+                    {/* Actions */}
+                    <View className="gap-4">
+                      <Pressable 
+                        onPress={handleARWayfinding}
+                        className="flex-row-reverse items-center justify-center bg-secondary h-16 rounded-[24px] gap-3 shadow-xl active:opacity-90"
+                      >
+                        <Navigation color="black" size={20} />
+                        <Text className="text-label text-black font-bold font-display uppercase tracking-wider">ניווט AR לקולנוע</Text>
+                      </Pressable>
+
+                      <Pressable 
+                        onPress={handleAddToWallet}
+                        className="flex-row-reverse items-center justify-center bg-white h-16 rounded-[24px] gap-3 shadow-xl active:bg-gray-100"
+                      >
+                        <CreditCard color="black" size={20} />
+                        <Text className="text-label text-black font-bold font-display uppercase tracking-wider">הוסף לארנק</Text>
+                      </Pressable>
+                      <Pressable 
+                        onPress={handleSaveToDrive}
+                        disabled={isSavingToDrive}
+                        className="flex-row-reverse items-center justify-center bg-white/5 border border-white/10 h-16 rounded-[24px] gap-3 active:bg-white/10"
+                      >
+                        {isSavingToDrive ? (
+                          <ActivityIndicator color="white" />
+                        ) : (
+                          <Cloud color="white" size={20} />
+                        )}
+                        <Text className="text-label text-white font-bold font-display">
+                          {isSavingToDrive ? 'שומר ב-Drive...' : 'שמור ב-Google Drive'}
+                        </Text>
+                      </Pressable>
+                      <Pressable 
+                        onPress={handleShare}
+                        className="flex-row-reverse items-center justify-center bg-white/5 border border-white/10 h-16 rounded-[24px] gap-3 active:bg-white/10"
+                      >
+                        <Share2 color="white" size={20} />
+                        <Text className="text-label text-white font-bold font-display">שתף עם חברים</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                </Animated.View>
               </Animated.View>
             </GestureDetector>
 

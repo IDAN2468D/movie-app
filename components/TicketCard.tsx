@@ -111,144 +111,145 @@ const TicketCard = React.memo(function TicketCard({ ticket, onPress, index = 0 }
   return (
     <Animated.View
       entering={ZoomIn.delay(Math.min(index * 100, 500)).springify().damping(18).stiffness(120).mass(1.0)}
-      style={scaleStyle}
     >
-      <Pressable 
-        testID={`ticket-card-${ticket.id}`}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        onPress={onPress}
-      >
-        <BlurView intensity={20} tint="dark" className="rounded-[32px] overflow-hidden border border-white/10 shadow-2xl">
-        <View>
-          {/* Morphic Ticket Overlay — כרטיס מורפי */}
-          <MorphicTicketOverlay
-            movieTitle={ticket.movieTitle}
-            showtimeDate={ticket.date}
-            showtimeTime={ticket.showtime?.time}
-            compact={true}
-          />
-          {/* Top Section - Movie Info */}
-          <View className="p-5">
-            <View className="flex-row justify-between items-start mb-4">
-              <View className="flex-1">
-                <Text 
-                  className="text-h2 text-white font-display text-left leading-tight" 
-                  numberOfLines={2}
-                  style={{ writingDirection: 'ltr' }}
-                >
-                  {ticket.movieTitle || 'סרט ללא שם'}
-                </Text>
-                <View className="flex-row items-center mt-2 opacity-60">
-                  <Text className="text-caption text-white font-body">{ticket.showtime?.hall || 'אולם'}</Text>
-                  <View className="w-1 h-1 rounded-full bg-white mx-2" />
-                  <Text className="text-caption text-white font-body uppercase">{ticket.showtime?.format || 'רגיל'}</Text>
+      <Animated.View style={scaleStyle}>
+        <Pressable 
+          testID={`ticket-card-${ticket.id}`}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          onPress={onPress}
+        >
+          <BlurView intensity={20} tint="dark" className="rounded-[32px] overflow-hidden border border-white/10 shadow-2xl">
+          <View>
+            {/* Morphic Ticket Overlay — כרטיס מורפי */}
+            <MorphicTicketOverlay
+              movieTitle={ticket.movieTitle}
+              showtimeDate={ticket.date}
+              showtimeTime={ticket.showtime?.time}
+              compact={true}
+            />
+            {/* Top Section - Movie Info */}
+            <View className="p-5">
+              <View className="flex-row justify-between items-start mb-4">
+                <View className="flex-1">
+                  <Text 
+                    className="text-h2 text-white font-display text-left leading-tight" 
+                    numberOfLines={2}
+                    style={{ writingDirection: 'ltr' }}
+                  >
+                    {ticket.movieTitle || 'סרט ללא שם'}
+                  </Text>
+                  <View className="flex-row items-center mt-2 opacity-60">
+                    <Text className="text-caption text-white font-body">{ticket.showtime?.hall || 'אולם'}</Text>
+                    <View className="w-1 h-1 rounded-full bg-white mx-2" />
+                    <Text className="text-caption text-white font-body uppercase">{ticket.showtime?.format || 'רגיל'}</Text>
+                  </View>
+                </View>
+                
+                <View className="bg-white p-2 rounded-2xl shadow-lg" style={{ shadowColor: Colors.primary, shadowOpacity: 0.5 }}>
+                  <Image 
+                    source={{ uri: qrUrl }}
+                    style={{ width: 48, height: 48 }}
+                    resizeMode="contain"
+                  />
                 </View>
               </View>
               
-              <View className="bg-white p-2 rounded-2xl shadow-lg" style={{ shadowColor: Colors.primary, shadowOpacity: 0.5 }}>
-                <Image 
-                  source={{ uri: qrUrl }}
-                  style={{ width: 48, height: 48 }}
-                  resizeMode="contain"
-                />
+              <View className="flex-row justify-between bg-white/5 p-4 rounded-2xl border border-white/5">
+                <View className="items-center px-2">
+                  <Text className="text-[10px] text-white/40 mb-1 font-body uppercase tracking-wider">תאריך</Text>
+                  <Text className="text-label text-white font-bold font-body">{ticket.date}</Text>
+                </View>
+                <View className="w-[1px] h-8 bg-white/10" />
+                <View className="items-center px-2">
+                  <Text className="text-[10px] text-white/40 mb-1 font-body uppercase tracking-wider">שעה</Text>
+                  <Text className="text-label text-white font-bold font-body">{ticket.showtime?.time || '--:--'}</Text>
+                </View>
+                <View className="w-[1px] h-8 bg-white/10" />
+                <View className="items-center px-2">
+                  <Text className="text-[10px] text-white/40 mb-1 font-body uppercase tracking-wider">מושבים</Text>
+                  <Text className="text-label text-primary font-black font-body">
+                    {ticket.seats && ticket.seats.length > 2 ? `${ticket.seats.length} מקומות` : ticket.seats?.map(s => `${s.row}${s.number}`).join(', ') || 'N/A'}
+                  </Text>
+                </View>
               </View>
             </View>
-            
-            <View className="flex-row justify-between bg-white/5 p-4 rounded-2xl border border-white/5">
-              <View className="items-center px-2">
-                <Text className="text-[10px] text-white/40 mb-1 font-body uppercase tracking-wider">תאריך</Text>
-                <Text className="text-label text-white font-bold font-body">{ticket.date}</Text>
-              </View>
-              <View className="w-[1px] h-8 bg-white/10" />
-              <View className="items-center px-2">
-                <Text className="text-[10px] text-white/40 mb-1 font-body uppercase tracking-wider">שעה</Text>
-                <Text className="text-label text-white font-bold font-body">{ticket.showtime?.time || '--:--'}</Text>
-              </View>
-              <View className="w-[1px] h-8 bg-white/10" />
-              <View className="items-center px-2">
-                <Text className="text-[10px] text-white/40 mb-1 font-body uppercase tracking-wider">מושבים</Text>
-                <Text className="text-label text-primary font-black font-body">
-                  {ticket.seats && ticket.seats.length > 2 ? `${ticket.seats.length} מקומות` : ticket.seats?.map(s => `${s.row}${s.number}`).join(', ') || 'N/A'}
-                </Text>
-              </View>
-            </View>
-          </View>
 
-          {/* Cinematic Perforation */}
-          <View className="flex-row items-center h-8">
-            <View className="w-8 h-8 rounded-full bg-background -ms-4 border-e border-white/10" />
-            <View className="flex-1 border-dashed border-white/20 mx-1 border-t-[1px]" />
-            <View className="w-8 h-8 rounded-full bg-background -me-4 border-s border-white/10" />
-          </View>
-
-          {/* Bottom Section - Quick Actions */}
-          <View className="px-5 pb-5 pt-2">
-            <View className="flex-row justify-between items-center mb-4">
-              <View>
-                <Text className="text-[10px] text-white/40 mb-1 font-body uppercase tracking-wider text-right">קוד הזמנה</Text>
-                <Text className="text-label text-white font-mono font-bold tracking-[2px]">
-                  {ticket.id ? ticket.id.substring(0, 8).toUpperCase() : '--------'}
-                </Text>
-              </View>
-              <View className="flex-row gap-3">
-                <Pressable 
-                  onPress={handleAddToCalendar}
-                  className="w-12 h-12 items-center justify-center bg-white/5 rounded-2xl border border-white/10"
-                >
-                  <CalendarIcon size={20} color={Colors.text} />
-                </Pressable>
-                <Pressable 
-                  onPress={handleSendEmail}
-                  disabled={sendingEmail || emailSent}
-                  className={`w-12 h-12 items-center justify-center rounded-2xl border ${
-                    emailSent ? 'bg-green-500/20 border-green-500/30' : 'bg-white/5 border-white/10'
-                  }`}
-                >
-                  {sendingEmail ? (
-                    <ActivityIndicator size="small" color={Colors.primary} />
-                  ) : emailSent ? (
-                    <CheckCircle2 size={20} color="#22c55e" />
-                  ) : (
-                    <Mail size={20} color={Colors.text} />
-                  )}
-                </Pressable>
-              </View>
+            {/* Cinematic Perforation */}
+            <View className="flex-row items-center h-8">
+              <View className="w-8 h-8 rounded-full bg-background -ms-4 border-e border-white/10" />
+              <View className="flex-1 border-dashed border-white/20 mx-1 border-t-[1px]" />
+              <View className="w-8 h-8 rounded-full bg-background -me-4 border-s border-white/10" />
             </View>
-            
-            <View className="flex-row gap-3 mt-4">
-              <Pressable 
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  setRewardsModalVisible(true);
-                }}
-                className="flex-1 bg-secondary/20 py-3 rounded-2xl items-center flex-row justify-center gap-2 border border-secondary/30"
-              >
-                <Gift size={16} color={Colors.secondary} />
-                <Text className="text-[12px] text-secondary font-bold font-body">פתח הפתעות סיום</Text>
-              </Pressable>
+
+            {/* Bottom Section - Quick Actions */}
+            <View className="px-5 pb-5 pt-2">
+              <View className="flex-row justify-between items-center mb-4">
+                <View>
+                  <Text className="text-[10px] text-white/40 mb-1 font-body uppercase tracking-wider text-right">קוד הזמנה</Text>
+                  <Text className="text-label text-white font-mono font-bold tracking-[2px]">
+                    {ticket.id ? ticket.id.substring(0, 8).toUpperCase() : '--------'}
+                  </Text>
+                </View>
+                <View className="flex-row gap-3">
+                  <Pressable 
+                    onPress={handleAddToCalendar}
+                    className="w-12 h-12 items-center justify-center bg-white/5 rounded-2xl border border-white/10"
+                  >
+                    <CalendarIcon size={20} color={Colors.text} />
+                  </Pressable>
+                  <Pressable 
+                    onPress={handleSendEmail}
+                    disabled={sendingEmail || emailSent}
+                    className={`w-12 h-12 items-center justify-center rounded-2xl border ${
+                      emailSent ? 'bg-green-500/20 border-green-500/30' : 'bg-white/5 border-white/10'
+                    }`}
+                  >
+                    {sendingEmail ? (
+                      <ActivityIndicator size="small" color={Colors.primary} />
+                    ) : emailSent ? (
+                      <CheckCircle2 size={20} color="#22c55e" />
+                    ) : (
+                      <Mail size={20} color={Colors.text} />
+                    )}
+                  </Pressable>
+                </View>
+              </View>
               
-              <Pressable 
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  router.push({ pathname: '/movie/spoiler-lounge' as any, params: { title: ticket.movieTitle } });
-                }}
-                className="flex-1 bg-primary/20 py-3 rounded-2xl items-center flex-row justify-center gap-2 border border-primary/30"
-              >
-                <MessageCircle size={16} color={Colors.primary} />
-                <Text className="text-[12px] text-primary font-bold font-body">לאונג' ספוילרים</Text>
-              </Pressable>
+              <View className="flex-row gap-3 mt-4">
+                <Pressable 
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    setRewardsModalVisible(true);
+                  }}
+                  className="flex-1 bg-secondary/20 py-3 rounded-2xl items-center flex-row justify-center gap-2 border border-secondary/30"
+                >
+                  <Gift size={16} color={Colors.secondary} />
+                  <Text className="text-[12px] text-secondary font-bold font-body">פתח הפתעות סיום</Text>
+                </Pressable>
+                
+                <Pressable 
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    router.push({ pathname: '/movie/spoiler-lounge' as any, params: { title: ticket.movieTitle } });
+                  }}
+                  className="flex-1 bg-primary/20 py-3 rounded-2xl items-center flex-row justify-center gap-2 border border-primary/30"
+                >
+                  <MessageCircle size={16} color={Colors.primary} />
+                  <Text className="text-[12px] text-primary font-bold font-body">לאונג' ספוילרים</Text>
+                </Pressable>
+              </View>
             </View>
           </View>
-        </View>
-      </BlurView>
+        </BlurView>
 
-      <DigitalRewardsModal 
-        visible={rewardsModalVisible} 
-        onClose={() => setRewardsModalVisible(false)} 
-        movieTitle={ticket.movieTitle || 'סרט'}
-      />
-      </Pressable>
+        <DigitalRewardsModal 
+          visible={rewardsModalVisible} 
+          onClose={() => setRewardsModalVisible(false)} 
+          movieTitle={ticket.movieTitle || 'סרט'}
+        />
+        </Pressable>
+      </Animated.View>
     </Animated.View>
   );
 });

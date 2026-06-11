@@ -388,49 +388,51 @@ const CineSymphony: React.FC<CineSymphonyProps> = ({
   // === Compact Mode (inline toggle button) ===
   if (compact) {
     return (
-      <Animated.View entering={FadeIn} style={buttonStyle}>
-        <Pressable
-          onPress={handleToggle}
-          style={{
-            flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row',
-            alignItems: 'center',
-            gap: 8,
-            paddingHorizontal: 14,
-            paddingVertical: 10,
-            borderRadius: 20,
-            borderWidth: 1,
-            borderColor: isPlaying ? `${theme.primaryColor}50` : 'rgba(255,255,255,0.1)',
-            backgroundColor: isPlaying ? `${theme.primaryColor}15` : 'rgba(255,255,255,0.05)',
-            overflow: 'hidden',
-          }}
-        >
-          {isPlaying && (
-            <LinearGradient
-              colors={[`${theme.primaryColor}10`, `${theme.secondaryColor}08`]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={StyleSheet.absoluteFill}
-            />
-          )}
-          <Music size={14} color={isPlaying ? theme.primaryColor : 'rgba(255,255,255,0.5)'} />
-          <Text
+      <Animated.View entering={FadeIn}>
+        <Animated.View style={buttonStyle}>
+          <Pressable
+            onPress={handleToggle}
             style={{
-              color: isPlaying ? theme.primaryColor : 'rgba(255,255,255,0.5)',
-              fontSize: 11,
-              fontFamily: 'Rubik-Bold',
-              writingDirection: 'rtl',
+              flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row',
+              alignItems: 'center',
+              gap: 8,
+              paddingHorizontal: 14,
+              paddingVertical: 10,
+              borderRadius: 20,
+              borderWidth: 1,
+              borderColor: isPlaying ? `${theme.primaryColor}50` : 'rgba(255,255,255,0.1)',
+              backgroundColor: isPlaying ? `${theme.primaryColor}15` : 'rgba(255,255,255,0.05)',
+              overflow: 'hidden',
             }}
           >
-            {isPlaying ? pattern.labelHe : 'סימפוניה'}
-          </Text>
-          {isPlaying && (
-            <WaveformVisualizer
-              isPlaying={isPlaying}
-              theme={theme}
-              bpm={pattern.bpm}
-            />
-          )}
-        </Pressable>
+            {isPlaying && (
+              <LinearGradient
+                colors={[`${theme.primaryColor}10`, `${theme.secondaryColor}08`]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFill}
+              />
+            )}
+            <Music size={14} color={isPlaying ? theme.primaryColor : 'rgba(255,255,255,0.5)'} />
+            <Text
+              style={{
+                color: isPlaying ? theme.primaryColor : 'rgba(255,255,255,0.5)',
+                fontSize: 11,
+                fontFamily: 'Rubik-Bold',
+                writingDirection: 'rtl',
+              }}
+            >
+              {isPlaying ? pattern.labelHe : 'סימפוניה'}
+            </Text>
+            {isPlaying && (
+              <WaveformVisualizer
+                isPlaying={isPlaying}
+                theme={theme}
+                bpm={pattern.bpm}
+              />
+            )}
+          </Pressable>
+        </Animated.View>
       </Animated.View>
     );
   }
@@ -439,130 +441,131 @@ const CineSymphony: React.FC<CineSymphonyProps> = ({
   return (
     <Animated.View
       entering={FadeInDown.springify().damping(18).stiffness(120)}
-      style={[buttonStyle]}
     >
-      <Pressable onPress={handleToggle}>
-        <Animated.View
-          style={[
-            {
-              borderRadius: 28,
-              borderWidth: 1,
-              overflow: 'hidden',
-              paddingVertical: 16,
-              paddingHorizontal: 20,
-            },
-            borderGlow,
-          ]}
-        >
-          {/* Background gradient */}
-          <LinearGradient
-            colors={
-              isPlaying
-                ? [`${theme.primaryColor}18`, `${theme.secondaryColor}10`, 'rgba(9,9,11,0.95)']
-                : ['rgba(20,20,25,0.95)', 'rgba(15,15,18,0.98)']
-            }
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={StyleSheet.absoluteFill}
-          />
-
-          {/* Ambient glow */}
-          {isPlaying && (
-            <Animated.View
-              style={[
-                {
-                  position: 'absolute',
-                  top: -40,
-                  alignSelf: 'center',
-                  width: 200,
-                  height: 100,
-                  borderRadius: 50,
-                  backgroundColor: theme.primaryColor,
-                },
-                glowStyle,
-              ]}
-            />
-          )}
-
-          {/* Content row */}
-          <View
-            style={{
-              flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row',
-              alignItems: 'center',
-              gap: 14,
-            }}
+      <Animated.View style={[buttonStyle]}>
+        <Pressable onPress={handleToggle}>
+          <Animated.View
+            style={[
+              {
+                borderRadius: 28,
+                borderWidth: 1,
+                overflow: 'hidden',
+                paddingVertical: 16,
+                paddingHorizontal: 20,
+              },
+              borderGlow,
+            ]}
           >
-            {/* Play/Pause button */}
+            {/* Background gradient */}
+            <LinearGradient
+              colors={
+                isPlaying
+                  ? [`${theme.primaryColor}18`, `${theme.secondaryColor}10`, 'rgba(9,9,11,0.95)']
+                  : ['rgba(20,20,25,0.95)', 'rgba(15,15,18,0.98)']
+              }
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
+
+            {/* Ambient glow */}
+            {isPlaying && (
+              <Animated.View
+                style={[
+                  {
+                    position: 'absolute',
+                    top: -40,
+                    alignSelf: 'center',
+                    width: 200,
+                    height: 100,
+                    borderRadius: 50,
+                    backgroundColor: theme.primaryColor,
+                  },
+                  glowStyle,
+                ]}
+              />
+            )}
+
+            {/* Content row */}
             <View
               style={{
-                width: 44,
-                height: 44,
-                borderRadius: 22,
-                backgroundColor: isPlaying ? theme.primaryColor : 'rgba(255,255,255,0.08)',
+                flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row',
                 alignItems: 'center',
-                justifyContent: 'center',
-                borderWidth: 1,
-                borderColor: isPlaying ? `${theme.primaryColor}80` : 'rgba(255,255,255,0.1)',
+                gap: 14,
               }}
             >
-              {isPlaying ? (
-                <Pause size={18} color="white" />
-              ) : (
-                <Play size={18} color="white" style={{ marginStart: 2 }} />
-              )}
-            </View>
-
-            {/* Info */}
-            <View style={{ flex: 1 }}>
+              {/* Play/Pause button */}
               <View
                 style={{
-                  flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row',
+                  width: 44,
+                  height: 44,
+                  borderRadius: 22,
+                  backgroundColor: isPlaying ? theme.primaryColor : 'rgba(255,255,255,0.08)',
                   alignItems: 'center',
-                  gap: 6,
-                  marginBottom: 4,
+                  justifyContent: 'center',
+                  borderWidth: 1,
+                  borderColor: isPlaying ? `${theme.primaryColor}80` : 'rgba(255,255,255,0.1)',
                 }}
               >
-                <PatternIcon size={12} color={theme.primaryColor} />
+                {isPlaying ? (
+                  <Pause size={18} color="white" />
+                ) : (
+                  <Play size={18} color="white" style={{ marginStart: 2 }} />
+                )}
+              </View>
+
+              {/* Info */}
+              <View style={{ flex: 1 }}>
+                <View
+                  style={{
+                    flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row',
+                    alignItems: 'center',
+                    gap: 6,
+                    marginBottom: 4,
+                  }}
+                >
+                  <PatternIcon size={12} color={theme.primaryColor} />
+                  <Text
+                    style={{
+                      color: 'white',
+                      fontSize: 14,
+                      fontFamily: 'Rubik-Bold',
+                      textAlign: 'right',
+                      writingDirection: 'rtl',
+                    }}
+                  >
+                    סימפוניה קולנועית
+                  </Text>
+                </View>
                 <Text
                   style={{
-                    color: 'white',
-                    fontSize: 14,
-                    fontFamily: 'Rubik-Bold',
+                    color: 'rgba(255,255,255,0.45)',
+                    fontSize: 11,
+                    fontFamily: 'Rubik-Regular',
                     textAlign: 'right',
                     writingDirection: 'rtl',
                   }}
                 >
-                  סימפוניה קולנועית
+                  {isPlaying
+                    ? `${pattern.labelHe} · ${pattern.bpm} BPM`
+                    : 'הפעל אווירה הפטית קולנועית'}
                 </Text>
               </View>
-              <Text
-                style={{
-                  color: 'rgba(255,255,255,0.45)',
-                  fontSize: 11,
-                  fontFamily: 'Rubik-Regular',
-                  textAlign: 'right',
-                  writingDirection: 'rtl',
-                }}
-              >
-                {isPlaying
-                  ? `${pattern.labelHe} · ${pattern.bpm} BPM`
-                  : 'הפעל אווירה הפטית קולנועית'}
-              </Text>
-            </View>
 
-            {/* Waveform or volume icon */}
-            {isPlaying ? (
-              <WaveformVisualizer
-                isPlaying={isPlaying}
-                theme={theme}
-                bpm={pattern.bpm}
-              />
-            ) : (
-              <Volume2 size={20} color="rgba(255,255,255,0.3)" />
-            )}
-          </View>
-        </Animated.View>
-      </Pressable>
+              {/* Waveform or volume icon */}
+              {isPlaying ? (
+                <WaveformVisualizer
+                  isPlaying={isPlaying}
+                  theme={theme}
+                  bpm={pattern.bpm}
+                />
+              ) : (
+                <Volume2 size={20} color="rgba(255,255,255,0.3)" />
+              )}
+            </View>
+          </Animated.View>
+        </Pressable>
+      </Animated.View>
     </Animated.View>
   );
 };
