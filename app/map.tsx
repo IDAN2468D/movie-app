@@ -954,7 +954,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Assistant-SemiBold',
     flex: 1,
-    textAlign: 'right',
+    textAlign: 'left',
     writingDirection: 'rtl',
   },
   ghostModeSwitch: {
