@@ -13,9 +13,29 @@ export interface IFriend {
   recentActivity?: { action: string; time: string }[];
 }
 
+export interface IFriendLocation {
+  id: string;
+  name: string;
+  profileImage?: string;
+  coords: {
+    latitude: number;
+    longitude: number;
+  };
+  activeMovie: {
+    movieId: number;
+    title: string;
+    posterPath: string;
+    branchName: string;
+    showtimeStart: string;
+    showtimeEnd: string;
+  };
+}
+
 interface SocialState {
   friends: IFriend[];
   searchResults: IFriend[];
+  friendLocations: IFriendLocation[];
+  isGhostMode: boolean;
   isLoading: boolean;
   error: string | null;
 
@@ -24,6 +44,8 @@ interface SocialState {
   removeFriend: (id: string) => Promise<{ success: boolean; message: string }>;
   searchUsers: (query: string) => Promise<void>;
   resetSearch: () => void;
+  fetchFriendLocations: () => Promise<void>;
+  toggleGhostMode: (enabled: boolean) => Promise<void>;
 }
 
 // Highly premium mock friends data for immersive local fallback
@@ -73,9 +95,65 @@ const PREMIUM_MOCK_FRIENDS: IFriend[] = [
   }
 ];
 
+const MOCK_FRIEND_LOCATIONS: IFriendLocation[] = [
+  {
+    id: 'friend_1',
+    name: 'רוני כהן',
+    profileImage: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop',
+    coords: {
+      latitude: 32.1481,
+      longitude: 34.7997
+    },
+    activeMovie: {
+      movieId: 933268,
+      title: 'גלדיאטור 2',
+      posterPath: '/2cxhvwyEwRlysAmRH4iodkvo0z5.jpg',
+      branchName: 'סינמה סיטי גלילות',
+      showtimeStart: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+      showtimeEnd: new Date(Date.now() + 90 * 60 * 1000).toISOString()
+    }
+  },
+  {
+    id: 'friend_2',
+    name: 'איתי לוי',
+    profileImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop',
+    coords: {
+      latitude: 32.0994,
+      longitude: 34.8258
+    },
+    activeMovie: {
+      movieId: 533535,
+      title: 'דדפול & וולברין',
+      posterPath: '/en971MEXui9diirXlogOrPKmsEn.jpg',
+      branchName: 'יס פלאנט איילון',
+      showtimeStart: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+      showtimeEnd: new Date(Date.now() + 105 * 60 * 1000).toISOString()
+    }
+  },
+  {
+    id: 'friend_3',
+    name: 'מיה גבאי',
+    profileImage: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200&auto=format&fit=crop',
+    coords: {
+      latitude: 32.0722,
+      longitude: 34.7749
+    },
+    activeMovie: {
+      movieId: 1022789,
+      title: 'מואנה 2',
+      posterPath: '/4YZpsylmjHbqeWzjKpUEF8gcLNW.jpg',
+      branchName: 'סינמה סיטי דיזנגוף',
+      showtimeStart: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+      showtimeEnd: new Date(Date.now() + 40 * 60 * 1000).toISOString()
+    }
+  }
+];
+
 export const useSocialStore = create<SocialState>((set, get) => ({
   friends: [],
   searchResults: [],
+  friendLocations: [],
+  isGhostMode: false,
   isLoading: false,
   error: null,
 
@@ -243,5 +321,49 @@ export const useSocialStore = create<SocialState>((set, get) => ({
     }, 400);
   },
 
-  resetSearch: () => set({ searchResults: [] })
+  resetSearch: () => set({ searchResults: [] }),
+
+  fetchFriendLocations: async () => {
+    set({ isLoading: true });
+    const token = useAuthStore.getState().token;
+
+    if (token) {
+      try {
+        const response = await safeFetch(`${API_BASE_URL}/users/friend-locations`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.success && response.data) {
+          set({ friendLocations: response.data, isLoading: false });
+          return;
+        }
+      } catch (err) {
+        console.warn('Backend friend-locations endpoint unavailable, using mock friend locations');
+      }
+    }
+
+    // High fidelity simulation
+    setTimeout(() => {
+      set({ friendLocations: MOCK_FRIEND_LOCATIONS, isLoading: false });
+    }, 600);
+  },
+
+  toggleGhostMode: async (enabled: boolean) => {
+    set({ isGhostMode: enabled });
+    const token = useAuthStore.getState().token;
+
+    if (token) {
+      try {
+        await safeFetch(`${API_BASE_URL}/users/ghost-mode`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ isGhostMode: enabled })
+        });
+      } catch (err) {
+        console.warn('Backend ghost mode sync failed, using local status');
+      }
+    }
+  }
 }));
