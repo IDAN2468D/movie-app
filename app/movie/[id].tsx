@@ -12,6 +12,7 @@ import {
   ScrollView,
   I18nManager,
   StyleSheet,
+  Alert,
 } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import * as Haptics from 'expo-haptics';
@@ -78,8 +79,20 @@ const MOCK_SHOWTIMES: Showtime[] = [
 ];
 
 export default function MovieDetailsScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, squadInvite, friendName } = useLocalSearchParams<{ id: string; squadInvite?: string; friendName?: string }>();
   const insets = useSafeAreaInsets();
+
+  useEffect(() => {
+    if (squadInvite === 'true' && friendName) {
+      setTimeout(() => {
+        Alert.alert(
+          'הזמנת CineSquad נשלחה! 👥',
+          `שלחת בהצלחה הזמנה ל-${friendName} להצטרף אליך לצפייה משותפת בסרט זה. קוד הקבוצה יישלח אליו ברקע.`,
+          [{ text: 'מצוין', style: 'default' }]
+        );
+      }, 500);
+    }
+  }, [squadInvite, friendName]);
   const [isPrismActive, setIsPrismActive] = useState(false);
   
   const {

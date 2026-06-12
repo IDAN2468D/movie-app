@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,8 @@ import {
   Image,
   Linking,
   Alert,
-  I18nManager
+  I18nManager,
+  ScrollView
 } from 'react-native';
 import { useHaptics } from '@/lib/useHaptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -27,11 +28,25 @@ import * as Location from 'expo-location';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
-import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
+import Animated, { 
+  FadeInDown, 
+  FadeOutDown,
+  FadeIn,
+  FadeOut,
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  cancelAnimation,
+  Easing,
+  runOnJS
+} from 'react-native-reanimated';
 
 import { useSocialStore, IFriendLocation } from '@/store/useSocialStore';
+import { useWatchlistStore } from '@/store/useWatchlistStore';
 import { getImageSource } from '@/utils/ImageUtils';
 import { BRANCHES as GLOBAL_BRANCHES } from '@/constants/Branches';
+import { Colors } from '@/constants/Theme';
 
 // Native maps disabled — using Leaflet.js inside WebView instead
 
@@ -51,7 +66,8 @@ const BRANCHES = GLOBAL_BRANCHES.map(b => ({
 function generateLeafletHTML(
   userLat: number,
   userLng: number,
-  friends: IFriendLocation[]
+  friends: IFriendLocation[],
+  isGhostMode: boolean
 ): string {
   // Serialize friend data as JSON to avoid quote escaping issues in HTML
   const friendsJSON = JSON.stringify(
@@ -87,20 +103,33 @@ function generateLeafletHTML(
     .user-marker { display: flex; align-items: center; justify-content: center; }
     .user-dot-outer {
       width: 28px; height: 28px; border-radius: 50%;
-      background: rgba(0, 150, 255, 0.2);
-      border: 2px solid rgba(0, 150, 255, 0.4);
+      background: ${isGhostMode ? 'rgba(168, 85, 247, 0.2)' : 'rgba(0, 150, 255, 0.2)'};
+      border: 2px solid ${isGhostMode ? 'rgba(168, 85, 247, 0.4)' : 'rgba(0, 150, 255, 0.4)'};
       display: flex; align-items: center; justify-content: center;
-      animation: pulse 2s ease-in-out infinite;
+      animation: pulse ${isGhostMode ? '3.5s' : '2s'} ease-in-out infinite;
     }
     .user-dot-inner {
       width: 12px; height: 12px; border-radius: 50%;
-      background: #0096FF; border: 2px solid #FFFFFF;
-      box-shadow: 0 0 12px rgba(0, 150, 255, 0.6);
+      background: ${isGhostMode ? '#A855F7' : '#0096FF'}; border: 2px solid #FFFFFF;
+      box-shadow: 0 0 12px ${isGhostMode ? 'rgba(168, 85, 247, 0.6)' : 'rgba(0, 150, 255, 0.6)'};
     }
     @keyframes pulse {
       0%, 100% { transform: scale(1); opacity: 1; }
       50% { transform: scale(1.4); opacity: 0.6; }
     }
+
+    ${isGhostMode ? `
+    body::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      border: 4px solid rgba(168, 85, 247, 0.35);
+      box-shadow: inset 0 0 40px rgba(168, 85, 247, 0.25);
+      pointer-events: none;
+      z-index: 1000;
+      border-radius: 20px;
+    }
+    ` : ''}
 
     .friend-marker { background: none !important; border: none !important; }
     .marker-wrap {
@@ -201,6 +230,48 @@ function generateLeafletHTML(
 </html>`;
 }
 
+interface IFloatingPopcorn {
+  id: string;
+}
+
+function FloatingPopcornItem({ id, onComplete }: { id: string; onComplete: (id: string) => void }) {
+  const yVal = useSharedValue(0);
+  const opacityVal = useSharedValue(1);
+  const xVal = useSharedValue((Math.random() - 0.5) * 80);
+  const rotationVal = useSharedValue((Math.random() - 0.5) * 45);
+
+  React.useEffect(() => {
+    yVal.value = withTiming(-420, { duration: 1600, easing: Easing.out(Easing.quad) }, (finished) => {
+      if (finished) {
+        runOnJS(onComplete)(id);
+      }
+    });
+    opacityVal.value = withTiming(0, { duration: 1600, easing: Easing.in(Easing.quad) });
+    xVal.value = withTiming(xVal.value + (Math.random() - 0.5) * 80, { duration: 1600 });
+  }, []);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        { translateY: yVal.value },
+        { translateX: xVal.value },
+        { rotate: `${rotationVal.value}deg` }
+      ],
+      opacity: opacityVal.value,
+      position: 'absolute',
+      bottom: 220,
+      alignSelf: 'center',
+      zIndex: 999
+    };
+  });
+
+  return (
+    <Animated.View style={animatedStyle} pointerEvents="none">
+      <Text style={{ fontSize: 28 }}>🍿</Text>
+    </Animated.View>
+  );
+}
+
 export default function CinemaMapScreen() {
   const insets = useSafeAreaInsets();
   const { selection, impactLight, impactMedium } = useHaptics();
@@ -211,7 +282,19 @@ export default function CinemaMapScreen() {
   const [userLocation, setUserLocation] = useState<Location.LocationObject | null>(null);
   const [selectedFriend, setSelectedFriend] = useState<IFriendLocation | null>(null);
 
-  const { friendLocations, isGhostMode, fetchFriendLocations, toggleGhostMode } = useSocialStore();
+  const webViewRef = useRef<WebView>(null);
+  const [isRadarScanning, setIsRadarScanning] = useState(false);
+  const [radarMatches, setRadarMatches] = useState<IFriendLocation[]>([]);
+  const [pings, setPings] = useState<IFloatingPopcorn[]>([]);
+
+  const handlePopcornComplete = useCallback((id: string) => {
+    setPings(prev => prev.filter(p => p.id !== id));
+  }, []);
+
+  const radarRotation = useSharedValue(0);
+
+  const { friends, friendLocations, isGhostMode, fetchFriendLocations, toggleGhostMode } = useSocialStore();
+  const watchlistMovies = useWatchlistStore(state => state.movies);
 
   // Handle messages from the Leaflet WebView (friend marker taps)
   const handleWebViewMessage = useCallback((event: WebViewMessageEvent) => {
@@ -233,8 +316,8 @@ export default function CinemaMapScreen() {
   const leafletHTML = useMemo(() => {
     const lat = userLocation ? userLocation.coords.latitude : 32.0853;
     const lng = userLocation ? userLocation.coords.longitude : 34.7818;
-    return generateLeafletHTML(lat, lng, friendLocations);
-  }, [userLocation, friendLocations]);
+    return generateLeafletHTML(lat, lng, friendLocations, isGhostMode);
+  }, [userLocation, friendLocations, isGhostMode]);
 
   // Load User Location for real-time distance calculations
   useEffect(() => {
@@ -260,6 +343,107 @@ export default function CinemaMapScreen() {
       fetchFriendLocations();
     }
   }, [activeTab, fetchFriendLocations]);
+
+  // Animate radar sweep rotation
+  useEffect(() => {
+    if (isRadarScanning) {
+      radarRotation.value = 0;
+      radarRotation.value = withRepeat(
+        withTiming(360, { duration: 2000, easing: Easing.linear }),
+        -1,
+        false
+      );
+    } else {
+      cancelAnimation(radarRotation);
+    }
+  }, [isRadarScanning]);
+
+  const radarSweepStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        { rotate: `${radarRotation.value}deg` }
+      ]
+    };
+  });
+
+  const triggerRadarScan = useCallback(() => {
+    if (isRadarScanning) return;
+
+    impactMedium();
+    setIsRadarScanning(true);
+    setRadarMatches([]);
+    setSelectedFriend(null);
+
+    // Clear lines in WebView
+    webViewRef.current?.injectJavaScript(`
+      if (window.radarPolylines) {
+        window.radarPolylines.forEach(function(l) { map.removeLayer(l); });
+      }
+      window.radarPolylines = [];
+      true;
+    `);
+
+    setTimeout(() => {
+      // Find matches
+      const myWatchlistIds = watchlistMovies.map(m => m.id);
+      const targetWatchlist = myWatchlistIds.length > 0 ? myWatchlistIds : [933268, 1022789];
+
+      const matchedFriends = friendLocations.filter(friend => {
+        const fullFriend = friends.find(f => f.id === friend.id || f.name === friend.name);
+        const watchlistIds = fullFriend?.watchlist?.map(m => m.id) || [];
+        const activeId = friend.activeMovie?.movieId ? [friend.activeMovie.movieId] : [];
+        const combined = [...watchlistIds, ...activeId];
+        return combined.some(id => targetWatchlist.includes(id));
+      });
+
+      setRadarMatches(matchedFriends);
+      setIsRadarScanning(false);
+      
+      if (matchedFriends.length > 0) {
+        impactMedium();
+        
+        const userLoc = userLocation 
+          ? [userLocation.coords.latitude, userLocation.coords.longitude] 
+          : [32.0853, 34.7818];
+          
+        const matchedCoords = matchedFriends.map(f => [f.coords.latitude, f.coords.longitude]);
+
+        // Inject JS to draw polyline connections
+        const drawLinesJS = `
+          try {
+            if (window.radarPolylines) {
+              window.radarPolylines.forEach(function(l) { map.removeLayer(l); });
+            }
+            window.radarPolylines = [];
+            
+            var userLoc = ${JSON.stringify(userLoc)};
+            var coordsList = ${JSON.stringify(matchedCoords)};
+            
+            coordsList.forEach(function(dest) {
+              var poly = L.polyline([userLoc, dest], {
+                color: '#FF1464',
+                weight: 3.5,
+                opacity: 0.85,
+                dashArray: '10, 10',
+                lineCap: 'round'
+              }).addTo(map);
+              window.radarPolylines.push(poly);
+            });
+            
+            var bounds = [userLoc].concat(coordsList);
+            map.fitBounds(bounds, { padding: [60, 60], maxZoom: 12 });
+          } catch(e) {
+            console.error(e);
+          }
+          true;
+        `;
+        webViewRef.current?.injectJavaScript(drawLinesJS);
+      } else {
+        impactMedium();
+        Alert.alert('תוצאות סריקה', 'לא נמצאו חברים קרובים עם סרטים משותפים כרגע.');
+      }
+    }, 2500);
+  }, [isRadarScanning, friendLocations, friends, watchlistMovies, userLocation, impactMedium]);
 
   const calculateDistance = (lat: number, lng: number) => {
     if (!userLocation) return null;
@@ -409,6 +593,7 @@ export default function CinemaMapScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: '#09090B' }}>
         <WebView
+          ref={webViewRef}
           style={{ flex: 1, backgroundColor: '#09090B' }}
           source={{ html: leafletHTML, baseUrl: 'https://unpkg.com' }}
           onMessage={handleWebViewMessage}
@@ -542,6 +727,23 @@ export default function CinemaMapScreen() {
             </View>
           </BlurView>
 
+          {/* CineMatch Radar Toggle Panel */}
+          <BlurView intensity={25} tint="dark" style={[styles.radarFloatCard, { top: insets.top + 215 }]}>
+            <Pressable 
+              onPress={triggerRadarScan}
+              className="flex-row items-center justify-between px-4 py-3"
+              style={{ flexDirection: 'row-reverse' }}
+            >
+              <View className="flex-row-reverse items-center gap-2">
+                <Sparkles size={16} color={Colors.primary} />
+                <Text style={{ fontFamily: 'Assistant-SemiBold', fontSize: 12, color: 'white', writingDirection: 'rtl', textAlign: 'right' }}>
+                  סרוק התאמות סרטים (CineMatch Radar) 📡
+                </Text>
+              </View>
+              <ChevronLeft size={16} color="white" />
+            </Pressable>
+          </BlurView>
+
           {/* Friend Details Card */}
           {selectedFriend && (
             <Animated.View
@@ -615,11 +817,178 @@ export default function CinemaMapScreen() {
                     <Text style={styles.navBtnText}>ניווט לקולנוע של {selectedFriend.name.split(' ')[0]}</Text>
                   </LinearGradient>
                 </Pressable>
+
+                {/* Social Interaction Buttons Row (Popcorn Ping & Co-watching Lounge Shortcut) */}
+                <View style={{ flexDirection: 'row-reverse', gap: 10, marginTop: 10 }}>
+                  <Pressable
+                    style={{ flex: 1, borderRadius: 16, overflow: 'hidden' }}
+                    onPress={() => {
+                      impactMedium();
+                      setTimeout(() => impactMedium(), 150);
+                      
+                      const newPings = Array.from({ length: 6 }).map((_, i) => ({
+                        id: `ping_${Date.now()}_${i}_${Math.random()}`
+                      }));
+                      newPings.forEach((ping, idx) => {
+                        setTimeout(() => {
+                          setPings(prev => [...prev, ping]);
+                        }, idx * 120);
+                      });
+                    }}
+                  >
+                    <BlurView intensity={25} tint="light" style={{ paddingVertical: 10, alignItems: 'center', justifyContent: 'center' }}>
+                      <Text style={{ color: '#E5FF00', fontFamily: 'Rubik-Bold', fontSize: 12 }}>
+                        שלח פופקורן 🍿
+                      </Text>
+                    </BlurView>
+                  </Pressable>
+
+                  <Pressable
+                    style={{ flex: 1, borderRadius: 16, overflow: 'hidden' }}
+                    onPress={() => {
+                      impactMedium();
+                      router.push({
+                        pathname: '/movie/[id]',
+                        params: {
+                          id: selectedFriend.activeMovie.movieId.toString(),
+                          squadInvite: 'true',
+                          friendId: selectedFriend.id,
+                          friendName: selectedFriend.name
+                        }
+                      });
+                    }}
+                  >
+                    <BlurView intensity={25} tint="dark" style={{ paddingVertical: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)' }}>
+                      <Text style={{ color: '#FFFFFF', fontFamily: 'Rubik-Bold', fontSize: 12 }}>
+                        הזמן יחד 🎟️
+                      </Text>
+                    </BlurView>
+                  </Pressable>
+                </View>
+              </BlurView>
+            </Animated.View>
+          )}
+
+          {/* CineMatch Radar Results Card */}
+          {radarMatches.length > 0 && !selectedFriend && (
+            <Animated.View
+              entering={FadeInDown.springify().damping(15)}
+              exiting={FadeOutDown}
+              style={[styles.friendDetailsFloatingCard, { bottom: bottomOffset }]}
+            >
+              <BlurView intensity={35} tint="dark" style={styles.friendDetailsBlur}>
+                <Pressable
+                  style={styles.closeCardBtn}
+                  onPress={() => {
+                    impactLight();
+                    setRadarMatches([]);
+                    // Clear lines
+                    webViewRef.current?.injectJavaScript(`
+                      if (window.radarPolylines) {
+                        window.radarPolylines.forEach(function(l) { map.removeLayer(l); });
+                      }
+                      window.radarPolylines = [];
+                      true;
+                    `);
+                  }}
+                >
+                  <X size={16} color="white" />
+                </Pressable>
+
+                <View className="flex-row-reverse items-center justify-between mb-3 px-1">
+                  <Text style={{ fontFamily: 'Rubik-Bold', fontSize: 13, color: Colors.secondary, writingDirection: 'rtl', textAlign: 'right' }}>
+                    נמצאו {radarMatches.length} התאמות CineMatch! 📡
+                  </Text>
+                </View>
+
+                <ScrollView 
+                  horizontal 
+                  showsHorizontalScrollIndicator={false} 
+                  className="w-full"
+                  contentContainerStyle={{ gap: 12, flexDirection: 'row-reverse', paddingVertical: 4 }}
+                >
+                  {radarMatches.map(friend => {
+                    const matchingMovie = friend.activeMovie?.title || 'סרט משותף';
+                    return (
+                      <Pressable
+                        key={friend.id}
+                        onPress={() => {
+                          impactMedium();
+                          setSelectedFriend(friend);
+                        }}
+                        style={{
+                          backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                          borderWidth: 1,
+                          borderColor: 'rgba(255, 255, 255, 0.05)',
+                          padding: 12,
+                          borderRadius: 16,
+                          alignItems: 'center',
+                          width: 140,
+                          marginStart: 8
+                        }}
+                      >
+                        {friend.profileImage ? (
+                          <Image source={{ uri: friend.profileImage }} className="w-10 h-10 rounded-full mb-2" style={{ borderColor: Colors.secondary, borderWidth: 1 }} />
+                        ) : (
+                          <View className="w-10 h-10 rounded-full bg-secondary/10 items-center justify-center mb-2" style={{ borderColor: Colors.secondary, borderWidth: 1 }}>
+                            <Text className="text-secondary font-bold text-xs">{friend.name.slice(0, 2)}</Text>
+                          </View>
+                        )}
+                        <Text className="text-white text-[11px] font-bold text-center" numberOfLines={1}>{friend.name}</Text>
+                        <Text className="text-secondary text-[8.5px] text-center mt-1 font-assistant" numberOfLines={1}>רוצה לראות: {matchingMovie.split(':')[0]}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
               </BlurView>
             </Animated.View>
           )}
         </View>
       )}
+
+      {/* Radar Sweep Scanning Screen Overlay */}
+      {isRadarScanning && (
+        <Animated.View 
+          entering={FadeIn.duration(300)}
+          exiting={FadeOut.duration(200)}
+          style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(9, 9, 11, 0.85)', zIndex: 200, justifyContent: 'center', alignItems: 'center' }]}
+        >
+          <Animated.View 
+            style={[
+              radarSweepStyle, 
+              {
+                width: 280,
+                height: 280,
+                borderRadius: 140,
+                borderWidth: 2,
+                borderColor: '#FF1464',
+                justifyContent: 'center',
+                alignItems: 'center',
+                overflow: 'hidden'
+              }
+            ]}
+          >
+            <LinearGradient
+              colors={['rgba(255, 20, 100, 0.3)', 'transparent']}
+              start={{ x: 0.5, y: 0.5 }}
+              end={{ x: 0.5, y: 0 }}
+              style={{ width: '100%', height: '100%' }}
+            />
+          </Animated.View>
+          
+          <Text style={{ fontFamily: 'Rubik-Bold', fontSize: 16, color: '#FAFAF7', marginTop: 24, textAlign: 'center' }}>
+            סורק התאמות CineMatch Radar... 📡
+          </Text>
+          <Text style={{ fontFamily: 'Assistant-Regular', fontSize: 12, color: '#A1A1AA', marginTop: 8, textAlign: 'center' }}>
+            מחפש סרטים משותפים עם חברים קרובים
+          </Text>
+        </Animated.View>
+      )}
+
+      {/* Floating CineBeacon Popcorn Pings */}
+      {pings.map(ping => (
+        <FloatingPopcornItem key={ping.id} id={ping.id} onComplete={handlePopcornComplete} />
+      ))}
     </View>
   );
 }
@@ -891,6 +1260,17 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.08)',
     overflow: 'hidden',
     zIndex: 10,
+  },
+  radarFloatCard: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    overflow: 'hidden',
+    zIndex: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
   },
   ghostModeRow: {
     flexDirection: 'row',
