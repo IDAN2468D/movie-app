@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   View, 
   Text, 
@@ -26,16 +26,14 @@ import { router } from 'expo-router';
 import * as Location from 'expo-location';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
+import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 
 import { useSocialStore, IFriendLocation } from '@/store/useSocialStore';
 import { getImageSource } from '@/utils/ImageUtils';
 import { BRANCHES as GLOBAL_BRANCHES } from '@/constants/Branches';
 
-// Native maps disabled due to dependency removal (using simulated radar maps)
-const MapView: any = null;
-const Marker: any = null;
-const PROVIDER_DEFAULT: any = null;
+// Native maps disabled — using Leaflet.js inside WebView instead
 
 const BRANCHES = GLOBAL_BRANCHES.map(b => ({
   id: b.id,
@@ -49,17 +47,159 @@ const BRANCHES = GLOBAL_BRANCHES.map(b => ({
   phone: '*2202'
 }));
 
-const DARK_MAP_STYLE = [
-  { "elementType": "geometry", "stylers": [{ "color": "#121214" }] },
-  { "elementType": "labels.icon", "stylers": [{ "visibility": "off" }] },
-  { "elementType": "labels.text.fill", "stylers": [{ "color": "#757575" }] },
-  { "elementType": "labels.text.stroke", "stylers": [{ "color": "#121214" }] },
-  { "featureType": "administrative", "elementType": "geometry", "stylers": [{ "color": "#3c3c3c" }] },
-  { "featureType": "poi", "elementType": "geometry", "stylers": [{ "color": "#18181b" }] },
-  { "featureType": "road", "elementType": "geometry.fill", "stylers": [{ "color": "#27272a" }] },
-  { "featureType": "road.highway", "elementType": "geometry", "stylers": [{ "color": "#09090b" }] },
-  { "featureType": "water", "elementType": "geometry", "stylers": [{ "color": "#09090b" }] }
-];
+// Generate Leaflet HTML for the dark interactive map
+function generateLeafletHTML(
+  userLat: number,
+  userLng: number,
+  friends: IFriendLocation[]
+): string {
+  // Serialize friend data as JSON to avoid quote escaping issues in HTML
+  const friendsJSON = JSON.stringify(
+    friends.map(f => ({
+      id: f.id,
+      name: f.name,
+      firstName: f.name.split(' ')[0],
+      initials: f.name.slice(0, 2),
+      profileImage: f.profileImage || null,
+      lat: f.coords.latitude,
+      lng: f.coords.longitude,
+    }))
+  );
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body, #map { width: 100%; height: 100%; background: #09090B; }
+    .leaflet-container { background: #09090B !important; }
+    .leaflet-control-attribution { display: none !important; }
+    .leaflet-control-zoom { display: none !important; }
+
+    #err {
+      display: none; position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%); color: #A1A1AA;
+      font-family: sans-serif; font-size: 14px; text-align: center; z-index: 999;
+    }
+
+    .user-marker { display: flex; align-items: center; justify-content: center; }
+    .user-dot-outer {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: rgba(0, 150, 255, 0.2);
+      border: 2px solid rgba(0, 150, 255, 0.4);
+      display: flex; align-items: center; justify-content: center;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    .user-dot-inner {
+      width: 12px; height: 12px; border-radius: 50%;
+      background: #0096FF; border: 2px solid #FFFFFF;
+      box-shadow: 0 0 12px rgba(0, 150, 255, 0.6);
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.4); opacity: 0.6; }
+    }
+
+    .friend-marker { background: none !important; border: none !important; }
+    .marker-wrap {
+      display: flex; flex-direction: column; align-items: center;
+      cursor: pointer; transition: transform 0.2s ease;
+    }
+    .marker-wrap:active { transform: scale(0.92); }
+    .avatar-ring {
+      width: 48px; height: 48px; border-radius: 50%;
+      border: 2.5px solid #FF1464; background: #1E1E21;
+      overflow: hidden; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 16px rgba(255, 20, 100, 0.45), 0 4px 12px rgba(0,0,0,0.5);
+    }
+    .avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .avatar-fallback {
+      color: #FF1464; font-family: sans-serif; font-weight: 700; font-size: 14px;
+      display: flex; align-items: center; justify-content: center;
+      width: 100%; height: 100%;
+    }
+    .name-badge {
+      margin-top: 4px;
+      background: rgba(18, 18, 20, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px; padding: 2px 8px;
+      color: #FAFAF7; font-family: sans-serif; font-size: 10px; font-weight: 600;
+      white-space: nowrap;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div id="err">Unable to load map</div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    try {
+      var map = L.map('map', {
+        center: [31.5, 34.9],
+        zoom: 8,
+        zoomControl: false,
+        attributionControl: false
+      });
+
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        subdomains: 'abcd',
+        maxZoom: 19
+      }).addTo(map);
+
+      var userIcon = L.divIcon({
+        className: 'user-marker',
+        html: '<div class="user-dot-outer"><div class="user-dot-inner"></div></div>',
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
+      });
+      L.marker([${userLat}, ${userLng}], { icon: userIcon, interactive: false }).addTo(map);
+
+      var friends = ${friendsJSON};
+      friends.forEach(function(f) {
+        var imgTag = f.profileImage
+          ? '<img src="' + f.profileImage + '" class="avatar-img" />'
+          : '';
+        var fallback = '<span class="avatar-fallback">' + f.initials + '</span>';
+        var avatarContent = f.profileImage ? imgTag + fallback : fallback;
+
+        var el = L.divIcon({
+          className: 'friend-marker',
+          html: '<div class="marker-wrap">' +
+                  '<div class="avatar-ring">' + avatarContent + '</div>' +
+                  '<div class="name-badge">' + f.firstName + '</div>' +
+                '</div>',
+          iconSize: [56, 70],
+          iconAnchor: [28, 70]
+        });
+
+        L.marker([f.lat, f.lng], { icon: el })
+          .addTo(map)
+          .on('click', function() {
+            if (window.ReactNativeWebView) {
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                action: 'selectFriend',
+                friendId: f.id
+              }));
+            }
+          });
+      });
+      // Auto-fit map to show all markers
+      if (friends.length > 0) {
+        var allPoints = [[${userLat}, ${userLng}]];
+        friends.forEach(function(f) { allPoints.push([f.lat, f.lng]); });
+        map.fitBounds(allPoints, { padding: [40, 40], maxZoom: 13 });
+      }
+    } catch(e) {
+      document.getElementById('err').style.display = 'block';
+      document.getElementById('err').textContent = e.message;
+    }
+  </script>
+</body>
+</html>`;
+}
 
 export default function CinemaMapScreen() {
   const insets = useSafeAreaInsets();
@@ -72,6 +212,29 @@ export default function CinemaMapScreen() {
   const [selectedFriend, setSelectedFriend] = useState<IFriendLocation | null>(null);
 
   const { friendLocations, isGhostMode, fetchFriendLocations, toggleGhostMode } = useSocialStore();
+
+  // Handle messages from the Leaflet WebView (friend marker taps)
+  const handleWebViewMessage = useCallback((event: WebViewMessageEvent) => {
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+      if (data.action === 'selectFriend' && data.friendId) {
+        const friend = friendLocations.find(f => f.id === data.friendId);
+        if (friend) {
+          impactMedium();
+          setSelectedFriend(friend);
+        }
+      }
+    } catch {
+      // Ignore malformed messages
+    }
+  }, [friendLocations, impactMedium]);
+
+  // Memoize the Leaflet HTML to avoid unnecessary WebView reloads
+  const leafletHTML = useMemo(() => {
+    const lat = userLocation ? userLocation.coords.latitude : 32.0853;
+    const lng = userLocation ? userLocation.coords.longitude : 34.7818;
+    return generateLeafletHTML(lat, lng, friendLocations);
+  }, [userLocation, friendLocations]);
 
   // Load User Location for real-time distance calculations
   useEffect(() => {
@@ -243,134 +406,39 @@ export default function CinemaMapScreen() {
   };
 
   const renderMapView = () => {
-    // Failsafe fallback: since react-native-maps was uninstalled, always use simulated map
-    const canUseNativeMap = false;
-
-    if (!canUseNativeMap) {
-      return (
-        <View style={styles.webMapContainer}>
-          {/* Futuristic Radar Grid Background */}
-          <View style={styles.webGridLineY1} />
-          <View style={styles.webGridLineY2} />
-          <View style={styles.webGridLineX1} />
-          <View style={styles.webGridLineX2} />
-
-          <View style={[styles.radarCircle, { width: 140, height: 140 }]} />
-          <View style={[styles.radarCircle, { width: 280, height: 280 }]} />
-          <View style={[styles.radarCircle, { width: 420, height: 420 }]} />
-
-          {/* User Marker Node */}
-          <View style={styles.webUserNode}>
-            <View style={styles.userLocationDotOuter}>
-              <View style={styles.userLocationDotInner} />
-            </View>
-            <Text style={styles.webUserLabel}>המיקום שלך</Text>
-          </View>
-
-          {/* Friends Simulated Coordinates */}
-          {friendLocations.map((friend, idx) => {
-            // Map the coordinates to fixed offsets for a beautiful layout on Web
-            let positionStyles = {};
-            if (friend.id === 'friend_1') {
-              positionStyles = { top: '32%', left: '22%' };
-            } else if (friend.id === 'friend_2') {
-              positionStyles = { top: '40%', right: '28%' };
-            } else {
-              positionStyles = { bottom: '30%', left: '46%' };
-            }
-
-            return (
-              <Pressable
-                key={friend.id}
-                style={[styles.webFriendNode, positionStyles]}
-                onPress={() => {
-                  impactMedium();
-                  setSelectedFriend(friend);
-                }}
-              >
-                <View style={styles.friendMarkerContainer}>
-                  <View style={styles.friendAvatarWrapper}>
-                    {friend.profileImage ? (
-                      <Image source={{ uri: friend.profileImage }} style={styles.friendAvatar} />
-                    ) : (
-                      <Text style={styles.friendAvatarText}>{friend.name.slice(0, 2)}</Text>
-                    )}
-                  </View>
-                  <View style={styles.friendLabelBadge}>
-                    <Text style={styles.friendLabelName} numberOfLines={1}>
-                      {friend.name.split(' ')[0]}
-                    </Text>
-                  </View>
-                </View>
-              </Pressable>
-            );
-          })}
-        </View>
-      );
-    }
-
     return (
-      <MapView
-        style={StyleSheet.absoluteFill}
-        provider={PROVIDER_DEFAULT}
-        customMapStyle={DARK_MAP_STYLE}
-        initialRegion={{
-          latitude: userLocation ? userLocation.coords.latitude : 32.0853,
-          longitude: userLocation ? userLocation.coords.longitude : 34.7818,
-          latitudeDelta: 0.18,
-          longitudeDelta: 0.18,
-        }}
-      >
-        {/* User Location Marker */}
-        {userLocation && (
-          <Marker
-            coordinate={{
-              latitude: userLocation.coords.latitude,
-              longitude: userLocation.coords.longitude,
-            }}
-            title="המיקום שלך"
-          >
-            <View style={styles.userLocationDotOuter}>
-              <View style={styles.userLocationDotInner} />
+      <View style={{ flex: 1, backgroundColor: '#09090B' }}>
+        <WebView
+          style={{ flex: 1, backgroundColor: '#09090B' }}
+          source={{ html: leafletHTML, baseUrl: 'https://unpkg.com' }}
+          onMessage={handleWebViewMessage}
+          originWhitelist={['*']}
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
+          mixedContentMode="always"
+          androidLayerType="hardware"
+          allowsInlineMediaPlayback={true}
+          scrollEnabled={false}
+          bounces={false}
+          overScrollMode="never"
+          showsHorizontalScrollIndicator={false}
+          showsVerticalScrollIndicator={false}
+          cacheEnabled={true}
+          startInLoadingState={true}
+          renderLoading={() => (
+            <View style={styles.mapLoading}>
+              <Text style={styles.mapLoadingText}>טוען מפה...</Text>
             </View>
-          </Marker>
-        )}
-
-        {/* Friends Markers */}
-        {friendLocations.map((friend) => (
-          <Marker
-            key={friend.id}
-            coordinate={{
-              latitude: friend.coords.latitude,
-              longitude: friend.coords.longitude,
-            }}
-            onPress={() => {
-              impactMedium();
-              setSelectedFriend(friend);
-            }}
-          >
-            <View style={styles.friendMarkerContainer}>
-              <View style={styles.friendAvatarWrapper}>
-                {friend.profileImage ? (
-                  <Image source={{ uri: friend.profileImage }} style={styles.friendAvatar} />
-                ) : (
-                  <Text style={styles.friendAvatarText}>{friend.name.slice(0, 2)}</Text>
-                )}
-              </View>
-              <View style={styles.friendLabelBadge}>
-                <Text style={styles.friendLabelName} numberOfLines={1}>{friend.name.split(' ')[0]}</Text>
-              </View>
-            </View>
-          </Marker>
-        ))}
-      </MapView>
+          )}
+        />
+      </View>
     );
   };
 
   return (
     <View style={styles.container}>
       {/* Floating Glass Header */}
-      <View style={[styles.headerContainer, { paddingTop: insets.top + 10 }]}>
+      <View style={[styles.headerContainer, { top: insets.top + 12 }]}>
         <BlurView intensity={35} tint="dark" style={styles.headerBlur}>
           <View style={styles.headerContent}>
             {/* Back Button */}
@@ -454,7 +522,7 @@ export default function CinemaMapScreen() {
           )}
         />
       ) : (
-        <View style={StyleSheet.absoluteFill}>
+        <View style={{ flex: 1 }}>
           {renderMapView()}
 
           {/* Ghost Mode Toggle Panel */}
@@ -798,137 +866,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  // Native Maps Custom Styles
-  userLocationDotOuter: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: 'rgba(0, 150, 255, 0.25)',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 150, 255, 0.4)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  userLocationDotInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#0096FF',
-    borderWidth: 1.5,
-    borderColor: '#FFFFFF',
-  },
-  friendMarkerContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  friendAvatarWrapper: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 2,
-    borderColor: '#FF1464',
-    backgroundColor: '#1E1E21',
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#FF1464',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  friendAvatar: {
-    width: '100%',
-    height: '100%',
-  },
-  friendAvatarText: {
-    color: '#FF1464',
-    fontFamily: 'Rubik-Bold',
-    fontSize: 14,
-  },
-  friendLabelBadge: {
-    backgroundColor: '#121214',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 8,
-    paddingHorizontal: 6,
-    paddingVertical: 1.5,
-    marginTop: 4,
-  },
-  friendLabelName: {
-    color: '#FAFAF7',
-    fontSize: 9,
-    fontFamily: 'Rubik-Medium',
-  },
-
-  // Web Simulated Map Styles
-  webMapContainer: {
-    ...StyleSheet.absoluteFill,
+  // Map loading state
+  mapLoading: {
+    ...StyleSheet.absoluteFill as object,
     backgroundColor: '#09090B',
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
   },
-  webGridLineY1: {
-    position: 'absolute',
-    left: '33%',
-    top: 0,
-    bottom: 0,
-    width: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
-  },
-  webGridLineY2: {
-    position: 'absolute',
-    left: '66%',
-    top: 0,
-    bottom: 0,
-    width: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
-  },
-  webGridLineX1: {
-    position: 'absolute',
-    top: '33%',
-    left: 0,
-    right: 0,
-    height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
-  },
-  webGridLineX2: {
-    position: 'absolute',
-    top: '66%',
-    left: 0,
-    right: 0,
-    height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
-  },
-  radarCircle: {
-    position: 'absolute',
-    borderRadius: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 20, 100, 0.03)',
-  },
-  webUserNode: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 2,
-  },
-  webUserLabel: {
-    color: '#0096FF',
-    fontSize: 9,
+  mapLoadingText: {
+    color: '#A1A1AA',
+    fontSize: 13,
     fontFamily: 'Rubik-Medium',
-    marginTop: 4,
-    backgroundColor: '#09090B',
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: 4,
-    borderWidth: 0.5,
-    borderColor: 'rgba(0, 150, 255, 0.2)',
-  },
-  webFriendNode: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 3,
+    textAlign: 'center',
+    writingDirection: 'rtl',
   },
 
   // Floating Ghost Mode Panel

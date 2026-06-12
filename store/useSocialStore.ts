@@ -100,14 +100,9 @@ const MOCK_FRIEND_LOCATIONS: IFriendLocation[] = [
     id: 'friend_1',
     name: 'רוני כהן',
     profileImage: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop',
-    coords: {
-      latitude: 32.1481,
-      longitude: 34.7997
-    },
+    coords: { latitude: 32.0853, longitude: 34.7818 },
     activeMovie: {
-      movieId: 933268,
-      title: 'גלדיאטור 2',
-      posterPath: '/2cxhvwyEwRlysAmRH4iodkvo0z5.jpg',
+      movieId: 933268, title: 'גלדיאטור 2', posterPath: '/2cxhvwyEwRlysAmRH4iodkvo0z5.jpg',
       branchName: 'סינמה סיטי גלילות',
       showtimeStart: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
       showtimeEnd: new Date(Date.now() + 90 * 60 * 1000).toISOString()
@@ -117,15 +112,10 @@ const MOCK_FRIEND_LOCATIONS: IFriendLocation[] = [
     id: 'friend_2',
     name: 'איתי לוי',
     profileImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop',
-    coords: {
-      latitude: 32.0994,
-      longitude: 34.8258
-    },
+    coords: { latitude: 31.7683, longitude: 35.2137 },
     activeMovie: {
-      movieId: 533535,
-      title: 'דדפול & וולברין',
-      posterPath: '/en971MEXui9diirXlogOrPKmsEn.jpg',
-      branchName: 'יס פלאנט איילון',
+      movieId: 533535, title: 'דדפול & וולברין', posterPath: '/en971MEXui9diirXlogOrPKmsEn.jpg',
+      branchName: 'יס פלאנט ירושלים',
       showtimeStart: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
       showtimeEnd: new Date(Date.now() + 105 * 60 * 1000).toISOString()
     }
@@ -134,17 +124,216 @@ const MOCK_FRIEND_LOCATIONS: IFriendLocation[] = [
     id: 'friend_3',
     name: 'מיה גבאי',
     profileImage: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200&auto=format&fit=crop',
-    coords: {
-      latitude: 32.0722,
-      longitude: 34.7749
-    },
+    coords: { latitude: 32.7940, longitude: 34.9896 },
     activeMovie: {
-      movieId: 1022789,
-      title: 'מואנה 2',
-      posterPath: '/4YZpsylmjHbqeWzjKpUEF8gcLNW.jpg',
-      branchName: 'סינמה סיטי דיזנגוף',
+      movieId: 1022789, title: 'מואנה 2', posterPath: '/4YZpsylmjHbqeWzjKpUEF8gcLNW.jpg',
+      branchName: 'סינמה סיטי חיפה',
       showtimeStart: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
       showtimeEnd: new Date(Date.now() + 40 * 60 * 1000).toISOString()
+    }
+  },
+  {
+    id: 'friend_4',
+    name: 'דניאל אביב',
+    profileImage: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200&auto=format&fit=crop',
+    coords: { latitude: 31.2530, longitude: 34.7915 },
+    activeMovie: {
+      movieId: 693134, title: 'דיון: חלק שני', posterPath: '/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg',
+      branchName: 'סינמה סיטי באר שבע',
+      showtimeStart: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
+      showtimeEnd: new Date(Date.now() + 75 * 60 * 1000).toISOString()
+    }
+  },
+  {
+    id: 'friend_5',
+    name: 'נועה שלום',
+    profileImage: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=200&auto=format&fit=crop',
+    coords: { latitude: 29.5577, longitude: 34.9519 },
+    activeMovie: {
+      movieId: 823464, title: 'גודזילה x קונג', posterPath: '/z1p34vh7dEOnLDmyCrlUVLuoDzd.jpg',
+      branchName: 'IMAX אילת',
+      showtimeStart: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
+      showtimeEnd: new Date(Date.now() + 100 * 60 * 1000).toISOString()
+    }
+  },
+  {
+    id: 'friend_6',
+    name: 'יובל מזרחי',
+    profileImage: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200&auto=format&fit=crop',
+    coords: { latitude: 32.3215, longitude: 34.8532 },
+    activeMovie: {
+      movieId: 933268, title: 'גלדיאטור 2', posterPath: '/2cxhvwyEwRlysAmRH4iodkvo0z5.jpg',
+      branchName: 'לב נתניה',
+      showtimeStart: new Date(Date.now() - 50 * 60 * 1000).toISOString(),
+      showtimeEnd: new Date(Date.now() + 70 * 60 * 1000).toISOString()
+    }
+  },
+  {
+    id: 'friend_7',
+    name: 'שירה ברק',
+    profileImage: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=200&auto=format&fit=crop',
+    coords: { latitude: 32.1629, longitude: 34.8447 },
+    activeMovie: {
+      movieId: 1022789, title: 'מואנה 2', posterPath: '/4YZpsylmjHbqeWzjKpUEF8gcLNW.jpg',
+      branchName: 'יס פלאנט הרצליה',
+      showtimeStart: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+      showtimeEnd: new Date(Date.now() + 110 * 60 * 1000).toISOString()
+    }
+  },
+  {
+    id: 'friend_8',
+    name: 'עומר דהן',
+    profileImage: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=200&auto=format&fit=crop',
+    coords: { latitude: 31.8014, longitude: 34.6435 },
+    activeMovie: {
+      movieId: 533535, title: 'דדפול & וולברין', posterPath: '/en971MEXui9diirXlogOrPKmsEn.jpg',
+      branchName: 'סינמה סיטי אשדוד',
+      showtimeStart: new Date(Date.now() - 35 * 60 * 1000).toISOString(),
+      showtimeEnd: new Date(Date.now() + 85 * 60 * 1000).toISOString()
+    }
+  },
+  {
+    id: 'friend_9',
+    name: 'ליאור פרץ',
+    profileImage: 'https://images.unsplash.com/photo-1519345182560-3f2917c472ef?q=80&w=200&auto=format&fit=crop',
+    coords: { latitude: 31.9635, longitude: 34.8046 },
+    activeMovie: {
+      movieId: 693134, title: 'דיון: חלק שני', posterPath: '/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg',
+      branchName: 'יס פלאנט ראשון לציון',
+      showtimeStart: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
+      showtimeEnd: new Date(Date.now() + 95 * 60 * 1000).toISOString()
+    }
+  },
+  {
+    id: 'friend_10',
+    name: 'תמר אלון',
+    profileImage: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=200&auto=format&fit=crop',
+    coords: { latitude: 32.0868, longitude: 34.8876 },
+    activeMovie: {
+      movieId: 823464, title: 'גודזילה x קונג', posterPath: '/z1p34vh7dEOnLDmyCrlUVLuoDzd.jpg',
+      branchName: 'סינמה סיטי פתח תקווה',
+      showtimeStart: new Date(Date.now() - 40 * 60 * 1000).toISOString(),
+      showtimeEnd: new Date(Date.now() + 80 * 60 * 1000).toISOString()
+    }
+  },
+  {
+    id: 'friend_11',
+    name: 'אדם שפירא',
+    profileImage: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=200&auto=format&fit=crop',
+    coords: { latitude: 32.1750, longitude: 34.9074 },
+    activeMovie: {
+      movieId: 933268, title: 'גלדיאטור 2', posterPath: '/2cxhvwyEwRlysAmRH4iodkvo0z5.jpg',
+      branchName: 'לב כפר סבא',
+      showtimeStart: new Date(Date.now() - 55 * 60 * 1000).toISOString(),
+      showtimeEnd: new Date(Date.now() + 65 * 60 * 1000).toISOString()
+    }
+  },
+  {
+    id: 'friend_12',
+    name: 'הילה רוזן',
+    profileImage: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?q=80&w=200&auto=format&fit=crop',
+    coords: { latitude: 32.1841, longitude: 34.8714 },
+    activeMovie: {
+      movieId: 1022789, title: 'מואנה 2', posterPath: '/4YZpsylmjHbqeWzjKpUEF8gcLNW.jpg',
+      branchName: 'רב חן רעננה',
+      showtimeStart: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+      showtimeEnd: new Date(Date.now() + 115 * 60 * 1000).toISOString()
+    }
+  },
+  {
+    id: 'friend_13',
+    name: 'סהר חדד',
+    profileImage: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=200&auto=format&fit=crop',
+    coords: { latitude: 32.6996, longitude: 35.3035 },
+    activeMovie: {
+      movieId: 533535, title: 'דדפול & וולברין', posterPath: '/en971MEXui9diirXlogOrPKmsEn.jpg',
+      branchName: 'סינמה סיטי נצרת',
+      showtimeStart: new Date(Date.now() - 70 * 60 * 1000).toISOString(),
+      showtimeEnd: new Date(Date.now() + 50 * 60 * 1000).toISOString()
+    }
+  },
+  {
+    id: 'friend_14',
+    name: 'עדן ביטון',
+    profileImage: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=200&auto=format&fit=crop',
+    coords: { latitude: 32.7922, longitude: 35.5312 },
+    activeMovie: {
+      movieId: 693134, title: 'דיון: חלק שני', posterPath: '/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg',
+      branchName: 'לב טבריה',
+      showtimeStart: new Date(Date.now() - 80 * 60 * 1000).toISOString(),
+      showtimeEnd: new Date(Date.now() + 40 * 60 * 1000).toISOString()
+    }
+  },
+  {
+    id: 'friend_15',
+    name: 'גל עמרני',
+    profileImage: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?q=80&w=200&auto=format&fit=crop',
+    coords: { latitude: 31.8928, longitude: 34.8113 },
+    activeMovie: {
+      movieId: 823464, title: 'גודזילה x קונג', posterPath: '/z1p34vh7dEOnLDmyCrlUVLuoDzd.jpg',
+      branchName: 'יס פלאנט רחובות',
+      showtimeStart: new Date(Date.now() - 22 * 60 * 1000).toISOString(),
+      showtimeEnd: new Date(Date.now() + 98 * 60 * 1000).toISOString()
+    }
+  },
+  {
+    id: 'friend_16',
+    name: 'אריאל גולן',
+    profileImage: 'https://images.unsplash.com/photo-1463453091185-61582044d556?q=80&w=200&auto=format&fit=crop',
+    coords: { latitude: 31.8969, longitude: 35.0104 },
+    activeMovie: {
+      movieId: 933268, title: 'גלדיאטור 2', posterPath: '/2cxhvwyEwRlysAmRH4iodkvo0z5.jpg',
+      branchName: 'סינמה סיטי מודיעין',
+      showtimeStart: new Date(Date.now() - 18 * 60 * 1000).toISOString(),
+      showtimeEnd: new Date(Date.now() + 102 * 60 * 1000).toISOString()
+    }
+  },
+  {
+    id: 'friend_17',
+    name: 'רונית שמש',
+    profileImage: 'https://images.unsplash.com/photo-1502323777036-f29e3972d82f?q=80&w=200&auto=format&fit=crop',
+    coords: { latitude: 32.0231, longitude: 34.7513 },
+    activeMovie: {
+      movieId: 1022789, title: 'מואנה 2', posterPath: '/4YZpsylmjHbqeWzjKpUEF8gcLNW.jpg',
+      branchName: 'לב בת ים',
+      showtimeStart: new Date(Date.now() - 42 * 60 * 1000).toISOString(),
+      showtimeEnd: new Date(Date.now() + 78 * 60 * 1000).toISOString()
+    }
+  },
+  {
+    id: 'friend_18',
+    name: 'אלעד נגר',
+    profileImage: 'https://images.unsplash.com/photo-1504257432389-52343af06ae3?q=80&w=200&auto=format&fit=crop',
+    coords: { latitude: 32.0105, longitude: 34.7726 },
+    activeMovie: {
+      movieId: 533535, title: 'דדפול & וולברין', posterPath: '/en971MEXui9diirXlogOrPKmsEn.jpg',
+      branchName: 'סינמה סיטי חולון',
+      showtimeStart: new Date(Date.now() - 38 * 60 * 1000).toISOString(),
+      showtimeEnd: new Date(Date.now() + 82 * 60 * 1000).toISOString()
+    }
+  },
+  {
+    id: 'friend_19',
+    name: 'יעל קדוש',
+    profileImage: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?q=80&w=200&auto=format&fit=crop',
+    coords: { latitude: 32.0686, longitude: 34.8248 },
+    activeMovie: {
+      movieId: 693134, title: 'דיון: חלק שני', posterPath: '/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg',
+      branchName: 'יס פלאנט רמת גן',
+      showtimeStart: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
+      showtimeEnd: new Date(Date.now() + 108 * 60 * 1000).toISOString()
+    }
+  },
+  {
+    id: 'friend_20',
+    name: 'עידו כרמל',
+    profileImage: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=200&auto=format&fit=crop',
+    coords: { latitude: 33.2075, longitude: 35.5697 },
+    activeMovie: {
+      movieId: 823464, title: 'גודזילה x קונג', posterPath: '/z1p34vh7dEOnLDmyCrlUVLuoDzd.jpg',
+      branchName: 'לב קריית שמונה',
+      showtimeStart: new Date(Date.now() - 65 * 60 * 1000).toISOString(),
+      showtimeEnd: new Date(Date.now() + 55 * 60 * 1000).toISOString()
     }
   }
 ];
