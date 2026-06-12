@@ -21,7 +21,8 @@ import {
   ChevronLeft,
   Sparkles,
   X,
-  EyeOff
+  EyeOff,
+  Radar
 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import * as Location from 'expo-location';
@@ -293,7 +294,7 @@ export default function CinemaMapScreen() {
 
   const radarRotation = useSharedValue(0);
 
-  const { friends, friendLocations, isGhostMode, fetchFriendLocations, toggleGhostMode } = useSocialStore();
+  const { friends, friendLocations, isGhostMode, fetchFriends, fetchFriendLocations, toggleGhostMode } = useSocialStore();
   const watchlistMovies = useWatchlistStore(state => state.movies);
 
   // Handle messages from the Leaflet WebView (friend marker taps)
@@ -341,8 +342,9 @@ export default function CinemaMapScreen() {
   useEffect(() => {
     if (activeTab === 'friends') {
       fetchFriendLocations();
+      fetchFriends();
     }
-  }, [activeTab, fetchFriendLocations]);
+  }, [activeTab, fetchFriendLocations, fetchFriends]);
 
   // Animate radar sweep rotation
   useEffect(() => {
@@ -731,13 +733,18 @@ export default function CinemaMapScreen() {
           <BlurView intensity={25} tint="dark" style={[styles.radarFloatCard, { top: insets.top + 215 }]}>
             <Pressable 
               onPress={triggerRadarScan}
-              className="flex-row items-center justify-between px-4 py-3"
-              style={{ flexDirection: 'row-reverse' }}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+              }}
             >
-              <View className="flex-row-reverse items-center gap-2">
-                <Sparkles size={16} color={Colors.primary} />
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Radar size={16} color={Colors.primary} style={{ marginEnd: 8 }} />
                 <Text style={{ fontFamily: 'Assistant-SemiBold', fontSize: 12, color: 'white', writingDirection: 'rtl', textAlign: 'right' }}>
-                  סרוק התאמות סרטים (CineMatch Radar) 📡
+                  סרוק התאמות סרטים (CineMatch Radar)
                 </Text>
               </View>
               <ChevronLeft size={16} color="white" />

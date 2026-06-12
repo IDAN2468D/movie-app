@@ -356,7 +356,7 @@ export const useSocialStore = create<SocialState>((set, get) => ({
         const response = await safeFetch(`${API_BASE_URL}/users/friends`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
-        if (response.success && response.data) {
+        if (response.success && response.data && response.data.length > 0) {
           set({ friends: response.data, isLoading: false });
           return;
         }
@@ -521,7 +521,7 @@ export const useSocialStore = create<SocialState>((set, get) => ({
         const response = await safeFetch(`${API_BASE_URL}/users/friend-locations`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
-        if (response.success && response.data) {
+        if (response.success && response.data && response.data.length > 0) {
           set({ friendLocations: response.data, isLoading: false });
           return;
         }
