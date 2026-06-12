@@ -1,12 +1,13 @@
-/* eslint-disable @typescript-eslint/no-unused-vars, react-hooks/exhaustive-deps */
-import React, { useEffect } from 'react';
-import { View, Text, ScrollView, Pressable, Image, Dimensions, I18nManager } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, ScrollView, Pressable, Image, Dimensions, I18nManager, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import { ChevronRight, ChevronLeft, ShoppingCart, Plus, Minus, Trash2, Grip } from 'lucide-react-native';
+import { ChevronRight, ChevronLeft, ShoppingCart, Plus, Minus, Trash2, Grip, Sparkles } from 'lucide-react-native';
 import { Colors } from '@/constants/Theme';
 import { SnackItem, useSnacksStore } from '@/store/useSnacksStore';
+import { useBookingStore } from '@/store/useBookingStore';
+import { AIService } from '@/services/AIService';
 import Animated, { 
   FadeInDown, 
   useSharedValue, 
@@ -160,6 +161,40 @@ export default function SnacksScreen() {
   useEffect(() => {
     fetchSnacks();
   }, []);
+
+  const movieTitle = useBookingStore(state => state.selectedMovieTitle);
+  const showtime = useBookingStore(state => state.selectedShowtime);
+
+  const [recIds, setRecIds] = useState<string[]>([]);
+  const [isRecLoading, setIsRecLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      if (!movieTitle) return;
+      setIsRecLoading(true);
+      try {
+        const ids = await AIService.getSnackRecommendations(
+          movieTitle,
+          showtime?.format,
+          showtime?.time
+        );
+        setRecIds(ids);
+      } catch (err) {
+        console.error('[SnacksScreen] Failed to fetch AI recommendations:', err);
+      } finally {
+        setIsRecLoading(false);
+      }
+    };
+    fetchRecommendations();
+  }, [movieTitle, showtime]);
+
+  const recommendedSnacks = React.useMemo(() => {
+    return recIds.map(id => allSnacks.find(s => s.id === id)).filter(Boolean) as SnackItem[];
+  }, [recIds, allSnacks]);
+
+  const totalRecPrice = React.useMemo(() => {
+    return recommendedSnacks.reduce((sum, s) => sum + s.price, 0);
+  }, [recommendedSnacks]);
 
   // Flatten the cart into an array of individual items to render on the tray
   const trayItems = React.useMemo(() => {
@@ -366,6 +401,73 @@ export default function SnacksScreen() {
           })}
         </ScrollView>
       </View>
+
+      {/* CineMeal AI Recommendation Card */}
+      {movieTitle && (isRecLoading || recommendedSnacks.length > 0) && (
+        <Animated.View 
+          entering={FadeInDown.duration(400)}
+          className="mx-6 mt-4 rounded-3xl border border-white/10 overflow-hidden bg-surfaceLight/25"
+        >
+          <BlurView intensity={20} tint="dark" className="p-4">
+            <View className="flex-row-reverse items-center justify-between mb-3">
+              <View className="flex-row-reverse items-center gap-2">
+                <Sparkles size={16} color={Colors.secondary} />
+                <Text style={{ fontFamily: 'Rubik-Bold', fontSize: 13, color: Colors.secondary, writingDirection: 'rtl', textAlign: 'right' }}>
+                  מבצע חם: CineMeal AI Recommendations 🍿
+                </Text>
+              </View>
+              {isRecLoading && <ActivityIndicator size="small" color={Colors.secondary} />}
+            </View>
+
+            {isRecLoading ? (
+              <Text className="text-white/50 text-[12px] font-assistant text-right" style={{ writingDirection: 'rtl' }}>
+                מנתח את העדפות שלך ומתאים נשנושים...
+              </Text>
+            ) : (
+              <View className="flex-col gap-3">
+                <Text className="text-white/80 text-[12px] font-assistant text-right leading-relaxed" style={{ writingDirection: 'rtl' }}>
+                  התאמנו במיוחד עבורך לצפייה ב-<Text style={{ fontFamily: 'Rubik-Medium', color: 'white' }}>{movieTitle}</Text>:
+                </Text>
+                
+                <View className="flex-row-reverse items-center justify-between">
+                  {/* Snack List Row */}
+                  <View className="flex-row-reverse gap-3 items-center">
+                    {recommendedSnacks.map(snack => (
+                      <View key={snack.id} className="flex-row-reverse items-center gap-1.5 bg-black/40 px-2.5 py-1.5 rounded-xl border border-white/5">
+                        {snack.image && <Image source={snack.image} className="w-5 h-5" resizeMode="contain" />}
+                        <Text className="text-white text-[10px] font-bold font-assistant">{snack.name}</Text>
+                      </View>
+                    ))}
+                  </View>
+
+                  {/* Add All Button */}
+                  <Pressable
+                    onPress={() => {
+                      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                      recommendedSnacks.forEach(snack => {
+                        addItem(snack.id);
+                      });
+                      triggerTraySplash();
+                    }}
+                    className="rounded-xl overflow-hidden border border-secondary/30 active:scale-95 shadow-sm shadow-secondary/20"
+                  >
+                    <LinearGradient
+                      colors={[Colors.secondary, '#B8CC00']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      className="px-3.5 py-2"
+                    >
+                      <Text className="font-bold text-background text-[11px] font-assistant">
+                        הוסף הכל • ₪{totalRecPrice}
+                      </Text>
+                    </LinearGradient>
+                  </Pressable>
+                </View>
+              </View>
+            )}
+          </BlurView>
+        </Animated.View>
+      )}
 
       {/* Snacks Grid */}
       <ScrollView 

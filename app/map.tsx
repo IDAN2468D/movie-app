@@ -1,21 +1,21 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  FlatList, 
-  Pressable, 
-  Image, 
-  Linking, 
-  Alert, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  Pressable,
+  Image,
+  Linking,
+  Alert,
   I18nManager
 } from 'react-native';
 import { useHaptics } from '@/lib/useHaptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { 
-  MapPin, 
-  Navigation, 
-  Phone, 
+import {
+  MapPin,
+  Navigation,
+  Phone,
   ChevronRight,
   ChevronLeft,
   Sparkles,
@@ -266,11 +266,11 @@ export default function CinemaMapScreen() {
     const R = 6371; // Earth radius in km
     const dLat = ((lat - userLocation.coords.latitude) * Math.PI) / 180;
     const dLon = ((lng - userLocation.coords.longitude) * Math.PI) / 180;
-    const a = 
-      0.5 - 
-      Math.cos(dLat) / 2 + 
-      (Math.cos((userLocation.coords.latitude * Math.PI) / 180) * 
-        Math.cos((lat * Math.PI) / 180) * 
+    const a =
+      0.5 -
+      Math.cos(dLat) / 2 +
+      (Math.cos((userLocation.coords.latitude * Math.PI) / 180) *
+        Math.cos((lat * Math.PI) / 180) *
         (1 - Math.cos(dLon))) / 2;
 
     const distance = R * 2 * Math.asin(Math.sqrt(a));
@@ -280,7 +280,7 @@ export default function CinemaMapScreen() {
   const handleNavigate = (branch: any) => {
     const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${branch.lat},${branch.lng}`;
     const wazeUrl = `waze://?ll=${branch.lat},${branch.lng}&navigate=yes`;
-    
+
     Linking.canOpenURL(wazeUrl)
       .then(supported => {
         if (supported) {
@@ -313,7 +313,7 @@ export default function CinemaMapScreen() {
   const renderBranchCard = ({ item }: { item: typeof BRANCHES[0] }) => {
     const isSelected = selectedBranch?.id === item.id;
     return (
-      <View 
+      <View
         style={[
           styles.listCardFrame,
           {
@@ -322,7 +322,7 @@ export default function CinemaMapScreen() {
           }
         ]}
       >
-        <Pressable 
+        <Pressable
           onPress={() => {
             selection();
             setSelectedBranch(item);
@@ -339,7 +339,7 @@ export default function CinemaMapScreen() {
             <Text style={styles.cardTitle} numberOfLines={1}>
               {item.name}
             </Text>
-            
+
             <View style={styles.cardSubRow}>
               <MapPin size={11} color={isSelected ? '#FF1464' : '#A1A1AA'} style={{ marginEnd: 4 }} />
               <Text style={styles.cardAddress} numberOfLines={1}>
@@ -350,11 +350,11 @@ export default function CinemaMapScreen() {
             {/* Badges */}
             <View style={styles.badgesContainer}>
               {item.features?.slice(0, 3).map((feat, idx) => (
-                <View 
-                  key={idx} 
+                <View
+                  key={idx}
                   style={[
-                    styles.featureBadge, 
-                    { 
+                    styles.featureBadge,
+                    {
                       backgroundColor: isSelected ? 'rgba(255, 20, 100, 0.12)' : 'rgba(255, 255, 255, 0.04)',
                       borderColor: isSelected ? 'rgba(255, 20, 100, 0.25)' : 'rgba(255, 255, 255, 0.06)'
                     }
@@ -380,7 +380,7 @@ export default function CinemaMapScreen() {
 
           {/* Buttons */}
           <View style={styles.buttonsWrap}>
-            <Pressable 
+            <Pressable
               onPress={() => {
                 impactMedium();
                 handleNavigate(item);
@@ -390,7 +390,7 @@ export default function CinemaMapScreen() {
               <Navigation size={14} color="white" />
             </Pressable>
 
-            <Pressable 
+            <Pressable
               onPress={() => {
                 impactLight();
                 handleCall(item.phone);
@@ -442,7 +442,7 @@ export default function CinemaMapScreen() {
         <BlurView intensity={35} tint="dark" style={styles.headerBlur}>
           <View style={styles.headerContent}>
             {/* Back Button */}
-            <Pressable 
+            <Pressable
               onPress={() => {
                 impactLight();
                 router.back();
@@ -451,7 +451,7 @@ export default function CinemaMapScreen() {
             >
               {I18nManager.isRTL ? <ChevronRight size={20} color="white" /> : <ChevronLeft size={20} color="white" />}
             </Pressable>
-            
+
             {/* Header title block */}
             <View style={styles.titleContainer}>
               <Text style={styles.brandSubtitle}>CINEBOOK SOCIAL</Text>
@@ -459,14 +459,14 @@ export default function CinemaMapScreen() {
                 {activeTab === 'branches' ? 'גילוי סניפים' : 'חברים בסרט 🍿'}
               </Text>
             </View>
-            
+
             {/* Toggle Placeholder (Empty view to balance row) */}
             <View style={styles.emptyTogglePod} />
           </View>
-          
+
           {/* Tabs Container */}
           <View style={styles.tabContainer}>
-            <Pressable 
+            <Pressable
               style={[styles.tabButton, activeTab === 'branches' && styles.activeTabButton]}
               onPress={() => {
                 impactLight();
@@ -478,7 +478,7 @@ export default function CinemaMapScreen() {
                 רשימת סניפים
               </Text>
             </Pressable>
-            <Pressable 
+            <Pressable
               style={[styles.tabButton, activeTab === 'friends' && styles.activeTabButton]}
               onPress={() => {
                 impactLight();
@@ -491,11 +491,11 @@ export default function CinemaMapScreen() {
             </Pressable>
           </View>
 
-          <LinearGradient 
-            colors={['#FF1464', '#E5FF00']} 
-            start={{ x: 0, y: 0 }} 
-            end={{ x: 1, y: 0 }} 
-            style={styles.dividerLine} 
+          <LinearGradient
+            colors={['#FF1464', '#E5FF00']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.dividerLine}
           />
         </BlurView>
       </View>
@@ -544,14 +544,14 @@ export default function CinemaMapScreen() {
 
           {/* Friend Details Card */}
           {selectedFriend && (
-            <Animated.View 
-              entering={FadeInDown.springify().damping(15)} 
+            <Animated.View
+              entering={FadeInDown.springify().damping(15)}
               exiting={FadeOutDown}
               style={[styles.friendDetailsFloatingCard, { bottom: bottomOffset }]}
             >
               <BlurView intensity={35} tint="dark" style={styles.friendDetailsBlur}>
-                <Pressable 
-                  style={styles.closeCardBtn} 
+                <Pressable
+                  style={styles.closeCardBtn}
                   onPress={() => {
                     impactLight();
                     setSelectedFriend(null);
@@ -559,7 +559,7 @@ export default function CinemaMapScreen() {
                 >
                   <X size={16} color="white" />
                 </Pressable>
-                
+
                 <View style={styles.friendDetailsHeader}>
                   <View style={styles.friendProfileSummary}>
                     <View style={styles.friendDetailsAvatarRing}>
@@ -581,9 +581,9 @@ export default function CinemaMapScreen() {
                 </View>
 
                 <View style={styles.movieDetailsRow}>
-                  <Image 
-                    source={getImageSource(selectedFriend.activeMovie.posterPath, 'poster', 'small')} 
-                    style={styles.movieDetailsPoster} 
+                  <Image
+                    source={getImageSource(selectedFriend.activeMovie.posterPath, 'poster', 'small')}
+                    style={styles.movieDetailsPoster}
                     resizeMode="cover"
                   />
                   <View style={styles.movieDetailsMeta}>
@@ -593,7 +593,7 @@ export default function CinemaMapScreen() {
                   </View>
                 </View>
 
-                <Pressable 
+                <Pressable
                   style={styles.navigateFriendBtn}
                   onPress={() => {
                     impactMedium();
@@ -605,10 +605,10 @@ export default function CinemaMapScreen() {
                     handleNavigate(branch);
                   }}
                 >
-                  <LinearGradient 
-                    colors={['#FF1464', '#9B1B30']} 
-                    start={{ x: 0, y: 0 }} 
-                    end={{ x: 1, y: 0 }} 
+                  <LinearGradient
+                    colors={['#FF1464', '#9B1B30']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
                     style={styles.navBtnGradient}
                   >
                     <Navigation size={14} color="white" style={{ marginEnd: 6 }} />
@@ -691,7 +691,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     opacity: 0.8,
   },
-  
+
   // Segmented Tabs
   tabContainer: {
     flexDirection: 'row',
@@ -723,7 +723,7 @@ const styles = StyleSheet.create({
   activeTabText: {
     color: '#FF1464',
   },
-  
+
   // List view styles
   listContainer: {
     paddingHorizontal: 16,

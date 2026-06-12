@@ -970,4 +970,91 @@ ${watchlistInfo}
       moodNarrative: 'חוויה קולנועית סוחפת ומרגשת',
     };
   }
+
+  // ─── FEATURE 5: AI Snack Recommendations (CineMeal) ─────────────────────────
+  
+  /**
+   * Generates AI snack recommendations based on movie details and showtime.
+   * Returns a list of snack IDs.
+   */
+  static async getSnackRecommendations(
+    movieTitle: string,
+    showtimeFormat?: string,
+    timeOfDay?: string
+  ): Promise<string[]> {
+    const model = this.getModel();
+    if (!model) {
+      console.log("[AIService] Gemini API key not present. Using offline snack recommendation simulation...");
+      return this.simulateSnackRecommendations(movieTitle, timeOfDay);
+    }
+
+    try {
+      return await this.withRetry(async () => {
+        const prompt = `אתה סייען קולנוע חכם הממליץ על שילובי נשנושים אידיאליים מהמזנון.
+סרט יעד: "${movieTitle}"
+סוג הקרנה: "${showtimeFormat || 'רגיל'}"
+שעה: "${timeOfDay || '19:30'}"
+
+הנשנושים הזמינים במזנון שלנו הם:
+- "p1" (פופקורן XL)
+- "p2" (פופקורן קרמל)
+- "d1" (קולה קלאסי)
+- "d2" (סודה תפוזים)
+- "c1" (קומבו מגה)
+- "c2" (קומבו דייט)
+- "cn1" (סוכריות גומי)
+
+בהתבסס על ז'אנר הסרט הצפוי משמו, שעת ההקרנה וסוג האולם, בחר 2-3 פריטים המשלימים זה את זה בצורה הטובה ביותר (למשל: סרט משפחתי בצהריים יקבל פופקורן קרמל וסודה תפוזים; סרט מתח/דרמה בלילה יקבל קומבו מגה או פופקורן מלוח וקולה קלאסי).
+
+החזר אך ורק מערך JSON המכיל את מזהי הפריטים הנבחרים בלבד (למשל: ["p1", "d1"]). אל תוסיף שום הערה, הסבר או תווים נוספים מחוץ ל-JSON.`;
+
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+        
+        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(jsonStr);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
+        return this.simulateSnackRecommendations(movieTitle, timeOfDay);
+      });
+    } catch (error) {
+      console.error("AIService Error (Snacks Recommendation):", error);
+      return this.simulateSnackRecommendations(movieTitle, timeOfDay);
+    }
+  }
+
+  /**
+   * Offline simulation fallback for snack recommendations
+   */
+  private static simulateSnackRecommendations(movieTitle: string, timeOfDay?: string): string[] {
+    const titleLower = movieTitle.toLowerCase();
+    const isLateNight = timeOfDay ? parseInt(timeOfDay.split(':')[0], 10) >= 21 : false;
+
+    // Kids / Family movies
+    if (
+      titleLower.includes('moana') || 
+      titleLower.includes('מואנה') || 
+      titleLower.includes('משפחה') || 
+      titleLower.includes('toy story') ||
+      titleLower.includes('מלך האריות')
+    ) {
+      return ['p2', 'd2', 'cn1']; // פופקורן קרמל + סודה תפוזים + סוכריות גומי
+    }
+
+    // Romance / Date night
+    if (titleLower.includes('אהבה') || titleLower.includes('רומנט') || titleLower.includes('date') || titleLower.includes('love')) {
+      return ['c2']; // קומבו דייט
+    }
+
+    // Late night action/horror/thriller
+    if (isLateNight || titleLower.includes('גלדיאטור') || titleLower.includes('gladiator') || titleLower.includes('אימה') || titleLower.includes('מתח')) {
+      return ['p1', 'd1']; // פופקורן XL + קולה קלאסי
+    }
+
+    // Default recommendation
+    return ['p1', 'd1', 'cn1']; // פופקורן XL + קולה קלאסי + סוכריות גומי
+  }
 }
+
