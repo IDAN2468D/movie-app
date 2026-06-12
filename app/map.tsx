@@ -529,7 +529,7 @@ export default function CinemaMapScreen() {
           <BlurView intensity={25} tint="dark" style={[styles.ghostModeFloatCard, { top: insets.top + 150 }]}>
             <View style={styles.ghostModeRow}>
               <EyeOff size={16} color={isGhostMode ? '#E5FF00' : '#A1A1AA'} style={{ marginEnd: 8 }} />
-              <Text style={styles.ghostModeLabel}>מצב רוח (הסתר אותי)</Text>
+              <Text style={styles.ghostModeLabel}>מצב רפאים (הסתר אותי)</Text>
               <Pressable
                 style={[styles.ghostModeSwitch, isGhostMode ? styles.ghostModeSwitchActive : styles.ghostModeSwitchInactive]}
                 onPress={() => {
