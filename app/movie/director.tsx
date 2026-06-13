@@ -122,6 +122,11 @@ export default function CineDirectorScreen() {
       );
 
       if (clientResult && clientResult.scenes && clientResult.scenes.length === 3) {
+        console.log('✨ Client-side Gemini storyboard generated successfully with prompts:', clientResult.scenes.map((s: any) => ({
+          sceneNumber: s.sceneNumber,
+          visualPrompt: s.visualPrompt,
+          visualPromptEnglish: s.visualPromptEnglish
+        })));
         setPitchResult({
           id: 'client-gen-' + Date.now(),
           movieTitle: movie?.title || 'סרט חדש',
@@ -173,6 +178,11 @@ export default function CineDirectorScreen() {
       });
 
       if (response.success && response.data) {
+        console.log('✨ Server-side storyboard generated successfully with prompts:', response.data.scenes.map((s: any) => ({
+          sceneNumber: s.sceneNumber,
+          visualPrompt: s.visualPrompt,
+          visualPromptEnglish: s.visualPromptEnglish
+        })));
         setPitchResult(response.data);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } else {

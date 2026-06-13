@@ -13,6 +13,7 @@ import Animated, {
 import { Colors } from '@/constants/Theme';
 import { Play } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { API_BASE_URL } from '@/constants/Config';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -67,6 +68,8 @@ const TinyEqualizer = () => {
 
 const StoryboardCard = ({ scene, index, scrollX, isSpeaking, onSpeak, movieBackdropPath }: StoryboardCardProps) => {
   const [isAiImageLoaded, setIsAiImageLoaded] = useState(false);
+  const [imageLoadError, setImageLoadError] = useState(false);
+  const [imgUri, setImgUri] = useState<string | null>(null);
   const aiImageOpacity = useSharedValue(0);
 
   useEffect(() => {
@@ -76,6 +79,64 @@ const StoryboardCard = ({ scene, index, scrollX, isSpeaking, onSpeak, movieBackd
       aiImageOpacity.value = 0;
     }
   }, [isAiImageLoaded]);
+
+  const promptToUse = scene.visualPromptEnglish || scene.visualPrompt;
+  const promptWithModifiers = promptToUse + ', cinematic film scene, movie shot, highly detailed, dramatic lighting, 8k resolution';
+
+  useEffect(() => {
+    const hfToken = process.env.EXPO_PUBLIC_HUGGINGFACE_API_KEY;
+    if (!hfToken) {
+      console.warn('⚠️ EXPO_PUBLIC_HUGGINGFACE_API_KEY is not configured in client .env');
+      setImageLoadError(true);
+      return;
+    }
+
+    let isMounted = true;
+    setIsAiImageLoaded(false);
+    setImageLoadError(false);
+    setImgUri(null);
+
+    console.log(`🎨 Storyboard Scene ${scene.sceneNumber} image prompt: "${promptToUse}" [${scene.visualPromptEnglish ? 'English' : 'Hebrew Fallback'}]`);
+
+    fetch(
+      'https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${hfToken}`
+        },
+        body: JSON.stringify({ inputs: promptWithModifiers })
+      }
+    )
+      .then(async (response) => {
+        if (!response.ok) {
+          const errText = await response.text();
+          throw new Error(errText || `HTTP ${response.status}`);
+        }
+        return response.blob();
+      })
+      .then((blob) => {
+        if (!isMounted) return;
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (!isMounted) return;
+          setImgUri(reader.result as string);
+          setIsAiImageLoaded(true);
+          console.log(`🖼️ Image generated successfully for scene ${scene.sceneNumber}`);
+        };
+        reader.readAsDataURL(blob);
+      })
+      .catch((error) => {
+        if (!isMounted) return;
+        console.warn(`❌ Image generation failed for scene ${scene.sceneNumber}:`, error.message);
+        setImageLoadError(true);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [promptToUse]);
 
   const animatedCardStyle = useAnimatedStyle(() => {
     const inputRange = [
@@ -112,10 +173,7 @@ const StoryboardCard = ({ scene, index, scrollX, isSpeaking, onSpeak, movieBackd
     ? `https://image.tmdb.org/t/p/w500${movieBackdropPath}` 
     : 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&q=80';
 
-  const promptToUse = scene.visualPromptEnglish || scene.visualPrompt;
-  const aiImageUrl = `https://image.pollinations.ai/p/${encodeURIComponent(
-    promptToUse + ', cinematic film scene, movie shot, highly detailed, dramatic lighting, 8k resolution'
-  )}?width=500&height=350&nologo=true`;
+  // Image is loaded via useEffect fetch and stored as base64 in imgUri
 
   return (
     <Animated.View 
@@ -135,18 +193,25 @@ const StoryboardCard = ({ scene, index, scrollX, isSpeaking, onSpeak, movieBackd
         />
 
         {/* Custom AI generated Scene Image (Loads in Background) */}
-        <Animated.Image 
-          source={{ uri: aiImageUrl }}
-          style={[{ position: 'absolute', inset: 0 }, animatedAiImageStyle]}
-          resizeMode="cover"
-          onLoad={() => setIsAiImageLoaded(true)}
-        />
+        {imgUri && (
+          <Animated.Image 
+            source={{ uri: imgUri }}
+            style={[{ position: 'absolute', inset: 0 }, animatedAiImageStyle]}
+            resizeMode="cover"
+          />
+        )}
 
         {/* Dynamic Generating Badge */}
-        {!isAiImageLoaded && (
+        {!isAiImageLoaded && !imageLoadError && (
           <View className="absolute bottom-3 right-3 bg-black/60 border border-white/10 px-2 py-1 rounded-lg flex-row items-center gap-1.5">
             <ActivityIndicator color={Colors.secondary} size="small" style={{ transform: [{ scale: 0.7 }] }} />
             <Text className="text-[9px] text-white/90 font-sans">מצייר סצנה ב-AI...</Text>
+          </View>
+        )}
+
+        {imageLoadError && (
+          <View className="absolute bottom-3 right-3 bg-red-950/80 border border-red-500/30 px-2.5 py-1 rounded-lg flex-row items-center gap-1.5">
+            <Text className="text-[9px] text-red-300 font-sans">ציור AI לא זמין - מציג רקע סרט 🍿</Text>
           </View>
         )}
         
