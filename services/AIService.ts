@@ -865,21 +865,24 @@ ${watchlistInfo}
     {
       "sceneNumber": 1,
       "visualPrompt": "תיאור ויזואלי מפורט של הסצנה עבור הבמאי/צייר בעברית (עד 15 מילים)",
+      "visualPromptEnglish": "Detailed English image generation prompt for this scene (up to 15 words, must be in English, e.g. 'cinematic sword fight in ancient city, dramatic lighting')",
       "dialogue": "שורת דיאלוג דרמטית בעברית המיוחסת לאחד מהשחקנים שלוהקו (למשל, ${actor1}: 'שלום עולם')"
     },
     {
       "sceneNumber": 2,
       "visualPrompt": "תיאור ויזואלי של הסצנה השנייה בעברית (עד 15 מילים)",
+      "visualPromptEnglish": "Detailed English image generation prompt for this scene (up to 15 words, must be in English)",
       "dialogue": "שורת דיאלוג של שחקן אחר (למשל, ${actor2}: 'אני כאן')"
     },
     {
       "sceneNumber": 3,
       "visualPrompt": "תיאור ויזואלי של הסצנה השלישית בעברית (עד 15 מילים)",
+      "visualPromptEnglish": "Detailed English image generation prompt for this scene (up to 15 words, must be in English)",
       "dialogue": "שורת דיאלוג נוספת (למשל, ${actor3}: 'הסוף הגיע')"
     }
   ]
 }
-הקפד לכתוב את כל הדיאלוגים והתיאורים בעברית רהוטה וקולנועית.`;
+הקפד לכתוב את כל הדיאלוגים והתיאורים בעברית רהוטה וקולנועית, פרט ל-visualPromptEnglish שחייב להיות באנגלית בלבד.`;
 
     return await this.withRetry(async () => {
       const result = await model.generateContent(modelPrompt);

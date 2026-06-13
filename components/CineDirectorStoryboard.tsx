@@ -25,6 +25,7 @@ interface StoryboardCardProps {
   scene: {
     sceneNumber: number;
     visualPrompt: string;
+    visualPromptEnglish?: string;
     dialogue: string;
   };
   index: number;
@@ -111,8 +112,9 @@ const StoryboardCard = ({ scene, index, scrollX, isSpeaking, onSpeak, movieBackd
     ? `https://image.tmdb.org/t/p/w500${movieBackdropPath}` 
     : 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&q=80';
 
+  const promptToUse = scene.visualPromptEnglish || scene.visualPrompt;
   const aiImageUrl = `https://image.pollinations.ai/p/${encodeURIComponent(
-    scene.visualPrompt + ', cinematic film scene, movie shot, highly detailed, dramatic lighting, 8k resolution'
+    promptToUse + ', cinematic film scene, movie shot, highly detailed, dramatic lighting, 8k resolution'
   )}?width=500&height=350&nologo=true`;
 
   return (
@@ -190,6 +192,7 @@ const StoryboardCard = ({ scene, index, scrollX, isSpeaking, onSpeak, movieBackd
 interface StoryboardCardData {
   sceneNumber: number;
   visualPrompt: string;
+  visualPromptEnglish?: string;
   dialogue: string;
 }
 
