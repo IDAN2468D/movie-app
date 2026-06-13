@@ -489,7 +489,7 @@ const CineSymphony: React.FC<CineSymphonyProps> = ({
             {/* Content row */}
             <View
               style={{
-                flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row',
+                flexDirection: 'row',
                 alignItems: 'center',
                 gap: 14,
               }}
@@ -515,10 +515,10 @@ const CineSymphony: React.FC<CineSymphonyProps> = ({
               </View>
 
               {/* Info */}
-              <View style={{ flex: 1 }}>
+              <View style={{ flex: 1, alignItems: 'flex-start' }}>
                 <View
                   style={{
-                    flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row',
+                    flexDirection: 'row',
                     alignItems: 'center',
                     gap: 6,
                     marginBottom: 4,
@@ -530,8 +530,8 @@ const CineSymphony: React.FC<CineSymphonyProps> = ({
                       color: 'white',
                       fontSize: 14,
                       fontFamily: 'Rubik-Bold',
-                      textAlign: 'right',
-                      writingDirection: 'rtl',
+                      textAlign: 'left',
+                      writingDirection: 'ltr',
                     }}
                   >
                     סימפוניה קולנועית
@@ -542,8 +542,8 @@ const CineSymphony: React.FC<CineSymphonyProps> = ({
                     color: 'rgba(255,255,255,0.45)',
                     fontSize: 11,
                     fontFamily: 'Rubik-Regular',
-                    textAlign: 'right',
-                    writingDirection: 'rtl',
+                    textAlign: 'left',
+                    writingDirection: 'ltr',
                   }}
                 >
                   {isPlaying

@@ -18,6 +18,9 @@ import Animated, { FadeInDown, FadeInRight, Layout } from 'react-native-reanimat
 import { Colors } from '@/constants/Theme';
 import { useLoyalty, REWARDS, TROPHIES } from '@/hooks/useLoyalty';
 
+import { router } from 'expo-router';
+import * as Haptics from 'expo-haptics';
+
 const ICON_MAP: Record<string, any> = {
   Gift,
   Star,
@@ -107,6 +110,36 @@ export default function LoyaltyScreen() {
             <Text className="text-white text-[13px] mt-2 font-bold" style={{ fontFamily: 'Rubik-Bold' }}>היסטוריה</Text>
           </Pressable>
         </View>
+
+        {/* AR Taste Radar Card */}
+        <Animated.View entering={FadeInDown.delay(100).duration(600)} className="px-6 mt-8">
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              router.push('/movie/ar-loom');
+            }}
+            className="rounded-[32px] overflow-hidden border border-white/10"
+            style={({ pressed }) => [pressed && { opacity: 0.9, scale: 0.98 }]}
+          >
+            <LinearGradient
+              colors={['rgba(0, 229, 255, 0.15)', 'rgba(123, 31, 162, 0.15)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              className="p-6 flex-row items-center justify-between"
+            >
+              <View className="flex-1 items-start pr-4">
+                <Text className="text-[#00E5FF] text-[12px] font-bold uppercase tracking-wider mb-1" style={{ fontFamily: 'Rubik-Bold' }}>חוויית מציאות רבודה</Text>
+                <Text className="text-white text-[18px] font-bold mb-1" style={{ fontFamily: 'Rubik-Bold' }}>אריג קולנועי AR 🌀</Text>
+                <Text className="text-white/60 text-[12px] leading-relaxed text-left" style={{ fontFamily: 'Rubik-Regular' }}>
+                  הקרן את פרופיל הטעם הקולנועי והמורשת שלך בחלל החדר באמצעות הולוגרמה תלת-מימדית.
+                </Text>
+              </View>
+              <View className="bg-white/10 p-4 rounded-3xl border border-white/20">
+                <Zap size={28} color="#00E5FF" />
+              </View>
+            </LinearGradient>
+          </Pressable>
+        </Animated.View>
 
         {/* Available Rewards */}
         <View className="mt-10">

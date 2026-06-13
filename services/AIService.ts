@@ -99,6 +99,61 @@ export class AIService {
     }
   }
 
+  /**
+   * Robust JSON extractor that finds the first '{' and the last '}' 
+   * (or '[' and ']') to parse a valid JSON block, ignoring conversational wraps.
+   */
+  private static parseJSON(text: string): any {
+    const trimmed = text.trim();
+    const cleanStr = trimmed.replace(/```json/g, '').replace(/```/g, '').trim();
+    try {
+      return JSON.parse(cleanStr);
+    } catch (e: any) {
+      const firstCurly = cleanStr.indexOf('{');
+      const lastCurly = cleanStr.lastIndexOf('}');
+      if (firstCurly !== -1 && lastCurly !== -1 && lastCurly > firstCurly) {
+        const sliced = cleanStr.slice(firstCurly, lastCurly + 1);
+        try {
+          return JSON.parse(sliced);
+        } catch (e2: any) {
+          try {
+            const sanitized = sliced
+              .replace(/[\u201C\u201D\u201E\u201F\u2033\u2036]/g, '"')
+              .replace(/[\u2018\u2019\u201A\u201B\u2032\u2035]/g, "'")
+              .replace(/,\s*([\]}])/g, '$1')
+              .replace(/[\u0000-\u001F]+/g, (match) => 
+                match.replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t')
+              );
+            return JSON.parse(sanitized);
+          } catch {
+            console.error("AIService: Failed parsing sliced JSON. Content was:", sliced, "Error:", e2.message);
+            throw e2;
+          }
+        }
+      }
+      const firstBracket = cleanStr.indexOf('[');
+      const lastBracket = cleanStr.lastIndexOf(']');
+      if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
+        const sliced = cleanStr.slice(firstBracket, lastBracket + 1);
+        try {
+          return JSON.parse(sliced);
+        } catch (e2: any) {
+          try {
+            const sanitized = sliced
+              .replace(/[\u201C\u201D\u201E\u201F\u2033\u2036]/g, '"')
+              .replace(/[\u2018\u2019\u201A\u201B\u2032\u2035]/g, "'")
+              .replace(/,\s*([\]}])/g, '$1');
+            return JSON.parse(sanitized);
+          } catch {
+            console.error("AIService: Failed parsing sliced Array. Content was:", sliced, "Error:", e2.message);
+            throw e2;
+          }
+        }
+      }
+      throw e;
+    }
+  }
+
   // ─── FEATURE 1: Movie Insights ──────────────────────────────────────────────
 
   /**
@@ -123,9 +178,7 @@ export class AIService {
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const text = response.text();
-
-        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(jsonStr);
+        return this.parseJSON(text);
       });
     } catch (error) {
       console.error("AIService Error (Insights):", error);
@@ -165,9 +218,7 @@ export class AIService {
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const text = response.text();
-
-        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        const parsed = JSON.parse(jsonStr);
+        const parsed = this.parseJSON(text);
         return {
           primary: parsed.primary || '#FF1464',
           secondary: parsed.secondary || '#9B1B30',
@@ -277,8 +328,7 @@ ${watchlistInfo}
 
         const result = await model.generateContent(prompt);
         const text = result.response.text();
-        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(jsonStr);
+        return this.parseJSON(text);
       });
     } catch (error) {
       console.error("AIService Error (Mood):", error);
@@ -304,8 +354,7 @@ ${watchlistInfo}
 
         const result = await model.generateContent(prompt);
         const text = result.response.text();
-        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(jsonStr);
+        return this.parseJSON(text);
       });
     } catch (error) {
       console.error("AIService Error (Trivia):", error);
@@ -332,8 +381,7 @@ ${watchlistInfo}
 
         const result = await model.generateContent(prompt);
         const text = result.response.text();
-        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(jsonStr);
+        return this.parseJSON(text);
       });
     } catch (error) {
       console.error("AIService Error (Similar):", error);
@@ -438,8 +486,7 @@ ${watchlistInfo}
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const text = response.text();
-        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(jsonStr);
+        return this.parseJSON(text);
       });
     } catch (error) {
       console.error("AIService Error (Semantic Search Fallback):", error);
@@ -490,8 +537,7 @@ ${watchlistInfo}
         ]);
         
         const text = result.response.text();
-        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(jsonStr);
+        return this.parseJSON(text);
       });
     } catch (error) {
       console.error("AIService Error (Voice Search Fallback):", error);
@@ -589,8 +635,7 @@ ${watchlistInfo}
 
         const result = await model.generateContent(prompt);
         const text = result.response.text();
-        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        const parsed = JSON.parse(jsonStr) as VoiceCommand;
+        const parsed = this.parseJSON(text) as VoiceCommand;
 
         // Validate the returned type
         const validTypes = ['search', 'navigate', 'watchlist_analyze', 'mood', 'info', 'chat'];
@@ -690,8 +735,7 @@ ${watchlistInfo}
         ]);
         
         const text = result.response.text();
-        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        const parsed = JSON.parse(jsonStr);
+        const parsed = this.parseJSON(text);
         return parsed.movieTitle || null;
       });
     } catch (error) {
@@ -706,7 +750,15 @@ ${watchlistInfo}
   /**
    * Text-to-Speech support
    */
-  static async speak(text: string) {
+  static async speak(
+    text: string,
+    options?: {
+      onStart?: () => void;
+      onDone?: () => void;
+      onStopped?: () => void;
+      onError?: (error: any) => void;
+    }
+  ) {
     if (Platform.OS === 'web') return;
     try {
       // Strip emojis, markdown, and special characters for better TTS
@@ -719,6 +771,10 @@ ${watchlistInfo}
         language: 'he-IL',
         pitch: 1.0,
         rate: 1.0,
+        onStart: options?.onStart,
+        onDone: options?.onDone,
+        onStopped: options?.onStopped,
+        onError: options?.onError,
       });
     } catch (error) {
       console.error("AIService TTS Error:", error);
@@ -772,8 +828,7 @@ ${watchlistInfo}
 
         const result = await model.generateContent(prompt);
         const text = result.response.text();
-        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(jsonStr);
+        return this.parseJSON(text);
       });
     } catch (_error) {
       console.error("AIService Error (Proactive):", _error);
@@ -782,6 +837,83 @@ ${watchlistInfo}
         suggestion: "מוכן למסע קולנועי חדש?",
         action: "יאללה"
       };
+    }
+  }
+
+  /**
+   * Generates a custom film script and storyboard pitch directly on the client using Gemini.
+   */
+  static async generatePitchClientSide(movieTitle: string, prompt: string, castList: string[]): Promise<any> {
+    const model = this.getModel("אתה תסריטאי ובמאי קולנוע מומחה. תפקידך ליצור תסריט לסרט קצר ולוח התרחשויות (storyboard) המבוסס על רעיון של המשתמש.");
+    if (!model) {
+      throw new Error("Gemini API Key missing on client");
+    }
+
+    const actor1 = castList[0] || 'שחקן 1';
+    const actor2 = castList[1] || 'שחקן 2';
+    const actor3 = castList[2] || 'שחקן 3';
+
+    const modelPrompt = `צור תסריט קצר וסצנות storyboard מפורטות לסרט המבוסס על הסרט "${movieTitle}".
+הרעיון הכללי של המשתמש הוא: "${prompt}"
+השחקנים הראשיים שלוהקו לתפקיד הם: ${castList.join(', ')}
+
+אנא צור בדיוק 3 סצנות מפתח. החזר תוצאה במבנה JSON תקין בלבד, ללא קוד markdown, ללא הקדמות וללא הערות.
+מבנה ה-JSON חייב להיות בדיוק כזה:
+{
+  "posterConcept": "תיאור קולנועי מרהיב בעברית של כרזת הסרט המתאימה לאווירה (עד 20 מילים)",
+  "scenes": [
+    {
+      "sceneNumber": 1,
+      "visualPrompt": "תיאור ויזואלי מפורט של הסצנה עבור הבמאי/צייר בעברית (עד 15 מילים)",
+      "dialogue": "שורת דיאלוג דרמטית בעברית המיוחסת לאחד מהשחקנים שלוהקו (למשל, ${actor1}: 'שלום עולם')"
+    },
+    {
+      "sceneNumber": 2,
+      "visualPrompt": "תיאור ויזואלי של הסצנה השנייה בעברית (עד 15 מילים)",
+      "dialogue": "שורת דיאלוג של שחקן אחר (למשל, ${actor2}: 'אני כאן')"
+    },
+    {
+      "sceneNumber": 3,
+      "visualPrompt": "תיאור ויזואלי של הסצנה השלישית בעברית (עד 15 מילים)",
+      "dialogue": "שורת דיאלוג נוספת (למשל, ${actor3}: 'הסוף הגיע')"
+    }
+  ]
+}
+הקפד לכתוב את כל הדיאלוגים והתיאורים בעברית רהוטה וקולנועית.`;
+
+    return await this.withRetry(async () => {
+      const result = await model.generateContent(modelPrompt);
+      const text = result.response.text();
+      return this.parseJSON(text);
+    });
+  }
+
+  /**
+   * Translates a list of actor names to Hebrew using Gemini.
+   */
+  static async translateActorNames(names: string[]): Promise<Record<string, string>> {
+    const model = this.getModel("אתה מתרגם מומחה. תפקידך לתרגם שמות של שחקני קולנוע מאנגלית לעברית (תעתיק מדויק בעברית).");
+    if (!model) return {};
+
+    const prompt = `תרגם את רשימת השמות הבאה מאנגלית לעברית (החזר תעתיק מדויק בעברית, למשל "Cillian Murphy" -> "קיליאן מרפי").
+רשימת השמות:
+${names.join('\n')}
+
+החזר אך ורק אובייקט JSON של התרגום במבנה הבא:
+{
+  "שם באנגלית": "שם בעברית"
+}
+אל תצרף שום הערה או טקסט נוסף מחוץ ל-JSON.`;
+
+    try {
+      return await this.withRetry(async () => {
+        const result = await model.generateContent(prompt);
+        const text = result.response.text();
+        return this.parseJSON(text);
+      });
+    } catch (error) {
+      console.error("AIService Error (Translate Actor Names):", error);
+      return {};
     }
   }
 

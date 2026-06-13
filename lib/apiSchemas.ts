@@ -128,7 +128,12 @@ export const ServerSnackItemSchema = z.object({
   name: z.string(),
   price: z.number(),
   quantity: z.number(),
-  image: z.string().optional(),
+  image: z.any().optional(),
+  customization: z.object({
+    butterLevel: z.number().optional(),
+    flavors: z.array(z.string()).optional(),
+    toppings: z.array(z.string()).optional(),
+  }).optional(),
 });
 
 export const ServerTicketSchema = z.object({

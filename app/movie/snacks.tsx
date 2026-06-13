@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, Pressable, Image, Dimensions, I18nManager, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { ChevronRight, ChevronLeft, ShoppingCart, Plus, Minus, Trash2, Grip, Sparkles } from 'lucide-react-native';
 import { Colors } from '@/constants/Theme';
@@ -361,6 +362,18 @@ export default function SnacksScreen() {
           showsHorizontalScrollIndicator={false} 
           contentContainerStyle={{ flexDirection: 'row-reverse', paddingHorizontal: 24, gap: 12 }}
         >
+          {/* Custom Popcorn Lab Button */}
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              router.push('/movie/snack-lab' as any);
+            }}
+            className="px-5 py-2.5 rounded-2xl bg-secondary/15 border border-secondary/35 justify-center items-center flex-row gap-1.5 active:bg-secondary/25 active:scale-95"
+          >
+            <Sparkles size={14} color={Colors.secondary} />
+            <Text className="font-bold text-secondary text-sm">רקח פופקורן אישי 🧪</Text>
+          </Pressable>
+
           {categories.map((cat) => {
             const isActive = activeCategory === cat;
             const label = cat === 'All' ? 'הכל' : 
@@ -676,21 +689,26 @@ function SnackCard({
   onDragStart: (item: SnackItem) => void,
   onDragEnd: (x: number, y: number) => void
 }) {
+  const localDragX = dragX;
+  const localDragY = dragY;
+  const localIsDragging = isDragging;
+  const localDragScale = dragScale;
+
   const panGesture = Gesture.Pan()
     .onStart((e) => {
-      dragX.value = e.absoluteX;
-      dragY.value = e.absoluteY;
-      isDragging.value = true;
-      dragScale.value = 1.25;
+      localDragX.value = e.absoluteX;
+      localDragY.value = e.absoluteY;
+      localIsDragging.value = true;
+      localDragScale.value = 1.25;
       runOnJS(onDragStart)(item);
     })
     .onUpdate((e) => {
-      dragX.value = e.absoluteX;
-      dragY.value = e.absoluteY;
+      localDragX.value = e.absoluteX;
+      localDragY.value = e.absoluteY;
     })
     .onEnd((e) => {
-      dragScale.value = 1.0;
-      isDragging.value = false;
+      localDragScale.value = 1.0;
+      localIsDragging.value = false;
       runOnJS(onDragEnd)(e.absoluteX, e.absoluteY);
     });
 

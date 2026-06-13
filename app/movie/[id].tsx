@@ -602,6 +602,35 @@ export default function MovieDetailsScreen() {
             </View>
           </ScrollEntrance>
 
+          {/* CineDirector AI Banner */}
+          <ScrollEntrance scrollY={scrollY}>
+            <Pressable
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                router.push(`/movie/director?movieId=${movie.id}` as any);
+              }}
+              className="mt-6 w-full rounded-3xl border border-secondary/20 bg-secondary/5 overflow-hidden active:scale-99"
+            >
+              <LinearGradient
+                colors={['rgba(255, 20, 100, 0.08)', 'rgba(0,0,0,0)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                className="p-5 flex-row items-center justify-between"
+              >
+                <View className="flex-row items-center gap-3">
+                  <View className="w-10 h-10 bg-secondary/10 border border-secondary/35 rounded-2xl justify-center items-center">
+                    <Sparkles size={20} color={Colors.secondary} />
+                  </View>
+                  <View className="items-start">
+                    <Text className="text-body text-white font-display text-left">במאי אישי AI • סטוריבורד</Text>
+                    <Text className="text-[10px] text-white/50 text-left font-sans">כתוב תסריט לסרט וליהוק שחקנים משלך</Text>
+                  </View>
+                </View>
+                {I18nManager.isRTL ? <ChevronLeft size={16} color="white" opacity={0.6} /> : <ChevronRight size={16} color="white" opacity={0.6} />}
+              </LinearGradient>
+            </Pressable>
+          </ScrollEntrance>
+
           {movie.overview ? (
             <ScrollEntrance scrollY={scrollY}>
               <View className="mt-8">

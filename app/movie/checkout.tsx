@@ -10,6 +10,7 @@ import { ArrowLeft, ArrowRight, CreditCard, ShieldCheck, Ticket, CheckCircle2, S
 import * as Haptics from 'expo-haptics';
 import { useSnacksStore } from '@/store/useSnacksStore';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useSquadBookingStore } from '@/store/useSquadBookingStore';
 import { Video } from '@/utils/SafeModules';
 import Animated, { 
   FadeInDown, 
@@ -58,6 +59,7 @@ export default function CheckoutScreen() {
   const { items, addItem } = useSnacksStore();
   const { user, addVirtualCard } = useAuthStore();
   const [isInviteModalVisible, setIsInviteModalVisible] = React.useState(false);
+  const { squadCode, sessionDetails } = useSquadBookingStore();
 
 
   if (!selectedShowtime) return null;
@@ -237,6 +239,63 @@ export default function CheckoutScreen() {
             * ההזמנה תחכה לך בדלפק המהיר עם הצגת הכרטיס
           </Text>
         </View>
+
+        {/* CineCrew Lobby Sync & Split Billing Card */}
+        {squadCode && sessionDetails && (
+          <Animated.View entering={FadeInDown.delay(100)} className="mt-10 p-6 rounded-3xl bg-secondary/10 border border-secondary/20">
+            <View className="flex-row items-center gap-2 mb-4 justify-end" style={{ flexDirection: 'row-reverse' }}>
+              <Users size={18} color={Colors.secondary} />
+              <Text className="text-h3 text-white font-display text-right">לובי הזמנה קבוצתי פעיל: {squadCode}</Text>
+            </View>
+            
+            {/* List group member bill shares */}
+            {sessionDetails.members.map((member) => {
+              const memberSeatsCount = sessionDetails.lockedSeats.filter(s => s.userId === member.userId).length;
+              const memberSeatsCost = memberSeatsCount * selectedShowtime.price;
+              
+              const memberSnacksCost = member.snacks 
+                ? member.snacks.reduce((sum, s) => sum + s.price * s.quantity, 0)
+                : 0;
+                
+              const memberShare = memberSeatsCost + memberSnacksCost;
+              const isMe = member.userId === user?.id;
+              
+              return (
+                <View key={member.userId} className="flex-row-reverse justify-between mb-3.5" style={{ flexDirection: 'row-reverse' }}>
+                  <View className="flex-row-reverse items-center gap-2" style={{ flexDirection: 'row-reverse' }}>
+                    <View className="w-6 h-6 rounded-full bg-white/10 items-center justify-center border border-white/20">
+                      <Text className="text-[9px] text-white font-bold">{member.name.substring(0, 1)}</Text>
+                    </View>
+                    <Text className={`text-body font-body ${isMe ? 'text-secondary font-bold' : 'text-white/70'}`}>
+                      {member.name} {isMe && '(אתה)'}
+                    </Text>
+                  </View>
+                  <View className="items-end">
+                    <Text className="text-body text-white font-display">₪{memberShare.toFixed(0)}</Text>
+                    <Text className="text-[9px] text-white/40 font-sans text-right">
+                      {memberSeatsCount} מושבים • {member.snacks?.reduce((sum, s) => sum + s.quantity, 0) || 0} נשנושים
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
+            <View className="h-[1px] bg-white/10 my-3" />
+            <View className="flex-row-reverse justify-between" style={{ flexDirection: 'row-reverse' }}>
+              <Text className="text-body text-white/50 font-body">סה״כ לקבוצה</Text>
+              <Text className="text-body text-white/80 font-display">
+                ₪{(
+                  sessionDetails.lockedSeats.length * selectedShowtime.price + 
+                  sessionDetails.members.reduce((sum, m) => sum + (m.snacks ? m.snacks.reduce((sSum, s) => sSum + s.price * s.quantity, 0) : 0), 0)
+                ).toFixed(0)}
+              </Text>
+            </View>
+            <View className="mt-3.5 p-3 rounded-2xl bg-white/5 border border-white/5">
+              <Text className="text-[9px] text-white/60 text-right font-sans">
+                * כל חבר קבוצה משלם בנפרד את חלקו לפי הפירוט לעיל.
+              </Text>
+            </View>
+          </Animated.View>
+        )}
 
         {/* Price Breakdown */}
         <View className="mt-10 p-6 rounded-3xl bg-surface border border-white/5">

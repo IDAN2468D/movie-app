@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Dimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
-import Svg, { Rect, G, Path, Defs, LinearGradient, Stop, Mask, Text as SvgText } from 'react-native-svg';
+import Svg, { Rect, G, Path, Defs, LinearGradient, Stop, Mask, Text as SvgText, Circle } from 'react-native-svg';
 import Animated, { 
   useAnimatedStyle, 
   useSharedValue, 
-  withSpring
+  withSpring,
+  runOnJS
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import * as Haptics from 'expo-haptics';
@@ -200,7 +201,7 @@ const SeatIcon = ({
 
 export default function ZoomableSeatMap() {
   const { seats, toggleSeat, selectedSeats, selectedShowtime } = useBookingStore();
-  const { squadCode, sessionDetails, hovers, toggleSquadSeat, sendSeatHover } = useSquadBookingStore();
+  const { squadCode, sessionDetails, hovers, cursors, toggleSquadSeat, sendSeatHover, sendCursorMove } = useSquadBookingStore();
   const user = useAuthStore(state => state.user);
 
   const [echos, setEchos] = useState<Record<string, { uri: string; userName: string; duration: string }>>({
@@ -322,6 +323,13 @@ export default function ZoomableSeatMap() {
       const maxTransY = (gridHeight * scale.value) / 1.5;
       translateX.value = Math.max(-maxTransX, Math.min(maxTransX, savedTranslateX.value + e.translationX));
       translateY.value = Math.max(-maxTransY, Math.min(maxTransY, savedTranslateY.value + e.translationY));
+      
+      if (squadCode && sendCursorMove) {
+        // Compute touch position relative to the seat grid coordinate system (offset x=40, y=60)
+        const gridTouchX = (e.x - 40 - translateX.value) / scale.value;
+        const gridTouchY = (e.y - 60 - translateY.value) / scale.value;
+        runOnJS(sendCursorMove)(gridTouchX, gridTouchY);
+      }
     })
     .onEnd(() => {
       savedTranslateX.value = translateX.value;
@@ -658,6 +666,24 @@ export default function ZoomableSeatMap() {
                     </SvgText>
                   </AnimatedG>
                 )}
+
+                {/* Render Live Cursors from other active lobby members */}
+                {squadCode && Object.values(cursors).map((cursor) => {
+                  if (cursor.userId === user?.id) return null;
+                  const memberColor = getMemberColor(cursor.userId);
+                  return (
+                    <G key={`cursor-${cursor.userId}`} x={cursor.x} y={cursor.y}>
+                      {/* Glowing crystal dot */}
+                      <Circle cx={0} cy={0} r={5} fill={memberColor} opacity={0.9} />
+                      <Circle cx={0} cy={0} r={10} fill="none" stroke={memberColor} strokeWidth={1} opacity={0.4} />
+                      {/* Initials overlay */}
+                      <Rect x={6} y={-10} width={20} height={10} rx={3} fill="rgba(10,10,12,0.85)" stroke={memberColor} strokeWidth={0.5} />
+                      <SvgText x={16} y={-2} fill="#FFFFFF" fontSize={6} fontWeight="bold" textAnchor="middle">
+                        {cursor.userName.substring(0, 2)}
+                      </SvgText>
+                    </G>
+                  );
+                })}
               </G>
             </Svg>
           </Animated.View>

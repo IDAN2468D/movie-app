@@ -294,6 +294,40 @@ export default function CinemaMapScreen() {
 
   const radarRotation = useSharedValue(0);
 
+  // Looping animations for social buttons icons
+  const popcornBounce = useSharedValue(0);
+  const ticketPulse = useSharedValue(1);
+
+  useEffect(() => {
+    // Popcorn bounce looping (translate Y)
+    popcornBounce.value = withRepeat(
+      withTiming(-4, { duration: 600, easing: Easing.inOut(Easing.quad) }),
+      -1,
+      true
+    );
+
+    // Ticket scale pulse looping
+    ticketPulse.value = withRepeat(
+      withTiming(1.15, { duration: 800, easing: Easing.inOut(Easing.quad) }),
+      -1,
+      true
+    );
+
+    return () => {
+      cancelAnimation(popcornBounce);
+      cancelAnimation(ticketPulse);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const popcornIconStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: popcornBounce.value }],
+  }));
+
+  const ticketIconStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: ticketPulse.value }],
+  }));
+
   const { friends, friendLocations, isGhostMode, fetchFriends, fetchFriendLocations, toggleGhostMode } = useSocialStore();
   const watchlistMovies = useWatchlistStore(state => state.movies);
 
@@ -758,7 +792,7 @@ export default function CinemaMapScreen() {
               exiting={FadeOutDown}
               style={[styles.friendDetailsFloatingCard, { bottom: bottomOffset }]}
             >
-              <BlurView intensity={35} tint="dark" style={styles.friendDetailsBlur}>
+              <BlurView intensity={95} tint="dark" style={styles.friendDetailsBlur}>
                 <Pressable
                   style={styles.closeCardBtn}
                   onPress={() => {
@@ -843,11 +877,19 @@ export default function CinemaMapScreen() {
                       });
                     }}
                   >
-                    <BlurView intensity={25} tint="light" style={{ paddingVertical: 10, alignItems: 'center', justifyContent: 'center' }}>
-                      <Text style={{ color: '#E5FF00', fontFamily: 'Rubik-Bold', fontSize: 12 }}>
-                        שלח פופקורן 🍿
+                    <LinearGradient
+                      colors={['#FFE57F', '#FF9100']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={{ paddingVertical: 11, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 }}
+                    >
+                      <Text style={{ color: '#09090B', fontFamily: 'Rubik-Bold', fontSize: 12 }}>
+                        שלח פופקורן
                       </Text>
-                    </BlurView>
+                      <Animated.View style={popcornIconStyle}>
+                        <Text style={{ fontSize: 14 }}>🍿</Text>
+                      </Animated.View>
+                    </LinearGradient>
                   </Pressable>
 
                   <Pressable
@@ -865,11 +907,19 @@ export default function CinemaMapScreen() {
                       });
                     }}
                   >
-                    <BlurView intensity={25} tint="dark" style={{ paddingVertical: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)' }}>
+                    <LinearGradient
+                      colors={['#00E5FF', '#7B1F8F']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={{ paddingVertical: 11, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 }}
+                    >
                       <Text style={{ color: '#FFFFFF', fontFamily: 'Rubik-Bold', fontSize: 12 }}>
-                        הזמן יחד 🎟️
+                        הזמן יחד
                       </Text>
-                    </BlurView>
+                      <Animated.View style={ticketIconStyle}>
+                        <Text style={{ fontSize: 14 }}>🎟️</Text>
+                      </Animated.View>
+                    </LinearGradient>
                   </Pressable>
                 </View>
               </BlurView>
@@ -1328,6 +1378,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: '#121214', // Opaque premium dark background
     overflow: 'hidden',
     zIndex: 10,
     shadowColor: '#000',

@@ -18,6 +18,9 @@ import SquadInviteModal from '@/components/SquadInviteModal';
 import { useSquadBookingStore } from '@/store/useSquadBookingStore';
 import { useVipCustomStore } from '@/store/useVipCustomStore';
 import { Seat } from '@/store/useBookingStore';
+import { useSeatViewStore } from '@/store/useSeatViewStore';
+import SeatViewHUD from '@/components/SeatViewHUD';
+import { Eye } from 'lucide-react-native';
 
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w1280';
 
@@ -40,6 +43,7 @@ export default function SeatsScreen() {
 
   const [squadModalVisible, setSquadModalVisible] = useState(false);
   const { squadCode, sessionDetails, leaveSquad } = useSquadBookingStore();
+  const { fetchSeatMetadata } = useSeatViewStore();
 
   useEffect(() => {
     return () => {
@@ -171,7 +175,7 @@ export default function SeatsScreen() {
                     style={{ marginEnd: 12 }}
                   >
                     <Pressable
-                      onPress={() => isVip ? setConfiguratorSeat(seat) : undefined}
+                      onPress={() => isVip ? setConfiguratorSeat(seat) : fetchSeatMetadata(selectedShowtime?.id || 'default_hall', seat.row, seat.number)}
                       style={({ pressed }) => ({
                         opacity: pressed ? 0.8 : 1,
                         transform: [{ scale: pressed ? 0.95 : 1 }],
@@ -182,19 +186,31 @@ export default function SeatsScreen() {
                           borderWidth: 1,
                           borderColor: isVip ? 'rgba(255,20,100,0.5)' : 'rgba(255,255,255,0.2)',
                           backgroundColor: isVip ? 'rgba(255,20,100,0.12)' : 'rgba(255,255,255,0.1)',
-                          paddingHorizontal: 20,
+                          paddingHorizontal: 16,
                           paddingVertical: 12,
                           borderRadius: 16,
                           alignItems: 'center',
-                          minWidth: 64,
+                          minWidth: 72,
                         }}
                       >
+                        {/* Eye icon button to directly trigger 3D perspective sightline */}
+                        <Pressable 
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            fetchSeatMetadata(selectedShowtime?.id || 'default_hall', seat.row, seat.number);
+                          }}
+                          className="absolute top-1.5 left-1.5 p-1 rounded-full bg-white/5 border border-white/10 active:bg-white/20"
+                          style={{ zIndex: 10 }}
+                        >
+                          <Eye size={10} color={isVip ? Colors.seatVIP : '#FFFFFF'} />
+                        </Pressable>
+
                         {isVip && (
-                          <Text style={{ fontSize: 11, marginBottom: 2 }}>
+                          <Text style={{ fontSize: 11, marginBottom: 2, marginTop: 4 }}>
                             {isCustomized ? '⚙️' : '👑'}
                           </Text>
                         )}
-                        <Text className="text-h3 text-white font-display">{seat.row}{seat.number}</Text>
+                        <Text className="text-h3 text-white font-display mt-2">{seat.row}{seat.number}</Text>
                         <View
                           style={{
                             width: 16, height: 2,
@@ -202,9 +218,13 @@ export default function SeatsScreen() {
                             borderRadius: 1, marginTop: 4,
                           }}
                         />
-                        {isVip && (
+                        {isVip ? (
                           <Text style={{ fontSize: 9, color: Colors.seatVIP, fontFamily: 'Assistant', marginTop: 3, fontWeight: '600' }}>
                             {isCustomized ? 'מותאם' : 'הגדר VIP'}
+                          </Text>
+                        ) : (
+                          <Text style={{ fontSize: 8, color: 'rgba(255,255,255,0.4)', fontFamily: 'Assistant', marginTop: 3 }}>
+                            תצוגת 3D
                           </Text>
                         )}
                       </View>
@@ -281,6 +301,9 @@ export default function SeatsScreen() {
         visible={squadModalVisible}
         onClose={() => setSquadModalVisible(false)}
       />
+
+      {/* CineView 3D Seat View HUD overlay */}
+      <SeatViewHUD />
     </View>
   );
 }

@@ -11,6 +11,7 @@ export interface ISquadMember {
   email: string;
   socketId?: string;
   joinedAt: string;
+  snacks?: Array<{ id: string; name: string; price: number; quantity: number; image?: string }>;
 }
 
 export interface ISquadSeat {
@@ -39,6 +40,7 @@ interface SquadState {
   sessionDetails: ISquadSession | null;
   socket: Socket | null;
   hovers: Record<string, { userName: string; userId: string; row: string; number: number; expiresAt: number }>;
+  cursors: Record<string, { userName: string; userId: string; x: number; y: number; expiresAt: number }>;
   isLoading: boolean;
   error: string | null;
 
@@ -57,6 +59,8 @@ interface SquadState {
   disconnectSocket: () => void;
   toggleSquadSeat: (row: string, number: number) => void;
   sendSeatHover: (row: string, number: number, isHovering: boolean) => void;
+  sendCursorMove: (x: number, y: number) => void;
+  sendSnacksSync: (snacks: Array<{ id: string; name: string; price: number; quantity: number; image?: string }>) => void;
   leaveSquad: () => void;
   clearError: () => void;
 }
@@ -68,6 +72,7 @@ export const useSquadBookingStore = create<SquadState>((set, get) => ({
   sessionDetails: null,
   socket: null,
   hovers: {},
+  cursors: {},
   isLoading: false,
   error: null,
 
@@ -208,6 +213,20 @@ export const useSquadBookingStore = create<SquadState>((set, get) => ({
       });
     });
 
+    socket.on('cursor-update', ({ userId, userName, x, y }) => {
+      set((state) => {
+        const nextCursors = { ...state.cursors };
+        nextCursors[userId] = {
+          userName,
+          userId,
+          x,
+          y,
+          expiresAt: Date.now() + 4000 // Expire display after 4s
+        };
+        return { cursors: nextCursors };
+      });
+    });
+
     socket.on('seat-toggle-error', ({ message }) => {
       set({ error: message });
     });
@@ -218,21 +237,34 @@ export const useSquadBookingStore = create<SquadState>((set, get) => ({
 
     set({ socket });
 
-    // Clean up expired hovers periodically
+    // Clean up expired hovers & cursors periodically
     const interval = setInterval(() => {
       set((state) => {
         const now = Date.now();
-        const nextHovers = { ...state.hovers };
-        let changed = false;
         
+        const nextHovers = { ...state.hovers };
+        let hoversChanged = false;
         Object.entries(nextHovers).forEach(([key, val]) => {
           if (val.expiresAt < now) {
             delete nextHovers[key];
-            changed = true;
+            hoversChanged = true;
+          }
+        });
+
+        const nextCursors = { ...state.cursors };
+        let cursorsChanged = false;
+        Object.entries(nextCursors).forEach(([key, val]) => {
+          if (val.expiresAt < now) {
+            delete nextCursors[key];
+            cursorsChanged = true;
           }
         });
         
-        return changed ? { hovers: nextHovers } : {};
+        const updates: Partial<SquadState> = {};
+        if (hoversChanged) updates.hovers = nextHovers;
+        if (cursorsChanged) updates.cursors = nextCursors;
+        
+        return updates;
       });
     }, 1000);
 
@@ -279,6 +311,32 @@ export const useSquadBookingStore = create<SquadState>((set, get) => ({
     });
   },
 
+  sendCursorMove: (x, y) => {
+    const { socket, squadCode } = get();
+    const user = useAuthStore.getState().user;
+    if (!socket || !squadCode || !user) return;
+
+    socket.emit('cursor-move', {
+      squadCode,
+      userId: user.id,
+      userName: user.name,
+      x,
+      y
+    });
+  },
+
+  sendSnacksSync: (snacks) => {
+    const { socket, squadCode } = get();
+    const user = useAuthStore.getState().user;
+    if (!socket || !squadCode || !user) return;
+
+    socket.emit('snack-update', {
+      squadCode,
+      userId: user.id,
+      snacks
+    });
+  },
+
   leaveSquad: () => {
     const { socket, squadCode } = get();
     const user = useAuthStore.getState().user;
@@ -295,6 +353,7 @@ export const useSquadBookingStore = create<SquadState>((set, get) => ({
       squadCode: null,
       sessionDetails: null,
       hovers: {},
+      cursors: {},
       error: null
     });
   }
