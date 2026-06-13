@@ -84,19 +84,47 @@ const StoryboardCard = ({ scene, index, scrollX, isSpeaking, onSpeak, movieBackd
   const promptWithModifiers = promptToUse + ', cinematic film scene, movie shot, highly detailed, dramatic lighting, 8k resolution';
 
   useEffect(() => {
-    const hfToken = process.env.EXPO_PUBLIC_HUGGINGFACE_API_KEY;
-    if (!hfToken) {
-      console.warn('⚠️ EXPO_PUBLIC_HUGGINGFACE_API_KEY is not configured in client .env');
-      setImageLoadError(true);
-      return;
-    }
-
     let isMounted = true;
     setIsAiImageLoaded(false);
     setImageLoadError(false);
     setImgUri(null);
 
+    const hfToken = process.env.EXPO_PUBLIC_HUGGINGFACE_API_KEY;
     console.log(`🎨 Storyboard Scene ${scene.sceneNumber} image prompt: "${promptToUse}" [${scene.visualPromptEnglish ? 'English' : 'Hebrew Fallback'}]`);
+
+    const fetchFromServerProxy = () => {
+      console.log(`🔄 Attempting server-side proxy image generation for scene ${scene.sceneNumber}...`);
+      fetch(`${API_BASE_URL}/director/image?prompt=${encodeURIComponent(promptWithModifiers)}`)
+        .then(async (res) => {
+          if (!res.ok) {
+            const errText = await res.text();
+            throw new Error(errText || `HTTP ${res.status}`);
+          }
+          return res.blob();
+        })
+        .then((blob) => {
+          if (!isMounted) return;
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            if (!isMounted) return;
+            setImgUri(reader.result as string);
+            setIsAiImageLoaded(true);
+            console.log(`🖼️ Image generated successfully via server proxy for scene ${scene.sceneNumber}`);
+          };
+          reader.readAsDataURL(blob);
+        })
+        .catch((proxyError) => {
+          if (!isMounted) return;
+          console.warn(`❌ Both client-side and server-side image generation failed for scene ${scene.sceneNumber}:`, proxyError.message);
+          setImageLoadError(true);
+        });
+    };
+
+    if (!hfToken) {
+      console.warn('⚠️ EXPO_PUBLIC_HUGGINGFACE_API_KEY not configured in client, falling back to server proxy...');
+      fetchFromServerProxy();
+      return;
+    }
 
     fetch(
       'https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell',
@@ -129,8 +157,8 @@ const StoryboardCard = ({ scene, index, scrollX, isSpeaking, onSpeak, movieBackd
       })
       .catch((error) => {
         if (!isMounted) return;
-        console.warn(`❌ Image generation failed for scene ${scene.sceneNumber}:`, error.message);
-        setImageLoadError(true);
+        console.warn(`⚠️ Client-side image generation failed for scene ${scene.sceneNumber}, trying server proxy:`, error.message);
+        fetchFromServerProxy();
       });
 
     return () => {
