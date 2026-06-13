@@ -51,6 +51,7 @@ import { type TMDBMovie, getGenreName } from '@/lib/tmdb';
 import { useSearch } from '@/hooks/useSearch';
 import AIOrb from '@/components/AIOrb';
 import * as Haptics from 'expo-haptics';
+import { Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 const ITEM_HEIGHT = 160;
@@ -436,6 +437,34 @@ export default function SearchScreen() {
           )}
         </Reanimated.View>
       )}
+
+      {/* Floating Galaxy Button (FAB) for CineSphere */}
+      <View style={{ position: 'absolute', bottom: insets.bottom + 85, right: 20, zIndex: 99 }}>
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            router.push('/movie/sphere' as any);
+          }}
+          style={({ pressed }) => [
+            {
+              width: 56,
+              height: 56,
+              borderRadius: 28,
+              backgroundColor: Colors.primary,
+              justifyContent: 'center',
+              alignItems: 'center',
+              shadowColor: Colors.primary,
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.4,
+              shadowRadius: 10,
+              elevation: 8,
+              opacity: pressed ? 0.8 : 1,
+            }
+          ]}
+        >
+          <Ionicons name="planet-outline" size={26} color="white" />
+        </Pressable>
+      </View>
     </View>
   );
 }

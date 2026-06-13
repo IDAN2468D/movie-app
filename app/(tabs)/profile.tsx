@@ -5,7 +5,7 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, ScrollView, TouchableOpacity, ImageBackground, StyleSheet, Dimensions, Image, I18nManager } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { User, Bell, CreditCard, Shield, ChevronLeft, ChevronRight, LogOut, Ticket, Heart, History, TrendingUp, Moon, Trophy, Map as MapIcon, Sparkles, Headphones, Users } from 'lucide-react-native';
+import { User, Bell, CreditCard, Shield, ChevronLeft, ChevronRight, LogOut, Ticket, Heart, History, TrendingUp, Moon, Trophy, Map as MapIcon, Sparkles, Headphones, Users, Award } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { router } from 'expo-router';
@@ -116,6 +116,14 @@ export default function ProfileScreen() {
             description="אוסף גבישי זכוכית תלת-ממדיים לכל סרט שראיתם!"
             color="#00E5FF" 
             onPress={() => router.push('/settings/vault' as any)} 
+          />
+
+          <MenuItem 
+            icon={Award} 
+            title="מורשת קולנועית — CineLegacy" 
+            description="כרטיס הזהות הקולנועי האינטראקטיבי והגנרטיבי שלך!"
+            color="#FFD700" 
+            onPress={() => router.push('/settings/legacy' as any)} 
           />
 
           <MenuItem 

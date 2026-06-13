@@ -18,7 +18,7 @@ import React, { useState, useEffect } from 'react';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 import LiquidBackground from '@/components/LiquidBackground';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { cssInterop } from 'react-native-css-interop';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -81,6 +81,7 @@ const MOCK_SHOWTIMES: Showtime[] = [
 export default function MovieDetailsScreen() {
   const { id, squadInvite, friendName } = useLocalSearchParams<{ id: string; squadInvite?: string; friendName?: string }>();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
 
   useEffect(() => {
     if (squadInvite === 'true' && friendName) {
@@ -718,6 +719,33 @@ export default function MovieDetailsScreen() {
                       "{insights.verdict}"
                     </Text>
                   </View>
+
+                  <Pressable
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                      router.push({
+                        pathname: '/movie/debate' as any,
+                        params: { id: movie.id.toString(), title: movie.title }
+                      });
+                    }}
+                    className="mt-6 w-full rounded-2xl overflow-hidden border border-white/10"
+                    style={({ pressed }) => [
+                      { transform: [{ scale: pressed ? 0.98 : 1 }] }
+                    ]}
+                  >
+                    <LinearGradient
+                      colors={[themeColors.primary, themeColors.secondary]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      className="py-3.5 px-4 flex-row justify-center items-center gap-2"
+                      style={{ flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row' }}
+                    >
+                      <Sparkles size={16} color="black" />
+                      <Text style={{ fontFamily: 'Rubik-Bold', color: Colors.background }} className="text-sm font-bold text-center">
+                        אתגר את ה-AI בעימות קולנועי ⚔️
+                      </Text>
+                    </LinearGradient>
+                  </Pressable>
                 </View>
               </View>
             </ScrollEntrance>
