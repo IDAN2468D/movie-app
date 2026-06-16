@@ -177,6 +177,32 @@ export const useAIConcierge = ({ visible, onNavigate }: UseAIConciergeOptions) =
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           break;
         }
+
+        case 'booking_restaurant': {
+          const content = `🍽️ **הזמנת שולחן VIP הושלמה!**\nהזמנו עבורך שולחן זוגי ב'קפה איטליה' לשעה 21:00 (במרחק 3 דקות הליכה מאולם הקולנוע).\n\nאישור ההזמנה נשלח לכתובת המייל שלך. בילוי נעים!`;
+          const msg: Message = {
+            id: (Date.now() + 1).toString(),
+            role: 'model',
+            content,
+          };
+          setMessages(prev => [...prev, msg]);
+          if (isTTSEnabled) AIService.speak(content);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          break;
+        }
+
+        case 'booking_uber': {
+          const content = `🚗 **מונית Uber בדרך אליך!**\nהזמנו נסיעה לקולנוע עבורך. נהג Uber Black (אלכס, טויוטה קאמרי שחורה) יגיע למיקומך בעוד כ-7 דקות.\n\nהגעה משוערת לקולנוע: 20:45. שים לב להתראות במכשיר!`;
+          const msg: Message = {
+            id: (Date.now() + 1).toString(),
+            role: 'model',
+            content,
+          };
+          setMessages(prev => [...prev, msg]);
+          if (isTTSEnabled) AIService.speak(content);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          break;
+        }
       }
     } catch (error) {
       console.error('Voice command execution error:', error);

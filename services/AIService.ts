@@ -47,7 +47,7 @@ interface WatchlistAnalysis {
 }
 
 export interface VoiceCommand {
-  type: 'search' | 'navigate' | 'watchlist_analyze' | 'mood' | 'info' | 'chat';
+  type: 'search' | 'navigate' | 'watchlist_analyze' | 'mood' | 'info' | 'chat' | 'booking_restaurant' | 'booking_uber';
   params?: {
     query?: string;
     genre?: string;
@@ -706,6 +706,16 @@ ${watchlistInfo}
     // Info commands
     if (lower.includes('מוקרן') || lower.includes('עכשיו') || lower.includes('חדש') || lower.includes('פופולרי')) {
       return { type: 'info', params: {}, displayText: '🍿 בודק מה חם בקולנוע עכשיו...' };
+    }
+
+    // VIP Booking Restaurant commands
+    if (lower.includes('שולחן') || lower.includes('מסעדה') || lower.includes('לאכול') || lower.includes('מסעדות')) {
+      return { type: 'booking_restaurant', params: {}, displayText: '🍽️ מאתר ומזמין שולחן במסעדה סמוכה...' };
+    }
+
+    // VIP Booking Uber commands
+    if (lower.includes('מונית') || lower.includes('אובר') || lower.includes('נסיעה') || lower.includes('להגיע') || lower.includes('taxi')) {
+      return { type: 'booking_uber', params: {}, displayText: '🚗 מזמין מונית Uber לקולנוע...' };
     }
 
     // Fallback to chat

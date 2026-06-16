@@ -31,6 +31,7 @@ import Animated, {
   useSharedValue,
   useAnimatedScrollHandler,
   withSpring,
+  withTiming,
   type SharedValue,
 } from 'react-native-reanimated';
 import { 
@@ -47,8 +48,12 @@ import {
   Film,
   Zap,
   Info,
-  Play
+  Play,
+  Activity,
+  HelpCircle
 } from 'lucide-react-native';
+
+import CineVistaTheme from '@/components/CineVistaTheme';
 
 import { Colors, Typography } from '@/constants/Theme';
 import { Video } from '@/utils/SafeModules';
@@ -820,6 +825,61 @@ export default function MovieDetailsScreen() {
           {/* Movie Trivia Challenge - Premium Feature */}
           <ScrollEntrance scrollY={scrollY}>
             <MovieTrivia movieTitle={movie.title} movieId={movie.id} themeColors={themeColors} />
+          </ScrollEntrance>
+
+          {/* CinePremium Pack (CineSynapse, CineOracle, CineVista) */}
+          <ScrollEntrance scrollY={scrollY}>
+            <View className="mt-8 p-6 rounded-[32px] border border-white/5 bg-surfaceLight">
+              <Text className="text-h2 text-white font-display text-left mb-4">חבילת פרימיום קולנועית</Text>
+              
+              <View className="flex-row gap-4 mb-6">
+                <Pressable
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    router.push({
+                      pathname: '/movie/synapse' as any,
+                      params: { movieId: movie.id.toString(), movieTitle: movie.title }
+                    });
+                  }}
+                  className="flex-1 py-4 px-3 rounded-2xl border border-white/5 bg-white/5 items-center justify-center"
+                >
+                  <Activity size={24} color={Colors.primary} />
+                  <Text className="text-white font-bold text-xs mt-2">CineSynapse</Text>
+                  <Text className="text-[10px] text-white/40 mt-1">מפת רגשות</Text>
+                </Pressable>
+
+                <Pressable
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    router.push({
+                      pathname: '/movie/oracle' as any,
+                      params: { 
+                        movieId: movie.id.toString(), 
+                        movieTitle: movie.title,
+                        genres: movie.genres.map(g => g.name).join(',')
+                      }
+                    });
+                  }}
+                  className="flex-1 py-4 px-3 rounded-2xl border border-white/5 bg-white/5 items-center justify-center"
+                >
+                  <HelpCircle size={24} color={Colors.secondary} />
+                  <Text className="text-white font-bold text-xs mt-2">CineOracle</Text>
+                  <Text className="text-[10px] text-white/40 mt-1">ניחוש עלילה</Text>
+                </Pressable>
+              </View>
+
+              {/* CineVista Aesthetic Portal */}
+              <CineVistaTheme
+                movieId={movie.id}
+                movieTitle={movie.title}
+                onColorChange={(colors: string[]) => {
+                  if (colors.length >= 2) {
+                    themeColors.primaryShared.value = withTiming(colors[0], { duration: 800 });
+                    themeColors.secondaryShared.value = withTiming(colors[1], { duration: 800 });
+                  }
+                }}
+              />
+            </View>
           </ScrollEntrance>
 
           {/* Group Watch Status */}
