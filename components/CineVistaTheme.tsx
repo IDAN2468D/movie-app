@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, Image, Linking } from 'react-native';
+import { View, Text, ScrollView, Pressable, Image, Linking } from 'react-native';
 import { BlurView } from 'expo-blur';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { Colors } from '@/constants/Theme';
@@ -9,8 +9,8 @@ import * as Haptics from 'expo-haptics';
 interface SceneFrame {
   id: string;
   name: string;
-  thumbnail: string; // url or mock local image placeholder
-  colors: string[]; // hex codes e.g. ['#FF1464', '#E5FF00']
+  thumbnail: string;
+  colors: string[];
   vibe: string;
   spotifyLink: string;
   location: string;
@@ -25,7 +25,6 @@ interface CineVistaThemeProps {
 }
 
 export default function CineVistaTheme({ movieId, movieTitle, onColorChange }: CineVistaThemeProps) {
-  // Mock scene data for any movie
   const scenes: SceneFrame[] = [
     {
       id: 'scene_1',
@@ -73,61 +72,137 @@ export default function CineVistaTheme({ movieId, movieTitle, onColorChange }: C
   const activeScene = scenes.find(s => s.id === activeSceneId) || scenes[0];
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>CineVista - פורטל אסתטיקה</Text>
-      <Text style={styles.subtitle}>בחר סצנה כדי להלביש את האפליקציה בצבעיה ולגלות מוזיקה, לוקיישנים ואופנה תואמים:</Text>
+    <View className="mt-6 items-stretch">
+      <Text 
+        className="text-white text-base font-bold mb-1 text-right"
+        style={{ fontFamily: 'Rubik-Bold', writingDirection: 'rtl' }}
+      >
+        CineVista - פורטל אסתטיקה
+      </Text>
+      
+      <Text 
+        className="text-[12px] text-textSecondary mb-4 leading-5 text-right"
+        style={{ fontFamily: 'Inter-Regular', writingDirection: 'rtl' }}
+      >
+        בחר סצנה כדי להלביש את האפליקציה בצבעיה ולגלות מוזיקה, לוקיישנים ואופנה תואמים:
+      </Text>
 
       {/* Horizontal Scene Slider */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.sceneScroll}>
-        {scenes.map((scene) => (
-          <Pressable
-            key={scene.id}
-            onPress={() => handleSelectScene(scene)}
-            style={[
-              styles.sceneCard,
-              activeSceneId === scene.id && styles.sceneCardActive
-            ]}
-          >
-            <Image source={{ uri: scene.thumbnail }} style={styles.thumbnail} />
-            <Text style={styles.sceneName}>{scene.name}</Text>
-            <View style={styles.paletteRow}>
-              {scene.colors.map((c, idx) => (
-                <View key={idx} style={[styles.colorDot, { backgroundColor: c }]} />
-              ))}
-            </View>
-          </Pressable>
-        ))}
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false} 
+        contentContainerClassName="flex-row gap-3 pb-3"
+      >
+        {scenes.map((scene) => {
+          const isActive = activeSceneId === scene.id;
+          return (
+            <Pressable
+              key={scene.id}
+              onPress={() => handleSelectScene(scene)}
+              className={`w-[110px] p-2 rounded-2xl border items-center ${
+                isActive 
+                  ? 'border-secondary bg-secondary/5' 
+                  : 'bg-white/[0.02] border-white/5'
+              }`}
+            >
+              <Image 
+                source={{ uri: scene.thumbnail }} 
+                className="w-full h-[60px] rounded-[10px] mb-1.5"
+              />
+              <Text 
+                className="text-[11px] text-white text-center"
+                style={{ fontFamily: 'Rubik-Medium' }}
+              >
+                {scene.name}
+              </Text>
+              <View className="flex-row gap-1 mt-1.5">
+                {scene.colors.map((c, idx) => (
+                  <View 
+                    key={idx} 
+                    className="w-3 h-3 rounded-full border border-black/30" 
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
+              </View>
+            </Pressable>
+          );
+        })}
       </ScrollView>
 
       {/* Aesthetic Recommendations Box */}
       <Animated.View entering={FadeIn.duration(300)} key={activeSceneId}>
-        <BlurView intensity={20} tint="dark" style={styles.glassPanel}>
-          <Text style={styles.vibeTitle}>🔮 {activeScene.vibe}</Text>
+        <BlurView 
+          intensity={20} 
+          tint="dark" 
+          className="mt-3 p-4 rounded-[20px] border border-white/5 overflow-hidden"
+        >
+          <Text 
+            className="text-sm text-secondary mb-3 text-right"
+            style={{ fontFamily: 'Rubik-Bold', writingDirection: 'rtl' }}
+          >
+            🔮 {activeScene.vibe}
+          </Text>
 
           {/* Spotify */}
-          <Pressable onPress={() => Linking.openURL(activeScene.spotifyLink)} style={styles.recommendationItem}>
+          <Pressable 
+            onPress={() => Linking.openURL(activeScene.spotifyLink)} 
+            className="flex-row items-center gap-3 py-2.5 border-b border-white/5"
+          >
             <Music size={18} color={Colors.secondary} />
-            <View style={styles.itemTextContainer}>
-              <Text style={styles.itemTitle}>פלייליסט סאונדטראק תואם</Text>
-              <Text style={styles.itemDesc}>לחץ כדי להאזין ב-Spotify לוויב של הסצנה</Text>
+            <View className="flex-1 items-start">
+              <Text 
+                className="text-[13px] text-white text-right"
+                style={{ fontFamily: 'Rubik-Medium', writingDirection: 'rtl' }}
+              >
+                פלייליסט סאונדטראק תואם
+              </Text>
+              <Text 
+                className="text-[11px] text-[#71717A] mt-0.5 text-right"
+                style={{ fontFamily: 'Inter-Regular', writingDirection: 'rtl' }}
+              >
+                לחץ כדי להאזין ב-Spotify לוויב של הסצנה
+              </Text>
             </View>
           </Pressable>
 
           {/* Location */}
-          <Pressable onPress={() => Linking.openURL(activeScene.locationLink)} style={styles.recommendationItem}>
+          <Pressable 
+            onPress={() => Linking.openURL(activeScene.locationLink)} 
+            className="flex-row items-center gap-3 py-2.5 border-b border-white/5"
+          >
             <MapPin size={18} color={Colors.secondary} />
-            <View style={styles.itemTextContainer}>
-              <Text style={styles.itemTitle}>לוקיישן השראה: {activeScene.location}</Text>
-              <Text style={styles.itemDesc}>לחץ כדי לצפות במפת גוגל</Text>
+            <View className="flex-1 items-start">
+              <Text 
+                className="text-[13px] text-white text-right"
+                style={{ fontFamily: 'Rubik-Medium', writingDirection: 'rtl' }}
+              >
+                לוקיישן השראה: {activeScene.location}
+              </Text>
+              <Text 
+                className="text-[11px] text-[#71717A] mt-0.5 text-right"
+                style={{ fontFamily: 'Inter-Regular', writingDirection: 'rtl' }}
+              >
+                לחץ כדי לצפות במפת גוגל
+              </Text>
             </View>
           </Pressable>
 
           {/* Fashion */}
-          <View style={styles.recommendationItem}>
+          <View className="flex-row items-center gap-3 py-2.5">
             <ShoppingBag size={18} color={Colors.secondary} />
-            <View style={styles.itemTextContainer}>
-              <Text style={styles.itemTitle}>קוד לבוש ואופנה (Fashion DNA)</Text>
-              <Text style={styles.itemDesc}>{activeScene.fashionTip}</Text>
+            <View className="flex-1 items-start">
+              <Text 
+                className="text-[13px] text-white text-right"
+                style={{ fontFamily: 'Rubik-Medium', writingDirection: 'rtl' }}
+              >
+                קוד לבוש ואופנה (Fashion DNA)
+              </Text>
+              <Text 
+                className="text-[11px] text-[#71717A] mt-0.5 text-right"
+                style={{ fontFamily: 'Inter-Regular', writingDirection: 'rtl' }}
+              >
+                {activeScene.fashionTip}
+              </Text>
             </View>
           </View>
         </BlurView>
@@ -135,112 +210,3 @@ export default function CineVistaTheme({ movieId, movieTitle, onColorChange }: C
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    marginTop: 24,
-    alignItems: 'stretch'
-  },
-  title: {
-    fontSize: 16,
-    fontFamily: 'Rubik-Bold',
-    color: '#FAFAF7',
-    textAlign: 'left',
-    writingDirection: 'rtl',
-    marginBottom: 4
-  },
-  subtitle: {
-    fontSize: 12,
-    fontFamily: 'Inter-Regular',
-    color: '#A1A1AA',
-    textAlign: 'left',
-    writingDirection: 'rtl',
-    marginBottom: 16,
-    lineHeight: 18
-  },
-  sceneScroll: {
-    flexDirection: 'row',
-    gap: 12,
-    paddingBottom: 12
-  },
-  sceneCard: {
-    width: 110,
-    padding: 8,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.02)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-    alignItems: 'center'
-  },
-  sceneCardActive: {
-    borderColor: '#E5FF00',
-    backgroundColor: 'rgba(229, 255, 0, 0.04)'
-  },
-  thumbnail: {
-    width: '100%',
-    height: 60,
-    borderRadius: 10,
-    marginBottom: 6
-  },
-  sceneName: {
-    fontSize: 11,
-    fontFamily: 'Rubik-Medium',
-    color: '#FAFAF7',
-    textAlign: 'center'
-  },
-  paletteRow: {
-    flexDirection: 'row',
-    gap: 4,
-    marginTop: 6
-  },
-  colorDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.3)'
-  },
-  glassPanel: {
-    marginTop: 12,
-    padding: 16,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-    overflow: 'hidden'
-  },
-  vibeTitle: {
-    fontSize: 14,
-    fontFamily: 'Rubik-Bold',
-    color: '#E5FF00',
-    textAlign: 'left',
-    writingDirection: 'rtl',
-    marginBottom: 12
-  },
-  recommendationItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 10,
-    borderBottomWidth: 0.5,
-    borderColor: 'rgba(255,255,255,0.05)'
-  },
-  itemTextContainer: {
-    flex: 1,
-    alignItems: 'flex-start'
-  },
-  itemTitle: {
-    fontSize: 13,
-    fontFamily: 'Rubik-Medium',
-    color: '#FAFAF7',
-    textAlign: 'left',
-    writingDirection: 'rtl'
-  },
-  itemDesc: {
-    fontSize: 11,
-    fontFamily: 'Inter-Regular',
-    color: '#71717A',
-    marginTop: 2,
-    textAlign: 'left',
-    writingDirection: 'rtl'
-  }
-});

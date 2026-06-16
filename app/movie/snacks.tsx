@@ -419,66 +419,92 @@ export default function SnacksScreen() {
       {movieTitle && (isRecLoading || recommendedSnacks.length > 0) && (
         <Animated.View 
           entering={FadeInDown.duration(400)}
-          className="mx-6 mt-4 rounded-3xl border border-white/10 overflow-hidden bg-surfaceLight/25"
+          className="mx-6 mt-4 rounded-3xl border border-white/10 overflow-hidden bg-surfaceLight"
+          style={{
+            shadowColor: Colors.secondary,
+            shadowOffset: { width: 0, height: 6 },
+            shadowOpacity: 0.08,
+            shadowRadius: 16,
+            elevation: 6,
+          }}
         >
-          <BlurView intensity={20} tint="dark" className="p-4">
-            <View className="flex-row-reverse items-center justify-between mb-3">
-              <View className="flex-row-reverse items-center gap-2">
-                <Sparkles size={16} color={Colors.secondary} />
-                <Text style={{ fontFamily: 'Rubik-Bold', fontSize: 13, color: Colors.secondary, writingDirection: 'rtl', textAlign: 'right' }}>
-                  מבצע חם: CineMeal AI Recommendations 🍿
-                </Text>
+          <View className="p-5">
+            <View className="flex-row items-center justify-between mb-4">
+              <View className="flex-row items-center gap-3 flex-1">
+                {/* Glowing AI Icon Container */}
+                <View className="w-9 h-9 rounded-xl bg-secondary/10 border border-secondary/25 items-center justify-center">
+                  <Sparkles size={18} color={Colors.secondary} />
+                </View>
+                
+                {/* Title Stack */}
+                <View className="items-start flex-1">
+                  <Text className="text-white font-bold text-[14px] font-sans" numberOfLines={1}>
+                    CineMeal AI Recommendations
+                  </Text>
+                  <Text className="text-white/40 text-[10px] font-medium font-assistant mt-0.5" numberOfLines={1}>
+                    התאמת נשנושים אישית מבוססת בינה מלאכותית
+                  </Text>
+                </View>
               </View>
-              {isRecLoading && <ActivityIndicator size="small" color={Colors.secondary} />}
+
+              {/* Hot Deal Badge or Loading Indicator */}
+              <View style={{ marginStart: 12 }}>
+                {isRecLoading ? (
+                  <ActivityIndicator size="small" color={Colors.secondary} />
+                ) : (
+                  <View className="bg-primary/15 border border-primary/30 px-2.5 py-1 rounded-full">
+                    <Text className="text-primary text-[9px] font-bold font-assistant">מבצע חם 🔥</Text>
+                  </View>
+                )}
+              </View>
             </View>
 
             {isRecLoading ? (
-              <Text className="text-white/50 text-[12px] font-assistant text-right" style={{ writingDirection: 'rtl' }}>
+              <Text className="text-white/50 text-[12px] font-assistant text-left">
                 מנתח את העדפות שלך ומתאים נשנושים...
               </Text>
             ) : (
-              <View className="flex-col gap-3">
-                <Text className="text-white/80 text-[12px] font-assistant text-right leading-relaxed" style={{ writingDirection: 'rtl' }}>
+              <View className="flex-col gap-4">
+                <Text className="text-white/80 text-[12px] font-assistant text-left leading-relaxed">
                   התאמנו במיוחד עבורך לצפייה ב-<Text style={{ fontFamily: 'Rubik-Medium', color: 'white' }}>{movieTitle}</Text>:
                 </Text>
                 
-                <View className="flex-row-reverse items-center justify-between">
-                  {/* Snack List Row */}
-                  <View className="flex-row-reverse gap-3 items-center">
-                    {recommendedSnacks.map(snack => (
-                      <View key={snack.id} className="flex-row-reverse items-center gap-1.5 bg-black/40 px-2.5 py-1.5 rounded-xl border border-white/5">
-                        {snack.image && <Image source={snack.image} className="w-5 h-5" resizeMode="contain" />}
-                        <Text className="text-white text-[10px] font-bold font-assistant">{snack.name}</Text>
-                      </View>
-                    ))}
-                  </View>
-
-                  {/* Add All Button */}
-                  <Pressable
-                    onPress={() => {
-                      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                      recommendedSnacks.forEach(snack => {
-                        addItem(snack.id);
-                      });
-                      triggerTraySplash();
-                    }}
-                    className="rounded-xl overflow-hidden border border-secondary/30 active:scale-95 shadow-sm shadow-secondary/20"
-                  >
-                    <LinearGradient
-                      colors={[Colors.secondary, '#B8CC00']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                      className="px-3.5 py-2"
-                    >
-                      <Text className="font-bold text-background text-[11px] font-assistant">
-                        הוסף הכל • ₪{totalRecPrice}
-                      </Text>
-                    </LinearGradient>
-                  </Pressable>
+                {/* Snack List Row */}
+                <View className="flex-row flex-wrap gap-2.5 justify-start">
+                  {recommendedSnacks.map(snack => (
+                    <View key={snack.id} className="flex-row items-center gap-2 bg-[#09090B] px-3 py-1.5 rounded-xl border border-white/10">
+                      {snack.image && <Image source={snack.image} className="w-6 h-6" resizeMode="contain" />}
+                      <Text className="text-white text-[11px] font-bold font-assistant">{snack.name}</Text>
+                    </View>
+                  ))}
                 </View>
+
+                {/* Add All Button */}
+                <Pressable
+                  onPress={() => {
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    recommendedSnacks.forEach(snack => {
+                      addItem(snack.id);
+                    });
+                    triggerTraySplash();
+                  }}
+                  className="w-full rounded-2xl overflow-hidden active:scale-[0.98] shadow-md shadow-secondary/10 mt-1"
+                >
+                  <LinearGradient
+                    colors={[Colors.secondary, '#B8CC00']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    className="w-full py-3 flex-row items-center justify-center gap-2"
+                  >
+                    <Sparkles size={14} color={Colors.background} />
+                    <Text className="font-bold text-background text-sm font-sans">
+                      הוסף את כל המארז לסל • ₪{totalRecPrice}
+                    </Text>
+                  </LinearGradient>
+                </Pressable>
               </View>
             )}
-          </BlurView>
+          </View>
         </Animated.View>
       )}
 

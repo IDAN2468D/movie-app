@@ -172,7 +172,14 @@ export default function CheckoutScreen() {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setDeliveryMode('immediate');
                 }}
-                className={`flex-1 p-4 rounded-2xl border ${deliveryMode === 'immediate' ? 'bg-primary/10 border-primary shadow-lg shadow-primary/20' : 'bg-surfaceLight border-white/5'} items-center`}
+                className={`flex-1 p-4 rounded-2xl border ${deliveryMode === 'immediate' ? 'bg-primary/10 border-primary' : 'bg-surfaceLight border-white/5'} items-center`}
+                style={deliveryMode === 'immediate' ? {
+                  shadowColor: Colors.primary,
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 8,
+                  elevation: 4,
+                } : undefined}
               >
                 <Text style={{ fontFamily: 'Rubik-Bold', fontSize: 14, color: deliveryMode === 'immediate' ? Colors.primary : 'white' }}>איסוף עצמי 🍿</Text>
                 <Text style={{ fontFamily: 'Assistant-Regular', fontSize: 10, color: '#A1A1AA', marginTop: 4, textAlign: 'center' }}>איסוף מהיר מהדלפק</Text>
@@ -183,7 +190,14 @@ export default function CheckoutScreen() {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setDeliveryMode('pre-sync');
                 }}
-                className={`flex-1 p-4 rounded-2xl border ${deliveryMode === 'pre-sync' ? 'bg-secondary/10 border-secondary shadow-lg shadow-secondary/20' : 'bg-surfaceLight border-white/5'} items-center`}
+                className={`flex-1 p-4 rounded-2xl border ${deliveryMode === 'pre-sync' ? 'bg-secondary/10 border-secondary' : 'bg-surfaceLight border-white/5'} items-center`}
+                style={deliveryMode === 'pre-sync' ? {
+                  shadowColor: Colors.secondary,
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 8,
+                  elevation: 4,
+                } : undefined}
               >
                 <Text style={{ fontFamily: 'Rubik-Bold', fontSize: 14, color: deliveryMode === 'pre-sync' ? Colors.secondary : 'white' }}>משלוח לכיסא 🛋️</Text>
                 <Text style={{ fontFamily: 'Assistant-Regular', fontSize: 10, color: '#A1A1AA', marginTop: 4, textAlign: 'center' }}>יוגש עם סיום הטריילרים</Text>
