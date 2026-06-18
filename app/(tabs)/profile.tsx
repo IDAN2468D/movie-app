@@ -5,7 +5,7 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, ScrollView, TouchableOpacity, ImageBackground, StyleSheet, Dimensions, Image, I18nManager } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { User, Bell, CreditCard, Shield, ChevronLeft, ChevronRight, LogOut, Ticket, Heart, History, TrendingUp, Moon, Trophy, Map as MapIcon, Sparkles, Headphones, Users, Award } from 'lucide-react-native';
+import { User, Bell, CreditCard, Shield, ChevronLeft, ChevronRight, LogOut, Ticket, Heart, History, TrendingUp, Moon, Trophy, Map as MapIcon, Sparkles, Headphones, Users, Award, Video, ScanLine, Palette } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { router } from 'expo-router';
@@ -155,6 +155,37 @@ export default function ProfileScreen() {
             description="עקבו אחר רשימות הצפייה וההזמנות של החברים שלכם!"
             color="#EC4899" 
             onPress={() => router.push('/friends' as any)} 
+          />
+
+          {/* ── AI Studio Section ── */}
+          <View className="mt-2 mb-1">
+            <Text style={{ fontFamily: 'Rubik-Medium', fontSize: 13, color: 'rgba(255,255,255,0.35)', letterSpacing: 1 }}>
+              AI STUDIO
+            </Text>
+          </View>
+
+          <MenuItem 
+            icon={Video} 
+            title="CineVision AI — מחולל קדימונים" 
+            description="חוללו קדימון אווירה מותאם אישית בעזרת בינה מלאכותית!"
+            color="#9333EA" 
+            onPress={() => router.push('/movie/cinevision' as any)} 
+          />
+
+          <MenuItem 
+            icon={ScanLine} 
+            title="CineLens AI — סורק פוסטרים" 
+            description="צלמו פוסטר וגלו טריוויה וסודות קולנועיים מוסתרים!"
+            color="#06B6D4" 
+            onPress={() => router.push('/search/cinelens' as any)} 
+          />
+
+          <MenuItem 
+            icon={Palette} 
+            title="CineArt Studio — כרטיסי אספנות" 
+            description="ייצרו כרטיס אספנות דינמי שמגיב לתנועת המכשיר!"
+            color="#F59E0B" 
+            onPress={() => router.push('/profile/cineart' as any)} 
           />
           
           <Pressable 

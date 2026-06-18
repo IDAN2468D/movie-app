@@ -224,6 +224,28 @@ function RootLayoutNav() {
             presentation: 'card',
           }}
         />
+        {/* ── Premium AI Screens ── */}
+        <Stack.Screen
+          name="movie/cinevision"
+          options={{
+            animation: 'slide_from_bottom',
+            presentation: 'modal',
+          }}
+        />
+        <Stack.Screen
+          name="search/cinelens"
+          options={{
+            animation: 'slide_from_bottom',
+            presentation: 'fullScreenModal',
+          }}
+        />
+        <Stack.Screen
+          name="profile/cineart"
+          options={{
+            animation: 'slide_from_bottom',
+            presentation: 'modal',
+          }}
+        />
       </Stack>
       <InTheaterOverlay />
     </>

@@ -636,6 +636,38 @@ export default function MovieDetailsScreen() {
             </Pressable>
           </ScrollEntrance>
 
+          {/* CineVision AI Banner — Mood Teaser Generator */}
+          <ScrollEntrance scrollY={scrollY}>
+            <Pressable
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                router.push({
+                  pathname: '/movie/cinevision' as any,
+                  params: { movieId: movie.id.toString(), movieTitle: movie.title, backdropPath: movie.backdrop_path || '' }
+                });
+              }}
+              className="mt-4 w-full rounded-3xl border border-[#9333EA]/20 bg-[#9333EA]/5 overflow-hidden active:scale-99"
+            >
+              <LinearGradient
+                colors={['rgba(147, 51, 234, 0.10)', 'rgba(0,0,0,0)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                className="p-5 flex-row items-center justify-between"
+              >
+                <View className="flex-row items-center gap-3">
+                  <View className="w-10 h-10 bg-[#9333EA]/10 border border-[#9333EA]/35 rounded-2xl justify-center items-center">
+                    <Sparkles size={20} color="#9333EA" />
+                  </View>
+                  <View className="items-start">
+                    <Text className="text-body text-white font-display text-left">חולל קדימון AI 🎬</Text>
+                    <Text className="text-[10px] text-white/50 text-left font-sans">צרו קדימון אווירה מותאם אישית לסרט זה</Text>
+                  </View>
+                </View>
+                {I18nManager.isRTL ? <ChevronLeft size={16} color="white" opacity={0.6} /> : <ChevronRight size={16} color="white" opacity={0.6} />}
+              </LinearGradient>
+            </Pressable>
+          </ScrollEntrance>
+
           {movie.overview ? (
             <ScrollEntrance scrollY={scrollY}>
               <View className="mt-8">
