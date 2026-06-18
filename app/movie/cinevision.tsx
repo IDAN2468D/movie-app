@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Pressable, TextInput, ScrollView, Image, ActivityIndicator, I18nManager } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import { ChevronRight, ChevronLeft, Sparkles, Play, Video } from 'lucide-react-native';
+import { ChevronRight, ChevronLeft, Sparkles, Play, Video, AlertTriangle } from 'lucide-react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Colors } from '@/constants/Theme';
@@ -21,12 +21,30 @@ export default function CineVisionScreen() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
   const [moodTags, setMoodTags] = useState<string[]>([]);
+  const [videoError, setVideoError] = useState(false);
 
   // Configure Expo Video Player
   const player = useVideoPlayer(generatedVideoUrl || '', (p) => {
     p.loop = true;
-    p.play();
   });
+
+  // Listen for player errors and auto-play when video is ready
+  useEffect(() => {
+    if (!generatedVideoUrl || !player) return;
+    setVideoError(false);
+
+    const statusSub = player.addListener('statusChange', (event) => {
+      if (event.status === 'error') {
+        setVideoError(true);
+      } else if (event.status === 'readyToPlay') {
+        player.play();
+      }
+    });
+
+    return () => {
+      statusSub.remove();
+    };
+  }, [generatedVideoUrl, player]);
 
   const handleGenerateTeaser = async () => {
     if (!prompt.trim()) {
@@ -119,15 +137,23 @@ export default function CineVisionScreen() {
         {/* Video Player / Video Placeholder Area */}
         <Animated.View entering={FadeInDown.delay(100).springify()} className="mb-6">
           <View className="w-full aspect-video rounded-[24px] overflow-hidden border border-white/10 bg-black/40 relative justify-center items-center">
-            {generatedVideoUrl ? (
+            {generatedVideoUrl && !videoError ? (
               <VideoView 
                 style={{ width: '100%', height: '100%' }} 
-                player={player} 
+                player={player}
+                contentFit="contain"
               />
             ) : (
               <View className="items-center p-6">
                 {isGenerating ? (
                   <ActivityIndicator size="large" color={Colors.primary} />
+                ) : videoError ? (
+                  <>
+                    <AlertTriangle size={40} color={Colors.primary} />
+                    <Text className="text-white/60 text-sm mt-3 text-center" style={{ fontFamily: 'Assistant-Regular' }}>
+                      לא ניתן לטעון את הסרטון. נסו שוב עם אווירה אחרת.
+                    </Text>
+                  </>
                 ) : (
                   <>
                     <Video size={48} color="rgba(255, 255, 255, 0.3)" />
@@ -156,19 +182,19 @@ export default function CineVisionScreen() {
         <Animated.View entering={FadeInDown.delay(200).springify()} className="bg-surfaceGlass/40 border border-white/8 rounded-[24px] overflow-hidden p-5">
           <BlurView intensity={30} tint="dark" className="absolute inset-0" />
           
-          <Text className="text-white text-base font-bold text-right mb-2" style={{ fontFamily: 'Rubik-Medium' }}>
+          <Text className="text-white text-base font-bold text-left mb-2" style={{ fontFamily: 'Rubik-Medium' }}>
             תאר את האווירה המבוקשת:
           </Text>
 
           <TextInput
             value={prompt}
             onChangeText={setPrompt}
-            placeholder="לדוגמה: אווירת פילם-נואר חשוכה, גשם כבד ברחובות ניאון..."
+            placeholder="למשל: פילם-נואר חשוך, גשם וניאון..."
             placeholderTextColor="rgba(255, 255, 255, 0.3)"
             multiline
             numberOfLines={4}
-            className="w-full bg-black/30 border border-white/10 rounded-xl p-4 text-white text-right mb-4"
-            style={{ fontFamily: 'Assistant-Regular', textAlign: 'right' }}
+            className="w-full bg-black/30 border border-white/10 rounded-xl p-4 text-white mb-4"
+            style={{ fontFamily: 'Assistant-Regular', textAlign: 'right', writingDirection: 'rtl' }}
           />
 
           <Pressable 
