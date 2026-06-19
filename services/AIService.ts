@@ -117,13 +117,21 @@ export class AIService {
           return JSON.parse(sliced);
         } catch (e2: any) {
           try {
-            const sanitized = sliced
+            let sanitized = sliced
+              .replace(/([a-zA-Z0-9א-ת])"([a-zA-Z0-9א-ת])/g, '$1\\"$2')
               .replace(/[\u201C\u201D\u201E\u201F\u2033\u2036]/g, '"')
               .replace(/[\u2018\u2019\u201A\u201B\u2032\u2035]/g, "'")
-              .replace(/,\s*([\]}])/g, '$1')
-              .replace(/[\u0000-\u001F]+/g, (match) => 
-                match.replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t')
-              );
+              .replace(/,\s*([\]}])/g, '$1');
+
+            sanitized = sanitized.replace(/"([^"\\]|\\.)*"/g, (strMatch) => {
+              return strMatch.replace(/[\u0000-\u001F]/g, (char) => {
+                if (char === '\n') return '\\n';
+                if (char === '\r') return '\\r';
+                if (char === '\t') return '\\t';
+                return '';
+              });
+            });
+
             return JSON.parse(sanitized);
           } catch {
             console.error("AIService: Failed parsing sliced JSON. Content was:", sliced, "Error:", e2.message);
@@ -139,10 +147,21 @@ export class AIService {
           return JSON.parse(sliced);
         } catch (e2: any) {
           try {
-            const sanitized = sliced
+            let sanitized = sliced
+              .replace(/([a-zA-Z0-9א-ת])"([a-zA-Z0-9א-ת])/g, '$1\\"$2')
               .replace(/[\u201C\u201D\u201E\u201F\u2033\u2036]/g, '"')
               .replace(/[\u2018\u2019\u201A\u201B\u2032\u2035]/g, "'")
               .replace(/,\s*([\]}])/g, '$1');
+
+            sanitized = sanitized.replace(/"([^"\\]|\\.)*"/g, (strMatch) => {
+              return strMatch.replace(/[\u0000-\u001F]/g, (char) => {
+                if (char === '\n') return '\\n';
+                if (char === '\r') return '\\r';
+                if (char === '\t') return '\\t';
+                return '';
+              });
+            });
+
             return JSON.parse(sanitized);
           } catch {
             console.error("AIService: Failed parsing sliced Array. Content was:", sliced, "Error:", e2.message);
@@ -1158,7 +1177,7 @@ ${names.join('\n')}
         const text = response.text();
         
         const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        const parsed = JSON.parse(jsonStr);
+        const parsed = this.parseJSON(jsonStr);
         if (Array.isArray(parsed)) {
           return parsed;
         }

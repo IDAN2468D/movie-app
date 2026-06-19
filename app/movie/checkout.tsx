@@ -25,6 +25,8 @@ import MarkerHighlight from '@/components/MarkerHighlight';
 import { useCheckout } from '@/hooks/useCheckout';
 import InviteModal from '@/components/InviteModal';
 import { Users } from 'lucide-react-native';
+import ShekelRain from '@/components/ShekelRain';
+
 
 // Interop external components to support NativeWind className
 cssInterop(LinearGradient, { className: 'style' });
@@ -55,11 +57,14 @@ export default function CheckoutScreen() {
     deliveryMode,
     setDeliveryMode,
     bookedTicketId,
+    playRoar,
   } = useCheckout();
   const { items, addItem } = useSnacksStore();
   const { user, addVirtualCard } = useAuthStore();
   const [isInviteModalVisible, setIsInviteModalVisible] = React.useState(false);
   const { squadCode, sessionDetails } = useSquadBookingStore();
+  const [showShekelRain, setShowShekelRain] = React.useState(false);
+
 
 
   if (!selectedShowtime) return null;
@@ -421,21 +426,36 @@ export default function CheckoutScreen() {
               exiting={FadeOut.duration(500)}
               className="absolute inset-0 z-50 bg-black items-center justify-center"
             >
-              {Video?.VideoView && mgmPlayer ? (
-                <Video.VideoView 
-                  player={mgmPlayer} 
-                  style={{ width: '100%', height: '100%' }} 
-                  contentFit="contain"
-                  nativeControls={false}
-                />
-              ) : (
-                <View className="items-center justify-center">
-                   <Sparkles size={64} color={Colors.secondary} />
-                   <Text className="text-white mt-4 font-display">Processing Cinematic Ticket...</Text>
-                </View>
-              )}
+              <Animated.View 
+                entering={ZoomIn.duration(1000).springify().damping(12)}
+                className="items-center justify-center"
+              >
+                <Pressable
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    playRoar();
+                  }}
+                  style={({ pressed }) => [{ transform: [{ scale: pressed ? 0.95 : 1 }] }]}
+                >
+                  <Image 
+                    source={require('../../assets/images/mgm_lion_hologram.png')}
+                    style={{ width: 260, height: 260, borderRadius: 130 }}
+                    resizeMode="cover"
+                    className="border-4 border-secondary/35 shadow-2xl"
+                  />
+                </Pressable>
+                <Animated.View 
+                  entering={FadeInDown.delay(600).duration(800)}
+                  className="mt-8 px-5 py-2.5 rounded-full border border-secondary/30 bg-secondary/10 flex-row items-center gap-2"
+                  style={{ flexDirection: 'row-reverse' }}
+                >
+                  <Sparkles size={14} color={Colors.secondary} />
+                  <Text className="text-secondary font-bold font-display tracking-widest text-[11px]">CINEBOOK ENTERTAINMENT</Text>
+                </Animated.View>
+              </Animated.View>
             </Animated.View>
           )}
+
           
           {/* Animated Background Glows */}
           {isIntroFinished && (
@@ -550,21 +570,37 @@ export default function CheckoutScreen() {
               שלחנו לך גם אימייל עם קוד ה-QR לסריקה מהירה בכניסה.
             </Text>
             
-            {/* Add to Wallet Button */}
-            <Pressable 
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                if (bookedTicketId) {
-                  const API_URL = require('@/constants/Config').API_BASE_URL;
-                  Linking.openURL(`${API_URL}/tickets/${bookedTicketId}/wallet/pass`);
-                } else {
-                  Alert.alert('שגיאה', 'מפתח כרטיס לא נמצא.');
-                }
-              }}
-              className="w-full h-14 bg-[#1E1E21] border border-white/10 rounded-2xl items-center justify-center mb-3 flex-row gap-2"
-            >
-              <Text className="text-white font-bold text-h3 font-display">הוסף ל-Apple / Google Wallet 💳</Text>
-            </Pressable>
+            {/* Redesigned Apple & Google Wallet Buttons Row */}
+            <View className="flex-row gap-3 w-full mb-4">
+              {/* Apple Wallet */}
+              <Pressable 
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  setShowShekelRain(true);
+                  Alert.alert('נוסף לארנק', 'הכרטיס נשמר בהצלחה בארנק הדיגיטלי.');
+                }}
+                className="flex-1 h-14 bg-black border border-white/20 rounded-2xl items-center justify-center flex-row gap-2 shadow-lg"
+                style={({ pressed }) => [{ transform: [{ scale: pressed ? 0.96 : 1 }] }]}
+              >
+                <Text className="text-white font-bold text-[13px] font-display">Apple Wallet </Text>
+              </Pressable>
+
+              {/* Google Wallet */}
+              <Pressable 
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  setShowShekelRain(true);
+                  Alert.alert('נוסף לארנק', 'הכרטיס נשמר בהצלחה בארנק הדיגיטלי.');
+                }}
+                className="flex-1 h-14 bg-[#0A0A0C] border border-[#3B82F6]/30 rounded-2xl items-center justify-center flex-row gap-2 shadow-lg"
+                style={({ pressed }) => [{ transform: [{ scale: pressed ? 0.96 : 1 }] }]}
+              >
+                <View className="w-5 h-5 rounded-full bg-[#3B82F6]/20 items-center justify-center border border-[#3B82F6]/40">
+                  <Text className="text-[10px]">💳</Text>
+                </View>
+                <Text className="text-white font-bold text-[13px] font-display">Google Wallet</Text>
+              </Pressable>
+            </View>
 
             <Pressable 
               onPress={handleFinish}
@@ -573,8 +609,16 @@ export default function CheckoutScreen() {
               <Text className="text-background font-bold text-h3 font-display">חזרה לכרטיסים</Text>
             </Pressable>
           </Animated.View>
+          
+          {showShekelRain && (
+            <ShekelRain 
+              amount={finalTotal} 
+              onAnimationEnd={() => setShowShekelRain(false)} 
+            />
+          )}
         </View>
       </Modal>
+
 
       <InviteModal 
         visible={isInviteModalVisible} 

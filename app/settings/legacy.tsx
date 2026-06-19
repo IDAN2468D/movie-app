@@ -295,10 +295,10 @@ export default function LegacyScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Generative Gyro-Reactive Glass Card */}
-          <Animated.View
-            entering={FadeInDown.duration(600).springify()}
-            style={[styles.cardContainer, { borderColor: themeColors.primary + '4D' }, cardAnimatedStyle]}
-          >
+          <Animated.View entering={FadeInDown.duration(600).springify()}>
+            <Animated.View
+              style={[styles.cardContainer, { borderColor: themeColors.primary + '4D' }, cardAnimatedStyle]}
+            >
             {/* Frosted Glass Base */}
             {Platform.OS !== 'web' ? (
               <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
@@ -410,6 +410,7 @@ export default function LegacyScreen() {
                 </Svg>
               </View>
             </View>
+            </Animated.View>
           </Animated.View>
 
           {/* Detailed Statistics Section */}

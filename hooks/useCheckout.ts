@@ -8,6 +8,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useSnacksStore } from '@/store/useSnacksStore';
 import NotificationService from '@/services/NotificationService';
 import { Video } from '@/utils/SafeModules';
+import { Audio } from '../utils/safeExpoAv';
 
 export const useCheckout = () => {
   const selectedMovieId = useBookingStore(state => state.selectedMovieId);
@@ -62,11 +63,47 @@ export const useCheckout = () => {
 
   const finalTotal = totalPrice + snacksTotal + 4; // Including 4 NIS fee
 
+  const playRoar = useCallback(async () => {
+    try {
+      // Set audio mode so it plays on iOS even in silent mode
+      if (typeof Audio.setAudioModeAsync === 'function') {
+        await Audio.setAudioModeAsync({
+          playsInSilentModeIOS: true,
+          staysActiveInBackground: false,
+          shouldRouteThroughEarpieceAndroid: false,
+          allowsRecordingIOS: false,
+          interruptionModeIOS: 1, // DoNotMix
+          interruptionModeAndroid: 1, // DoNotMix
+          playThroughEarpieceAndroid: false,
+        } as any);
+      }
+      
+      const { sound } = await Audio.Sound.createAsync(
+        require('../assets/audio/lion_roar.mp3'),
+        { volume: 0.9, shouldPlay: true }
+      );
+      
+      // Auto unload sound after playing
+      sound.setOnPlaybackStatusUpdate((status: any) => {
+        if (status.didJustFinish) {
+          sound.unloadAsync().catch(() => {});
+        }
+      });
+    } catch (e) {
+      console.warn('[useCheckout] Failed to play roar:', e);
+    }
+  }, []);
+
   // Handle Success Sequence
   useEffect(() => {
     if (isSuccess) {
       setShowAnimation(true);
       setIsIntroFinished(false);
+      
+      // Play the sound after a slight delay to sync with screen transition
+      const soundTimer = setTimeout(() => {
+        playRoar();
+      }, 500);
       
       // Start MGM Intro
       if (mgmPlayer) {
@@ -92,9 +129,11 @@ export const useCheckout = () => {
       }, 9500);
 
       return () => {
+        clearTimeout(soundTimer);
         clearTimeout(hapticTimer);
         clearTimeout(timer);
         clearTimeout(modalTimer);
+        
         try {
           if (mgmPlayer) {
             mgmPlayer.pause();
@@ -102,7 +141,8 @@ export const useCheckout = () => {
         } catch (e) {}
       };
     }
-  }, [isSuccess, mgmPlayer]);
+  }, [isSuccess, mgmPlayer, playRoar]);
+
 
   const handlePayment = useCallback(async () => {
     const { user } = useAuthStore.getState();
@@ -218,5 +258,6 @@ export const useCheckout = () => {
     deliveryMode,
     setDeliveryMode,
     bookedTicketId,
+    playRoar,
   };
 };

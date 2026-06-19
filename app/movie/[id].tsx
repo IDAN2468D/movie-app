@@ -482,17 +482,18 @@ export default function MovieDetailsScreen() {
           }}
         >
           {posterSource && (
-            <Animated.View 
-              entering={FadeInDown.delay(300).springify()}
-              style={posterAnimatedStyle}
-              className="shadow-2xl"
-            >
-              <Image
-                source={posterSource}
-                className="w-[140px] h-[210px] rounded-[24px] border-2 border-white/20"
-                resizeMode="cover"
-                onError={() => handleImageError(setPosterSource, 'poster')}
-              />
+            <Animated.View entering={FadeInDown.delay(300).springify()}>
+              <Animated.View 
+                style={posterAnimatedStyle}
+                className="shadow-2xl"
+              >
+                <Image
+                  source={posterSource}
+                  className="w-[140px] h-[210px] rounded-[24px] border-2 border-white/20"
+                  resizeMode="cover"
+                  onError={() => handleImageError(setPosterSource, 'poster')}
+                />
+              </Animated.View>
             </Animated.View>
           )}
             <View 
