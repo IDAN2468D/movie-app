@@ -5,7 +5,7 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, ScrollView, TouchableOpacity, ImageBackground, StyleSheet, Dimensions, Image, I18nManager } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { User, Bell, CreditCard, Shield, ChevronLeft, ChevronRight, LogOut, Ticket, Heart, History, TrendingUp, Moon, Trophy, Map as MapIcon, Sparkles, Headphones, Users, Award, Video, ScanLine, Palette } from 'lucide-react-native';
+import { User, Bell, CreditCard, Shield, ChevronLeft, ChevronRight, LogOut, Ticket, Heart, History, TrendingUp, Moon, Trophy, Map as MapIcon, Sparkles, Headphones, Users, Award, Video, ScanLine, Palette, BookOpen, Calendar, Film } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { router } from 'expo-router';
@@ -187,6 +187,31 @@ export default function ProfileScreen() {
             color="#F59E0B" 
             onPress={() => router.push('/profile/cineart' as any)} 
           />
+
+          <MenuItem 
+            icon={BookOpen} 
+            title="CineJournal AI — יומן קולנוע אישי" 
+            description="כתבו רשמים מהצפייה וסנכרנו אוטומטית ליומן ה-Obsidian שלכם!"
+            color="#10B981" 
+            onPress={() => router.push('/cinejournal' as any)} 
+          />
+
+          <MenuItem 
+            icon={Calendar} 
+            title="CineBudget — מתכנן אירועים וספליט" 
+            description="תאמו הקרנות משותפות וסנכרנו תקציבים ל-Google Sheets ו-Calendar!"
+            color="#3B82F6" 
+            onPress={() => router.push('/squadplanner' as any)} 
+          />
+
+          <MenuItem 
+            icon={Film} 
+            title="CinePitch — סטודיו ליצירת סרטים" 
+            description="פתחו רעיונות לסרטים והפיקו מצגות Pitch Deck מעוצבות לענן!"
+            color="#EC4899" 
+            onPress={() => router.push('/productionlab' as any)} 
+          />
+
           
           <Pressable 
             onPress={toggleInTheaterMode} 
