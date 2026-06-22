@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator, Linking, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Film, Sparkles, Check, X, FileText, Video } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -7,6 +7,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Colors, Typography } from '@/constants/Theme';
+import { API_BASE_URL } from '@/constants/Config';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export default function ProductionLabScreen() {
   const insets = useSafeAreaInsets();
@@ -23,11 +25,12 @@ export default function ProductionLabScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     try {
-      const response = await fetch('http://localhost:5000/api/mcp/pitch-deck', {
+      const token = useAuthStore.getState().token;
+      const response = await fetch(`${API_BASE_URL}/mcp/pitch-deck`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer mock-dev-token'
+          'Authorization': `Bearer ${token || 'mock-dev-token'}`
         },
         body: JSON.stringify({
           movieTitle,
@@ -40,6 +43,8 @@ export default function ProductionLabScreen() {
       if (json.success) {
         setPitchDetails(json.data);
         setSaved(true);
+      } else {
+        throw new Error(json.message || 'Server returned failure response');
       }
     } catch (error) {
       console.warn('API error, simulating pitch deck...', error);
@@ -160,8 +165,29 @@ export default function ProductionLabScreen() {
                     {pitchDetails.outline}
                   </Text>
                 </View>
+
+                {!pitchDetails.googleSlidesId.startsWith('mock-') && pitchDetails.googleSlidesId !== 'slides-deck-8787878' ? (
+                  <Pressable 
+                    onPress={() => {
+                      const url = `https://docs.google.com/presentation/d/${pitchDetails.googleSlidesId}/edit`;
+                      Linking.openURL(url).catch(err => {
+                        console.error('Failed to open URL:', err);
+                        Alert.alert('שגיאה', 'לא ניתן לפתוח את הקישור במכשיר זה');
+                      });
+                    }}
+                    className="w-full bg-[#E5FF00] rounded-2xl p-4 items-center justify-center mt-2 flex-row gap-2"
+                  >
+                    <FileText size={20} color="black" />
+                    <Text className="text-black font-bold text-base" style={{ fontFamily: 'Rubik-Bold' }}>פתח מצגת ב-Google Slides</Text>
+                  </Pressable>
+                ) : (
+                  <Text style={{ textAlign: 'right', fontFamily: 'Assistant-Regular' }} className="text-amber-500 text-xs mt-1">
+                    ⚠️ שים לב: זוהי מצגת סימולציה מקומית (מצב לא מקוון).
+                  </Text>
+                )}
               </View>
             )}
+
 
             <Pressable 
               onPress={() => {
