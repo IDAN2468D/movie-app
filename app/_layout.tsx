@@ -247,6 +247,34 @@ function RootLayoutNav() {
           }}
         />
         <Stack.Screen
+          name="aiconcierge"
+          options={{
+            animation: 'slide_from_bottom',
+            presentation: 'modal',
+          }}
+        />
+        <Stack.Screen
+          name="arwayfinder"
+          options={{
+            animation: 'slide_from_bottom',
+            presentation: 'modal',
+          }}
+        />
+        <Stack.Screen
+          name="auramatch"
+          options={{
+            animation: 'slide_from_bottom',
+            presentation: 'modal',
+          }}
+        />
+        <Stack.Screen
+          name="hapticpreview"
+          options={{
+            animation: 'slide_from_bottom',
+            presentation: 'modal',
+          }}
+        />
+        <Stack.Screen
           name="cinejournal"
           options={{
             animation: 'slide_from_bottom',

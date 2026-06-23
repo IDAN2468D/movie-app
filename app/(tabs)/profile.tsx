@@ -244,6 +244,38 @@ export default function ProfileScreen() {
             onPress={() => router.push('/seatauction' as any)} 
           />
 
+          <MenuItem 
+            icon={Sparkles} 
+            title="קונסיירז׳ AI — AI Cine-Concierge" 
+            description="המלצות ושיחה קולנועית מותאמת אישית מבוססת בינה מלאכותית!"
+            color="#00F0FF" 
+            onPress={() => router.push('/aiconcierge' as any)} 
+          />
+
+          <MenuItem 
+            icon={MapIcon} 
+            title="ניווט AR בקולנוע — AR Wayfinder" 
+            description="ניווט אינטראקטיבי תלת-ממדי מבוסס מצלמה למושב ולמזנון!"
+            color="#FF1464" 
+            onPress={() => router.push('/arwayfinder' as any)} 
+          />
+
+          <MenuItem 
+            icon={Users} 
+            title="מעגלי Aura-Match" 
+            description="מצאו חברים לצפייה משותפת על בסיס התאמת הילת הטעם הקולנועי!"
+            color="#8A2BE2" 
+            onPress={() => router.push('/auramatch' as any)} 
+          />
+
+          <MenuItem 
+            icon={Film} 
+            title="קדימונים רטטיים — Haptic Preview" 
+            description="צפו בטריילרים המסונכרנים עם משוב רטט ממוקד וסאונד מרחבי!"
+            color="#E5FF00" 
+            onPress={() => router.push('/hapticpreview' as any)} 
+          />
+
           
           <Pressable 
             onPress={toggleInTheaterMode} 
