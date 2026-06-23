@@ -212,6 +212,38 @@ export default function ProfileScreen() {
             onPress={() => router.push('/productionlab' as any)} 
           />
 
+          <MenuItem 
+            icon={Headphones} 
+            title="כיוונון סאונד — CineSound" 
+            description="כוונו את הסאונד המרחבי הדינמי לפי מיקום המושב שלכם!"
+            color="#8B5CF6" 
+            onPress={() => router.push('/cinesound' as any)} 
+          />
+
+          <MenuItem 
+            icon={MapIcon} 
+            title="הגעה קבוצתית — CineSquad" 
+            description="תאמו הגעה שיתופית לקולנוע בזמן אמת עם הגנת פרטיות!"
+            color="#10B981" 
+            onPress={() => router.push('/cinesquad' as any)} 
+          />
+
+          <MenuItem 
+            icon={Sparkles} 
+            title="תסריטאי AI — CineDirector" 
+            description="שכתבו סצנות מסרטים לז'אנרים שונים בעזרת מאיץ AI!"
+            color="#FF1464" 
+            onPress={() => router.push('/cinedirector' as any)} 
+          />
+
+          <MenuItem 
+            icon={Trophy} 
+            title="החלפת מושבים — CineSeat Swap" 
+            description="שוק החלפת מושבים P2P ומכירות פומביות בנקודות CinePass!"
+            color="#E5FF00" 
+            onPress={() => router.push('/seatauction' as any)} 
+          />
+
           
           <Pressable 
             onPress={toggleInTheaterMode} 
