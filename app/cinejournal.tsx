@@ -7,9 +7,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Colors, Typography } from '@/constants/Theme';
+import { API_BASE_URL } from '@/constants/Config';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export default function CineJournalScreen() {
   const insets = useSafeAreaInsets();
+  const token = useAuthStore(state => state.token);
   const [movieTitle, setMovieTitle] = useState('');
   const [userRating, setUserRating] = useState(8);
   const [userNotes, setUserNotes] = useState('');
@@ -25,12 +28,12 @@ export default function CineJournalScreen() {
 
     try {
       // Direct mock API call or fetch to local server
-      const response = await fetch('http://localhost:5000/api/mcp/journal', {
+      const response = await fetch(`${API_BASE_URL}/mcp/journal`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           // Simple mock authentication header for development
-          'Authorization': 'Bearer mock-dev-token'
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           movieId: 'mock-movie-id',
@@ -39,6 +42,10 @@ export default function CineJournalScreen() {
           userNotes
         })
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       const json = await response.json();
       if (json.success) {

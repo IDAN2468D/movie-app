@@ -31,7 +31,7 @@ export default function CineVistaTheme({ movieId, movieTitle, onColorChange }: C
       name: 'מבוא סייבר-ניאון',
       thumbnail: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=150&q=80',
       colors: ['#FF1464', '#00F0FF'],
-      vibe: 'Cyberpunk Neon Vibe',
+      vibe: 'וויב סייברפאנק ניאון',
       spotifyLink: 'https://open.spotify.com/playlist/37i9dQZF1DXdLTE7y1R4Yp',
       location: 'טוקיו, רובע שיבויה',
       locationLink: 'https://maps.google.com/?q=Shibuya+Crossing+Tokyo',
@@ -42,7 +42,7 @@ export default function CineVistaTheme({ movieId, movieTitle, onColorChange }: C
       name: 'שקיעה מלנכולית',
       thumbnail: 'https://images.unsplash.com/photo-1472289065668-ce650ac443d2?auto=format&fit=crop&w=150&q=80',
       colors: ['#FFA500', '#4A0E0E'],
-      vibe: 'Warm Melancholy Sunset',
+      vibe: 'שקיעה מלנכולית חמימה',
       spotifyLink: 'https://open.spotify.com/playlist/37i9dQZF1DX8U52IPtqGXt',
       location: 'גרנד קניון, אריזונה',
       locationLink: 'https://maps.google.com/?q=Grand+Canyon+USA',
@@ -53,7 +53,7 @@ export default function CineVistaTheme({ movieId, movieTitle, onColorChange }: C
       name: 'היכל הזכוכית הלבן',
       thumbnail: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=150&q=80',
       colors: ['#E5FF00', '#1E1E21'],
-      vibe: 'Futuristic Minimalist Glass',
+      vibe: 'זכוכית מינימליסטית עתידנית',
       spotifyLink: 'https://open.spotify.com/playlist/37i9dQZF1DX0rV78Ahn6x9',
       location: 'מוזיאון הלובר, פריז',
       locationLink: 'https://maps.google.com/?q=Louvre+Museum+Paris',
@@ -74,15 +74,15 @@ export default function CineVistaTheme({ movieId, movieTitle, onColorChange }: C
   return (
     <View className="mt-6 items-stretch">
       <Text 
-        className="text-white text-base font-bold mb-1 text-right"
-        style={{ fontFamily: 'Rubik-Bold', writingDirection: 'rtl' }}
+        className="text-white text-base font-bold mb-1 text-left"
+        style={{ fontFamily: 'Rubik-Bold', writingDirection: 'ltr' }}
       >
         CineVista - פורטל אסתטיקה
       </Text>
       
       <Text 
-        className="text-[12px] text-textSecondary mb-4 leading-5 text-right"
-        style={{ fontFamily: 'Inter-Regular', writingDirection: 'rtl' }}
+        className="text-[12px] text-textSecondary mb-4 leading-5 text-left"
+        style={{ fontFamily: 'Inter-Regular', writingDirection: 'ltr' }}
       >
         בחר סצנה כדי להלביש את האפליקציה בצבעיה ולגלות מוזיקה, לוקיישנים ואופנה תואמים:
       </Text>
@@ -137,8 +137,8 @@ export default function CineVistaTheme({ movieId, movieTitle, onColorChange }: C
           className="mt-3 p-4 rounded-[20px] border border-white/5 overflow-hidden"
         >
           <Text 
-            className="text-sm text-secondary mb-3 text-right"
-            style={{ fontFamily: 'Rubik-Bold', writingDirection: 'rtl' }}
+            className="text-sm text-secondary mb-3 text-left"
+            style={{ fontFamily: 'Rubik-Bold', writingDirection: 'ltr' }}
           >
             🔮 {activeScene.vibe}
           </Text>
@@ -151,14 +151,14 @@ export default function CineVistaTheme({ movieId, movieTitle, onColorChange }: C
             <Music size={18} color={Colors.secondary} />
             <View className="flex-1 items-start">
               <Text 
-                className="text-[13px] text-white text-right"
-                style={{ fontFamily: 'Rubik-Medium', writingDirection: 'rtl' }}
+                className="text-[13px] text-white text-left"
+                style={{ fontFamily: 'Rubik-Medium', writingDirection: 'ltr' }}
               >
                 פלייליסט סאונדטראק תואם
               </Text>
               <Text 
-                className="text-[11px] text-[#71717A] mt-0.5 text-right"
-                style={{ fontFamily: 'Inter-Regular', writingDirection: 'rtl' }}
+                className="text-[11px] text-[#71717A] mt-0.5 text-left"
+                style={{ fontFamily: 'Inter-Regular', writingDirection: 'ltr' }}
               >
                 לחץ כדי להאזין ב-Spotify לוויב של הסצנה
               </Text>
@@ -173,14 +173,14 @@ export default function CineVistaTheme({ movieId, movieTitle, onColorChange }: C
             <MapPin size={18} color={Colors.secondary} />
             <View className="flex-1 items-start">
               <Text 
-                className="text-[13px] text-white text-right"
-                style={{ fontFamily: 'Rubik-Medium', writingDirection: 'rtl' }}
+                className="text-[13px] text-white text-left"
+                style={{ fontFamily: 'Rubik-Medium', writingDirection: 'ltr' }}
               >
                 לוקיישן השראה: {activeScene.location}
               </Text>
               <Text 
-                className="text-[11px] text-[#71717A] mt-0.5 text-right"
-                style={{ fontFamily: 'Inter-Regular', writingDirection: 'rtl' }}
+                className="text-[11px] text-[#71717A] mt-0.5 text-left"
+                style={{ fontFamily: 'Inter-Regular', writingDirection: 'ltr' }}
               >
                 לחץ כדי לצפות במפת גוגל
               </Text>
@@ -192,14 +192,14 @@ export default function CineVistaTheme({ movieId, movieTitle, onColorChange }: C
             <ShoppingBag size={18} color={Colors.secondary} />
             <View className="flex-1 items-start">
               <Text 
-                className="text-[13px] text-white text-right"
-                style={{ fontFamily: 'Rubik-Medium', writingDirection: 'rtl' }}
+                className="text-[13px] text-white text-left"
+                style={{ fontFamily: 'Rubik-Medium', writingDirection: 'ltr' }}
               >
                 קוד לבוש ואופנה (Fashion DNA)
               </Text>
               <Text 
-                className="text-[11px] text-[#71717A] mt-0.5 text-right"
-                style={{ fontFamily: 'Inter-Regular', writingDirection: 'rtl' }}
+                className="text-[11px] text-[#71717A] mt-0.5 text-left"
+                style={{ fontFamily: 'Inter-Regular', writingDirection: 'ltr' }}
               >
                 {activeScene.fashionTip}
               </Text>

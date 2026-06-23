@@ -7,9 +7,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Colors, Typography } from '@/constants/Theme';
+import { API_BASE_URL } from '@/constants/Config';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export default function SquadPlannerScreen() {
   const insets = useSafeAreaInsets();
+  const token = useAuthStore(state => state.token);
   const [movieTitle, setMovieTitle] = useState('');
   const [eventDate, setEventDate] = useState('2026-06-25T19:30:00.000Z');
   const [participantInput, setParticipantInput] = useState('');
@@ -32,11 +35,11 @@ export default function SquadPlannerScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     try {
-      const response = await fetch('http://localhost:5000/api/mcp/squad-budget', {
+      const response = await fetch(`${API_BASE_URL}/mcp/squad-budget`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer mock-dev-token'
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           squadId: '60c72b2f9b1d8a23d88b4567', // Mock object id
@@ -46,6 +49,10 @@ export default function SquadPlannerScreen() {
           totalBudget
         })
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       const json = await response.json();
       if (json.success) {

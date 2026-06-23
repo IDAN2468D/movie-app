@@ -8,12 +8,15 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '@/constants/Theme';
+import { API_BASE_URL } from '@/constants/Config';
+import { useAuthStore } from '@/store/useAuthStore';
 
 const GENRES = ['Sci-Fi Noir', 'Hebrew Bourekas', 'Cyberpunk', 'Western', 'Classic Drama'];
 const { width } = Dimensions.get('window');
 
 export default function CineDirectorScreen() {
   const insets = useSafeAreaInsets();
+  const token = useAuthStore(state => state.token);
   const [sceneText, setSceneText] = useState('');
   const [selectedGenreIndex, setSelectedGenreIndex] = useState(0);
   const [reimaginedScene, setReimaginedScene] = useState('');
@@ -62,11 +65,11 @@ export default function CineDirectorScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
 
     try {
-      const response = await fetch('http://localhost:5000/api/mcp/director/reimagine', {
+      const response = await fetch(`${API_BASE_URL}/mcp/director/reimagine`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer mock-dev-token'
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           movieTitle: 'סרט מותאם אישית',
@@ -75,11 +78,17 @@ export default function CineDirectorScreen() {
         })
       });
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const json = await response.json();
       if (json.success) {
         setReimaginedScene(json.data.reimaginedScene);
         setIsLocalFallback(!!json.data.isLocalFallback);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } else {
+        throw new Error(json.message || 'Server returned unsuccessful status');
       }
     } catch (err) {
       console.warn('AI API error, fallback to offline simulation:', err);
@@ -106,7 +115,7 @@ export default function CineDirectorScreen() {
 
         {/* Scene Text Input */}
         <Animated.View entering={FadeInDown.duration(600).springify()} className="mb-6">
-          <Text style={{ textAlign: 'right', writingDirection: 'rtl' }} className="text-white/60 mb-2 font-body">הסצנה המקורית שלך</Text>
+          <Text style={{ textAlign: 'left', writingDirection: 'ltr' }} className="text-white/60 mb-2 font-body">הסצנה המקורית שלך</Text>
           <TextInput
             value={sceneText}
             onChangeText={setSceneText}
@@ -114,15 +123,15 @@ export default function CineDirectorScreen() {
             placeholderTextColor="rgba(255,255,255,0.3)"
             multiline
             numberOfLines={4}
-            style={{ textAlign: 'right', writingDirection: 'rtl', minHeight: 90, fontFamily: 'Rubik-Regular' }}
+            style={{ textAlign: 'left', writingDirection: 'ltr', minHeight: 90, fontFamily: 'Rubik-Regular' }}
             className="w-full bg-surfaceLight border border-white/10 rounded-2xl p-4 text-white text-base"
           />
         </Animated.View>
 
         {/* Dial Section */}
         <Animated.View entering={FadeInDown.duration(600).delay(100).springify()} className="rounded-3xl border border-white/10 bg-surfaceLight p-6 mb-6 items-center">
-          <Text style={{ textAlign: 'right', writingDirection: 'rtl' }} className="text-white text-base font-bold mb-1">גלגל ז'אנרים סינמטיים</Text>
-          <Text style={{ textAlign: 'right', writingDirection: 'rtl' }} className="text-white/40 text-xs mb-6">החליקו שמאלה או ימינה כדי לסובב את חוגת הז'אנר</Text>
+          <Text style={{ textAlign: 'center' }} className="text-white text-base font-bold mb-1">גלגל ז'אנרים סינמטיים</Text>
+          <Text style={{ textAlign: 'center' }} className="text-white/40 text-xs mb-6">החליקו שמאלה או ימינה כדי לסובב את חוגת הז'אנר</Text>
           
           {/* Dial Gesture Interface */}
           <GestureDetector gesture={gesture}>
@@ -174,17 +183,17 @@ export default function CineDirectorScreen() {
             {isLocalFallback && (
               <View className="bg-amber-500/10 border border-amber-500/30 p-3 rounded-2xl flex-row items-center gap-3 mb-4">
                 <AlertCircle size={20} color={Colors.warning} />
-                <Text style={{ textAlign: 'right', flex: 1 }} className="text-amber-500 text-xs font-semibold">מנוע AI פועל כעת במצב שחזור מקומי אופליין</Text>
+                <Text style={{ textAlign: 'left', flex: 1 }} className="text-amber-500 text-xs font-semibold">מנוע AI פועל כעת במצב שחזור מקומי אופליין</Text>
               </View>
             )}
 
-            <View className="flex-row items-center justify-between mb-4 border-b border-white/5 pb-3">
+            <View className="flex-row-reverse items-center justify-between mb-4 border-b border-white/5 pb-3">
               <Film size={18} color={Colors.secondary} />
               <Text className="text-white text-sm font-bold">הסצנה המשוכתבת</Text>
             </View>
             
             <Text 
-              style={{ textAlign: 'right', writingDirection: 'rtl', fontFamily: 'Rubik-Regular', lineHeight: 24 }} 
+              style={{ textAlign: 'left', writingDirection: 'ltr', fontFamily: 'Rubik-Regular', lineHeight: 24 }} 
               className="text-white/80 text-base"
             >
               {reimaginedScene}

@@ -8,11 +8,14 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Accelerometer } from 'expo-sensors';
 import { Colors, Typography } from '@/constants/Theme';
+import { API_BASE_URL } from '@/constants/Config';
+import { useAuthStore } from '@/store/useAuthStore';
 
 const { width } = Dimensions.get('window');
 
 export default function CineSoundScreen() {
   const insets = useSafeAreaInsets();
+  const token = useAuthStore(state => state.token);
   const [soundMode, setSoundMode] = useState<'Dolby Atmos' | 'Spatial Stereo' | 'DTS:X'>('Dolby Atmos');
   const [gyroActive, setGyroActive] = useState(true);
   const [bass, setBass] = useState(50);
@@ -58,11 +61,11 @@ export default function CineSoundScreen() {
     setSaving(true);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     try {
-      const response = await fetch('http://localhost:5000/api/mcp/cinesound/profile', {
+      const response = await fetch(`${API_BASE_URL}/mcp/cinesound/profile`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer mock-dev-token'
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           showtimeId: 'showtime-101',
@@ -73,6 +76,9 @@ export default function CineSoundScreen() {
           roomSimLevel
         })
       });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
       if (data.success) {
         alert('הפרופיל נשמר בהצלחה בשרת!');

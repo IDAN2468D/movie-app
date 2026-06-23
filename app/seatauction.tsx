@@ -8,6 +8,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '@/constants/Theme';
+import { API_BASE_URL } from '@/constants/Config';
+import { useAuthStore } from '@/store/useAuthStore';
 
 interface IAuction {
   _id: string;
@@ -23,6 +25,7 @@ interface IAuction {
 
 export default function CineSeatAuctionScreen() {
   const insets = useSafeAreaInsets();
+  const token = useAuthStore(state => state.token);
   const [auctions, setAuctions] = useState<IAuction[]>([]);
   const [loading, setLoading] = useState(false);
   const [bidValue, setBidValue] = useState('');
@@ -31,7 +34,8 @@ export default function CineSeatAuctionScreen() {
 
   // Initialize WebSockets and Fetch initial auctions
   useEffect(() => {
-    const socketInstance = io('http://localhost:5000');
+    const socketUrl = API_BASE_URL.replace('/api', '');
+    const socketInstance = io(socketUrl);
     setSocket(socketInstance);
 
     socketInstance.emit('join_auction', { showtimeId: 'showtime-101' });
@@ -61,12 +65,17 @@ export default function CineSeatAuctionScreen() {
   const fetchActiveAuctions = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/mcp/seatauction/active/showtime-101', {
-        headers: { 'Authorization': 'Bearer mock-dev-token' }
+      const response = await fetch(`${API_BASE_URL}/mcp/seatauction/active/showtime-101`, {
+        headers: { 'Authorization': `Bearer ${token}` }
       });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const json = await response.json();
       if (json.success) {
         setAuctions(json.data);
+      } else {
+        throw new Error(json.message || 'Server failure response');
       }
     } catch (err) {
       console.warn('SeatAuction fetch offline simulation:', err);
@@ -96,17 +105,21 @@ export default function CineSeatAuctionScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
 
     try {
-      const response = await fetch('http://localhost:5000/api/mcp/seatauction/bid', {
+      const response = await fetch(`${API_BASE_URL}/mcp/seatauction/bid`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer mock-dev-token'
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           auctionId: selectedAuction._id,
           pointsBid
         })
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       const json = await response.json();
       if (json.success) {
@@ -150,11 +163,11 @@ export default function CineSeatAuctionScreen() {
   const handleCreateMockListing = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     try {
-      await fetch('http://localhost:5000/api/mcp/seatauction/create', {
+      const response = await fetch(`${API_BASE_URL}/mcp/seatauction/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer mock-dev-token'
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           showtimeId: 'showtime-101',
@@ -163,6 +176,9 @@ export default function CineSeatAuctionScreen() {
           pointsRequired: 40
         })
       });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       fetchActiveAuctions();
     } catch (e) {
       // Offline local append
@@ -189,18 +205,18 @@ export default function CineSeatAuctionScreen() {
         </View>
 
         {/* Info Card */}
-        <View className="bg-white/5 border border-white/10 p-4 rounded-3xl mb-6 flex-row justify-end items-center gap-3">
-          <View className="flex-1 items-end">
-            <Text className="text-white text-sm font-bold">שוק החלפת מושבים P2P</Text>
-            <Text style={{ textAlign: 'right' }} className="text-white/40 text-[11px] mt-0.5">הציעו את המושב שלכם תמורת מושב אחר או הציעו נקודות CinePass על מושבים מבוקשים כעת</Text>
-          </View>
+        <View className="bg-white/5 border border-white/10 p-4 rounded-3xl mb-6 flex-row-reverse justify-start items-center gap-3">
           <View className="w-10 h-10 rounded-2xl bg-secondary/10 border border-secondary/30 items-center justify-center">
             <Info size={18} color={Colors.secondary} />
+          </View>
+          <View className="flex-1 items-end">
+            <Text style={{ textAlign: 'right', writingDirection: 'rtl' }} className="text-white text-sm font-bold">שוק החלפת מושבים P2P</Text>
+            <Text style={{ textAlign: 'right', writingDirection: 'rtl' }} className="text-white/40 text-[11px] mt-0.5">הציעו את המושב שלכם תמורת מושב אחר או הציעו נקודות CinePass על מושבים מבוקשים כעת</Text>
           </View>
         </View>
 
         {/* Active Auctions List */}
-        <Text style={{ textAlign: 'right' }} className="text-white text-base font-bold mb-4">מושבים פנויים להחלפה או ביד</Text>
+        <Text style={{ textAlign: 'right', writingDirection: 'rtl' }} className="text-white text-base font-bold mb-4">מושבים פנויים להחלפה או ביד</Text>
 
         {loading && auctions.length === 0 ? (
           <ActivityIndicator size="large" color={Colors.primary} className="my-8" />
@@ -217,27 +233,27 @@ export default function CineSeatAuctionScreen() {
               <Animated.View key={auc._id} entering={FadeInDown.duration(600).springify()} className="bg-surfaceLight border border-white/10 rounded-3xl p-5 relative overflow-hidden">
                 <LinearGradient colors={['rgba(255, 255, 255, 0.02)', 'transparent']} style={StyleSheet.absoluteFill} />
                 
-                <View className="flex-row justify-between items-center mb-3">
+                <View className="flex-row-reverse justify-between items-center mb-3">
+                  {/* Seat code */}
+                  <View className="flex-row-reverse items-center gap-1.5">
+                    <Text className="text-white text-lg font-bold">כסא {auc.originalSeat}</Text>
+                    <Text className="text-white/40 text-xs">שייך ל-{auc.ownerId?.name || 'חבר'}</Text>
+                  </View>
+
                   {/* Bids info */}
-                  <View className="flex-row items-center gap-1 bg-secondary/10 border border-secondary/30 px-3 py-1 rounded-full">
+                  <View className="flex-row-reverse items-center gap-1 bg-secondary/10 border border-secondary/30 px-3 py-1 rounded-full">
                     <Award size={12} color={Colors.secondary} />
                     <Text className="text-secondary text-[11px] font-bold">
                       {auc.highestBid > 0 ? `${auc.highestBid} נקודות` : `${auc.pointsRequired} נקודות התחלה`}
                     </Text>
                   </View>
-                  
-                  {/* Seat code */}
-                  <View className="flex-row items-center gap-1.5">
-                    <Text className="text-white/40 text-xs">שייך ל-{auc.ownerId?.name || 'חבר'}</Text>
-                    <Text className="text-white text-lg font-bold">כסא {auc.originalSeat}</Text>
-                  </View>
                 </View>
 
                 {/* Target Swap code if exists */}
                 {auc.targetSeat && (
-                  <View className="flex-row justify-end items-center gap-1.5 mb-4">
-                    <Text className="text-primary text-xs font-bold">מחפש כסא: {auc.targetSeat}</Text>
-                    <CornerDownLeft size={12} color={Colors.primary} />
+                  <View className="flex-row-reverse justify-start items-center gap-1.5 mb-4">
+                    <CornerDownLeft size={12} color={Colors.primary} style={{ transform: [{ scaleX: -1 }] }} />
+                    <Text style={{ textAlign: 'right', writingDirection: 'rtl' }} className="text-primary text-xs font-bold">מחפש כסא: {auc.targetSeat}</Text>
                   </View>
                 )}
 
@@ -259,14 +275,14 @@ export default function CineSeatAuctionScreen() {
         {/* Modal bid dialog */}
         {selectedAuction && (
           <Animated.View entering={FadeInDown} className="mt-8 bg-surfaceLight border border-primary/30 p-6 rounded-3xl">
-            <View className="flex-row justify-between items-center mb-4">
+            <View className="flex-row-reverse justify-between items-center mb-4">
               <Pressable onPress={() => setSelectedAuction(null)} className="w-8 h-8 rounded-full bg-white/5 items-center justify-center">
                 <X size={16} color="white" />
               </Pressable>
-              <Text className="text-white text-sm font-bold">הגש ביד על מושב {selectedAuction.originalSeat}</Text>
+              <Text style={{ textAlign: 'right', writingDirection: 'rtl' }} className="text-white text-sm font-bold">הגש ביד על מושב {selectedAuction.originalSeat}</Text>
             </View>
 
-            <Text style={{ textAlign: 'right' }} className="text-white/40 text-xs mb-3">
+            <Text style={{ textAlign: 'right', writingDirection: 'rtl' }} className="text-white/40 text-xs mb-3">
               הצעה נוכחית: {selectedAuction.highestBid || selectedAuction.pointsRequired} נקודות CinePass
             </Text>
 
@@ -276,7 +292,7 @@ export default function CineSeatAuctionScreen() {
               keyboardType="number-pad"
               placeholder="הכנס כמות נקודות..."
               placeholderTextColor="rgba(255,255,255,0.3)"
-              style={{ textAlign: 'right', fontFamily: 'Rubik-Regular' }}
+              style={{ textAlign: 'right', writingDirection: 'rtl', fontFamily: 'Rubik-Regular' }}
               className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-white text-base mb-4"
             />
 

@@ -30,7 +30,7 @@ export default function ProductionLabScreen() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token || 'mock-dev-token'}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           movieTitle,
@@ -38,6 +38,10 @@ export default function ProductionLabScreen() {
           pitchPrompt
         })
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       const json = await response.json();
       if (json.success) {
