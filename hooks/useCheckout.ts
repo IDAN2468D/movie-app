@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars, react-hooks/exhaustive-deps */
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAnimatedStyle, withRepeat, withTiming } from 'react-native-reanimated';
@@ -47,10 +47,35 @@ export const useCheckout = () => {
     ]
   }));
 
-  // MGM Intro Video Player
-  const mgmPlayer = Video?.useVideoPlayer('https://archive.org/download/mgm-1995/MGM%201995.mp4', (player: any) => {
-    player.loop = false;
-  });
+  const soundRef = useRef<any>(null);
+
+  // Configure Audio Mode once on hook initialization and handle cleanup on unmount
+  useEffect(() => {
+    const setupAudioMode = async () => {
+      try {
+        if (typeof Audio.setAudioModeAsync === 'function') {
+          await Audio.setAudioModeAsync({
+            playsInSilentModeIOS: true,
+            staysActiveInBackground: false,
+            shouldRouteThroughEarpieceAndroid: false,
+            allowsRecordingIOS: false,
+            playThroughEarpieceAndroid: false,
+          });
+        }
+      } catch (modeError) {
+        console.warn('[useCheckout] Audio mode configuration warning:', modeError);
+      }
+    };
+    setupAudioMode();
+
+    return () => {
+      if (soundRef.current) {
+        soundRef.current.unloadAsync().catch((err: any) => {
+          console.warn('[useCheckout] Cleanup unload failed:', err);
+        });
+      }
+    };
+  }, []);
 
   const snacksTotal = getTotalPrice();
   
@@ -65,28 +90,32 @@ export const useCheckout = () => {
 
   const playRoar = useCallback(async () => {
     try {
-      // Set audio mode so it plays on iOS even in silent mode
-      if (typeof Audio.setAudioModeAsync === 'function') {
-        await Audio.setAudioModeAsync({
-          playsInSilentModeIOS: true,
-          staysActiveInBackground: false,
-          shouldRouteThroughEarpieceAndroid: false,
-          allowsRecordingIOS: false,
-          interruptionModeIOS: 1, // DoNotMix
-          interruptionModeAndroid: 1, // DoNotMix
-          playThroughEarpieceAndroid: false,
-        } as any);
+      // Stop and unload existing sound if it is already loaded/playing
+      if (soundRef.current) {
+        try {
+          await soundRef.current.stopAsync();
+          await soundRef.current.unloadAsync();
+        } catch (unloadErr) {
+          // ignore
+        }
+        soundRef.current = null;
       }
-      
+
+      console.log('[useCheckout] Creating and playing lion roar sound...');
       const { sound } = await Audio.Sound.createAsync(
         require('../assets/audio/lion_roar.mp3'),
         { volume: 0.9, shouldPlay: true }
       );
       
+      soundRef.current = sound;
+
       // Auto unload sound after playing
       sound.setOnPlaybackStatusUpdate((status: any) => {
         if (status.didJustFinish) {
           sound.unloadAsync().catch(() => {});
+          if (soundRef.current === sound) {
+            soundRef.current = null;
+          }
         }
       });
     } catch (e) {
@@ -105,12 +134,8 @@ export const useCheckout = () => {
         playRoar();
       }, 500);
       
-      // Start MGM Intro
-      if (mgmPlayer) {
-        mgmPlayer.play();
-      } else {
-        setIsIntroFinished(true);
-      }
+      // No mgmPlayer video anymore to prevent clashing audio / slow network loading
+      setIsIntroFinished(false);
       
       // Haptics for the roar
       const hapticTimer = setTimeout(() => {
@@ -133,15 +158,9 @@ export const useCheckout = () => {
         clearTimeout(hapticTimer);
         clearTimeout(timer);
         clearTimeout(modalTimer);
-        
-        try {
-          if (mgmPlayer) {
-            mgmPlayer.pause();
-          }
-        } catch (e) {}
       };
     }
-  }, [isSuccess, mgmPlayer, playRoar]);
+  }, [isSuccess, playRoar]);
 
 
   const handlePayment = useCallback(async () => {
@@ -251,7 +270,6 @@ export const useCheckout = () => {
     showModal,
     isIntroFinished,
     ticketAnimatedStyle,
-    mgmPlayer,
     handlePayment,
     handleFinish,
     goBack,

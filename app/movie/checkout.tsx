@@ -50,7 +50,6 @@ export default function CheckoutScreen() {
     showModal,
     isIntroFinished,
     ticketAnimatedStyle,
-    mgmPlayer,
     handlePayment,
     handleFinish,
     goBack,
