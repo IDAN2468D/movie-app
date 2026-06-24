@@ -5,7 +5,7 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, ScrollView, TouchableOpacity, ImageBackground, StyleSheet, Dimensions, Image, I18nManager } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { User, Bell, CreditCard, Shield, ChevronLeft, ChevronRight, LogOut, Ticket, Heart, History, TrendingUp, Moon, Trophy, Map as MapIcon, Sparkles, Headphones, Users, Award, Video, ScanLine, Palette, BookOpen, Calendar, Film } from 'lucide-react-native';
+import { User, Bell, CreditCard, Shield, ChevronLeft, ChevronRight, LogOut, Ticket, Heart, History, TrendingUp, Moon, Trophy, Map as MapIcon, Sparkles, Headphones, Users, Award, Video, ScanLine, Palette, BookOpen, Calendar, Film, HelpCircle, Gift, BarChart2 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { router } from 'expo-router';
@@ -282,6 +282,38 @@ export default function ProfileScreen() {
             description="צפו בטריילרים המסונכרנים עם משוב רטט ממוקד וסאונד מרחבי!"
             color="#E5FF00" 
             onPress={() => router.push('/hapticpreview' as any)} 
+          />
+
+          <MenuItem 
+            icon={HelpCircle} 
+            title="זירת טריוויה AI — CineQuiz" 
+            description="שחקו בטריוויה קולנועית בזמן אמת מול חברים בעברית!"
+            color="#0AEFFF" 
+            onPress={() => router.push('/cinequiz' as any)} 
+          />
+
+          <MenuItem 
+            icon={Gift} 
+            title="אוסף מזכרות 3D — CineCollect" 
+            description="הציגו את המזכרות הקולנועיות התלת-ממדיות שלכם בארון תצוגה מבוסס תנועה!"
+            color="#E5FF00" 
+            onPress={() => router.push('/cinecollect' as any)} 
+          />
+
+          <MenuItem 
+            icon={Users} 
+            title="סקוואד הזמנות — CineShare" 
+            description="הזמינו חברים ובחרו מושבים מסונכרנים בזמן אמת!"
+            color="#FF1464" 
+            onPress={() => router.push('/cineshare' as any)} 
+          />
+
+          <MenuItem 
+            icon={BarChart2} 
+            title="אורקל תחזיות — CinePredict" 
+            description="חזו ביצועי קופות וציוני סרטים וזכו בפרסים עם האורקל הקולנועי!"
+            color="#8B5CF6" 
+            onPress={() => router.push('/cinepredict' as any)} 
           />
 
           
