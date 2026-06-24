@@ -1,26 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, Pressable, StyleSheet, Dimensions, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Gyroscope } from 'expo-sensors';
 import { BlurView } from 'expo-blur';
-import { X, Aperture, RefreshCw, Smartphone } from 'lucide-react-native';
-import Svg, { Polygon, Circle, Text as SvgText, Line, G, Defs, LinearGradient, Stop } from 'react-native-svg';
+import { X, Aperture, RefreshCw, Smartphone, Award, Film, Clock } from 'lucide-react-native';
+import Svg, { Polygon, Circle, Line, G, Defs, LinearGradient, Stop, Ellipse } from 'react-native-svg';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
   withSpring, 
   withRepeat, 
-  withTiming 
+  withTiming,
+  FadeIn,
+  FadeInDown,
+  FadeOut
 } from 'react-native-reanimated';
 import { Colors } from '@/constants/Theme';
 import { useLegacyStore } from '@/store/useLegacyStore';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 
+const { width } = Dimensions.get('window');
+
 const CENTER_X = 150;
-const CENTER_Y = 150;
-const MAX_RADIUS = 100;
+const CENTER_Y = 130;
+const MAX_RADIUS = 85;
 const GENRES = ['action', 'comedy', 'sci-fi', 'horror', 'drama'];
 const GENRE_LABELS: Record<string, string> = {
   'action': 'אקשן ⚔️',
@@ -37,14 +42,20 @@ export default function CineLoomARScreen() {
   const legacyData = useLegacyStore(state => state.legacyData);
   const fetchLegacy = useLegacyStore(state => state.fetchLegacy);
 
-  const [gyroData, setGyroData] = useState({ x: 0, y: 0, z: 0 });
   const [isAnchored, setIsAnchored] = useState(false);
 
   // Reanimated shared values for Hologram position and tilt
   const tiltX = useSharedValue(0);
   const tiltY = useSharedValue(0);
   const hologramScale = useSharedValue(0);
-  const pulse = useSharedValue(0.85);
+  const pulse = useSharedValue(0.9);
+  const scanLineY = useSharedValue(0.15);
+
+  // Gyroscope tracking ref for isAnchored state to prevent capture closures
+  const isAnchoredRef = useRef(false);
+  useEffect(() => {
+    isAnchoredRef.current = isAnchored;
+  }, [isAnchored]);
 
   useEffect(() => {
     fetchLegacy();
@@ -54,39 +65,69 @@ export default function CineLoomARScreen() {
       requestPermission();
     }
 
-    // Subscribe to Gyroscope
-    const subscription = Gyroscope.addListener((data) => {
-      setGyroData(data);
-    });
-    Gyroscope.setUpdateInterval(16); // 60Hz high rate
-
     // Animate entry scale
     hologramScale.value = withSpring(1.0, { damping: 15 });
 
     // Floating breathing effect for hologram
     pulse.value = withRepeat(
-      withTiming(1.05, { duration: 1800 }),
+      withTiming(1.03, { duration: 2000 }),
       -1,
       true
     );
 
-    return () => {
-      subscription.remove();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Laser scanline animation loop
+    scanLineY.value = withRepeat(
+      withTiming(0.85, { duration: 3200 }),
+      -1,
+      true
+    );
   }, []);
 
+  // Configure Gyroscope listener cleanly with springs and fallbacks
   useEffect(() => {
-    // Map gyroscope velocity to rotation angles dynamically
-    // Filter noise: only accumulate if velocity > 0.05
-    if (Math.abs(gyroData.x) > 0.05) {
-      tiltX.value = withTiming(gyroData.x * -25, { duration: 150 });
-    }
-    if (Math.abs(gyroData.y) > 0.05) {
-      tiltY.value = withTiming(gyroData.y * -25, { duration: 150 });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gyroData]);
+    let subscription: any = null;
+    let isMounted = true;
+
+    const startGyro = async () => {
+      try {
+        const isAvailable = await Gyroscope.isAvailableAsync();
+        if (!isAvailable) {
+          // Fallback: floating idle animation on simulator
+          tiltX.value = withRepeat(withTiming(10, { duration: 3000 }), -1, true);
+          tiltY.value = withRepeat(withTiming(8, { duration: 4000 }), -1, true);
+          return;
+        }
+
+        Gyroscope.setUpdateInterval(16); // 60Hz update rate
+        subscription = Gyroscope.addListener((data) => {
+          if (isMounted) {
+            if (!isAnchoredRef.current) {
+              // Smoothly map pitch/roll velocity to tilt angles
+              tiltX.value = withSpring(data.y * -25, { damping: 20, stiffness: 80 });
+              tiltY.value = withSpring(data.x * -25, { damping: 20, stiffness: 80 });
+            } else {
+              // Smoothly return to center when locked
+              tiltX.value = withSpring(0, { damping: 15 });
+              tiltY.value = withSpring(0, { damping: 15 });
+            }
+          }
+        });
+      } catch (e) {
+        // Fallback: floating idle animation on errors
+        tiltX.value = withRepeat(withTiming(10, { duration: 3000 }), -1, true);
+        tiltY.value = withRepeat(withTiming(8, { duration: 4000 }), -1, true);
+      }
+    };
+
+    startGyro();
+
+    return () => {
+      isMounted = false;
+      if (subscription) {
+        subscription.remove();
+      }
+    };
+  }, []);
 
   const animatedHologramStyle = useAnimatedStyle(() => {
     const scaleFactor = hologramScale.value * pulse.value;
@@ -97,6 +138,12 @@ export default function CineLoomARScreen() {
         { rotateY: `${tiltY.value}deg` },
         { scale: scaleFactor }
       ]
+    };
+  });
+
+  const scanLineStyle = useAnimatedStyle(() => {
+    return {
+      top: `${scanLineY.value * 100}%`,
     };
   });
 
@@ -159,6 +206,22 @@ export default function CineLoomARScreen() {
       {/* Real camera view in the background */}
       <CameraView style={StyleSheet.absoluteFill} facing="back" />
 
+      {/* Laser Scanline Effect */}
+      <Animated.View 
+        style={[{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          height: 3,
+          backgroundColor: '#00E5FF',
+          shadowColor: '#00E5FF',
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: 0.8,
+          shadowRadius: 10,
+          elevation: 5,
+        }, scanLineStyle]}
+      />
+
       {/* Absolute Dark HUD Mask Overlay */}
       <View className="absolute inset-0 bg-black/10" pointerEvents="none" />
 
@@ -174,8 +237,8 @@ export default function CineLoomARScreen() {
           <X size={20} color="white" />
         </Pressable>
 
-        <BlurView intensity={20} tint="dark" className="px-4 py-2 rounded-2xl border border-white/10 bg-black/30">
-          <Text className="text-xs text-white font-display uppercase tracking-wider text-center">
+        <BlurView intensity={25} tint="dark" className="px-4 py-2 rounded-2xl border border-white/10 bg-black/30">
+          <Text className="text-[10px] text-[#00E5FF] font-bold uppercase tracking-wider text-center" style={{ fontFamily: 'Rubik-Bold' }}>
             {isAnchored ? 'הולוגרמה נעולה 📍' : 'מחפש משטח ישר... 🌀'}
           </Text>
         </BlurView>
@@ -194,28 +257,67 @@ export default function CineLoomARScreen() {
       {/* Floating Holographic Radar Chart Pentagon */}
       <View className="flex-1 justify-center items-center">
         <Animated.View 
-          style={[{ width: 300, height: 320, justifyContent: 'center', alignItems: 'center' }, animatedHologramStyle]}
+          style={[{ width: 300, height: 360, justifyContent: 'center', alignItems: 'center' }, animatedHologramStyle]}
         >
-          {/* Hologram neon pillar base */}
-          <View className="absolute bottom-0 w-36 h-[20px] bg-secondary/15 rounded-full border border-secondary/40 shadow-2xl opacity-60" style={{ transform: [{ scaleX: 2.0 }] }} />
-
-          <Svg width={300} height={300} viewBox="0 0 300 300">
+          <Svg width={300} height={360} viewBox="0 0 300 360">
             <Defs>
               <LinearGradient id="hologramGridGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                <Stop offset="0%" stopColor="#00E5FF" stopOpacity="0.1" />
+                <Stop offset="0%" stopColor="#00E5FF" stopOpacity="0.12" />
                 <Stop offset="100%" stopColor="transparent" stopOpacity="0.0" />
               </LinearGradient>
               <LinearGradient id="hologramFillGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <Stop offset="0%" stopColor="#00E5FF" stopOpacity="0.5" />
-                <Stop offset="100%" stopColor={Colors.secondary} stopOpacity="0.2" />
+                <Stop offset="0%" stopColor="#00E5FF" stopOpacity="0.55" />
+                <Stop offset="100%" stopColor={Colors.secondary} stopOpacity="0.25" />
+              </LinearGradient>
+              <LinearGradient id="hologramBeamGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+                <Stop offset="0%" stopColor="#00E5FF" stopOpacity="0.4" />
+                <Stop offset="15%" stopColor="#00E5FF" stopOpacity="0.2" />
+                <Stop offset="100%" stopColor="#00E5FF" stopOpacity="0.0" />
+              </LinearGradient>
+              <LinearGradient id="projectorBaseGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <Stop offset="0%" stopColor="#00E5FF" stopOpacity="0.3" />
+                <Stop offset="100%" stopColor="transparent" stopOpacity="0.0" />
               </LinearGradient>
             </Defs>
 
+            {/* Volumetric Holographic Projection Cone Beam */}
+            <Polygon 
+              points="150,335 65,130 235,130" 
+              fill="url(#hologramBeamGrad)" 
+              opacity={isAnchored ? 0.3 : 0.65} 
+            />
+
+            {/* Glowing Holographic Projector Base Platform */}
+            <Ellipse 
+              cx={150} 
+              cy={335} 
+              rx={70} 
+              ry={14} 
+              fill="url(#projectorBaseGrad)" 
+              stroke="#00E5FF" 
+              strokeWidth={1} 
+              opacity={0.6} 
+            />
+            <Ellipse 
+              cx={150} 
+              cy={335} 
+              rx={40} 
+              ry={8} 
+              fill="none" 
+              stroke={Colors.secondary} 
+              strokeWidth={1.5} 
+              opacity={0.7} 
+            />
+            
+            {/* Glowing Projector Lens Center */}
+            <Circle cx={150} cy={335} r={8} fill="#00E5FF" opacity={0.9} />
+            <Circle cx={150} cy={335} r={4} fill="#FFFFFF" opacity={0.95} />
+
             {/* Radar concentric pentagons grid */}
-            <Polygon points={getRadarPoints(1.0)} fill="url(#hologramGridGrad)" stroke="rgba(0, 229, 255, 0.2)" strokeWidth={1} />
-            <Polygon points={getRadarPoints(0.75)} fill="none" stroke="rgba(0, 229, 255, 0.15)" strokeWidth={0.8} />
-            <Polygon points={getRadarPoints(0.5)} fill="none" stroke="rgba(0, 229, 255, 0.15)" strokeWidth={0.8} />
-            <Polygon points={getRadarPoints(0.25)} fill="none" stroke="rgba(0, 229, 255, 0.1)" strokeWidth={0.5} />
+            <Polygon points={getRadarPoints(1.0)} fill="url(#hologramGridGrad)" stroke="rgba(0, 229, 255, 0.25)" strokeWidth={1} />
+            <Polygon points={getRadarPoints(0.75)} fill="none" stroke="rgba(0, 229, 255, 0.18)" strokeWidth={0.8} />
+            <Polygon points={getRadarPoints(0.5)} fill="none" stroke="rgba(0, 229, 255, 0.18)" strokeWidth={0.8} />
+            <Polygon points={getRadarPoints(0.25)} fill="none" stroke="rgba(0, 229, 255, 0.12)" strokeWidth={0.5} />
 
             {/* Axis lines from center to corners */}
             {GENRES.map((_, idx) => {
@@ -227,7 +329,7 @@ export default function CineLoomARScreen() {
                   key={`axis-${idx}`} 
                   x1={CENTER_X} y1={CENTER_Y} 
                   x2={x2} y2={y2} 
-                  stroke="rgba(0, 229, 255, 0.15)" 
+                  stroke="rgba(0, 229, 255, 0.18)" 
                   strokeWidth={1} 
                 />
               );
@@ -238,7 +340,7 @@ export default function CineLoomARScreen() {
               points={activeRadarPoints} 
               fill="url(#hologramFillGrad)" 
               stroke="#00E5FF" 
-              strokeWidth={2.2} 
+              strokeWidth={2.5} 
             />
 
             {/* Glowing dots at data vertices */}
@@ -251,55 +353,121 @@ export default function CineLoomARScreen() {
 
               return (
                 <G key={`dot-${idx}`}>
-                  <Circle cx={x} cy={y} r={4} fill="#00E5FF" />
-                  <Circle cx={x} cy={y} r={8} fill="none" stroke="#FFFFFF" strokeWidth={1} opacity={0.6} />
+                  <Circle cx={x} cy={y} r={4.5} fill="#00E5FF" />
+                  <Circle cx={x} cy={y} r={8.5} fill="none" stroke="#FFFFFF" strokeWidth={1.2} opacity={0.7} />
                 </G>
               );
             })}
+          </Svg>
 
-            {/* Corner Genre Labels in Hebrew */}
+          {/* Absolute native Text Labels - replaces SvgText to fix Unicode errors and emojis */}
+          <View style={StyleSheet.absoluteFill} pointerEvents="none">
             {GENRES.map((genre, idx) => {
               const angle = (idx * 2 * Math.PI) / 5 - Math.PI / 2;
-              // Push text slightly outwards from corner coordinates
-              const x = CENTER_X + Math.cos(angle) * (MAX_RADIUS + 22);
-              const y = CENTER_Y + Math.sin(angle) * (MAX_RADIUS + 12);
+              // Project text labels slightly outward from maximum radius (MAX_RADIUS = 85)
+              const labelDistance = MAX_RADIUS + 34;
+              const x = CENTER_X + Math.cos(angle) * labelDistance;
+              const y = CENTER_Y + Math.sin(angle) * labelDistance;
               
               const label = GENRE_LABELS[genre] || genre;
 
               return (
-                <SvgText
-                  key={`label-${idx}`}
-                  x={x}
-                  y={y}
-                  fill="#FFFFFF"
-                  fontSize={10}
-                  fontWeight="bold"
-                  fontFamily="Rubik"
-                  textAnchor="middle"
-                  opacity={0.9}
+                <View
+                  key={`native-label-${idx}`}
+                  style={{
+                    position: 'absolute',
+                    left: x - 55, // Center the label on the computed horizontal point
+                    top: y - 10,  // Center vertically
+                    width: 110,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
                 >
-                  {label}
-                </SvgText>
+                  <Text 
+                    style={{
+                      color: '#FFFFFF',
+                      fontSize: 11,
+                      fontFamily: 'Rubik-Bold',
+                      textAlign: 'center',
+                      textShadowColor: 'rgba(0, 229, 255, 0.65)',
+                      textShadowOffset: { width: 0, height: 0 },
+                      textShadowRadius: 6,
+                    }}
+                  >
+                    {label}
+                  </Text>
+                </View>
               );
             })}
-          </Svg>
+          </View>
         </Animated.View>
       </View>
+
+      {/* Sleek Glassmorphic Stats Overlay Card */}
+      {legacyData && (
+        <Animated.View 
+          entering={FadeInDown.delay(300).duration(800)}
+          className="absolute bottom-28 left-6 right-6 p-5 rounded-3xl border border-white/10 bg-black/40 backdrop-blur-md"
+        >
+          <View className="flex-row items-center justify-between mb-4" style={{ flexDirection: 'row-reverse' }}>
+            <View className="flex-row items-center gap-2" style={{ flexDirection: 'row-reverse' }}>
+              <Award size={18} color="#00E5FF" />
+              <Text className="text-white font-bold text-body font-display">פרופיל מורשת קולנועית</Text>
+            </View>
+            <View className="px-2.5 py-0.5 rounded-full bg-primary/20 border border-primary/30">
+              <Text className="text-primary text-[10px] font-bold">רמה {legacyData.legacyLevel || 1}</Text>
+            </View>
+          </View>
+          
+          <View className="flex-row justify-around py-1 gap-2">
+            <View className="items-center flex-1">
+              <Film size={16} color="white" opacity={0.5} className="mb-1" />
+              <Text className="text-[9px] text-white/50 font-body mb-0.5">סרטים וכרטיסים</Text>
+              <Text className="text-white text-caption font-bold font-sans">{legacyData.totalTickets || 0} כרטיסים</Text>
+            </View>
+            
+            <View className="w-[1px] bg-white/10" />
+            
+            <View className="items-center flex-1">
+              <Clock size={16} color="white" opacity={0.5} className="mb-1" />
+              <Text className="text-[9px] text-white/50 font-body mb-0.5">זמן מסך כולל</Text>
+              <Text className="text-white text-caption font-bold font-sans">
+                {Math.round((legacyData.totalWatchTime || 0) / 60)} שעות
+              </Text>
+            </View>
+
+            <View className="w-[1px] bg-white/10" />
+            
+            <View className="items-center flex-1">
+              <Award size={16} color="white" opacity={0.5} className="mb-1" />
+              <Text className="text-[9px] text-white/50 font-body mb-0.5">תואר מועדון</Text>
+              <Text className="text-secondary text-caption font-bold font-display">{legacyData.rankName || 'חבר'}</Text>
+            </View>
+          </View>
+        </Animated.View>
+      )}
 
       {/* Bottom AR HUD control bar */}
       <View 
         className="absolute bottom-0 left-0 right-0 px-6 py-6 items-center z-20"
-        style={{ paddingBottom: Math.max(insets.bottom + 20, 32) }}
+        style={{ paddingBottom: Math.max(insets.bottom + 16, 28) }}
       >
         <Pressable 
           onPress={handleAnchorHologram}
-          className="w-18 h-18 rounded-full bg-black/60 border border-white/10 items-center justify-center active:scale-95"
-          style={{ width: 72, height: 72, borderColor: isAnchored ? Colors.secondary : 'rgba(255,255,255,0.2)' }}
+          className="w-18 h-18 rounded-full bg-black/60 border border-white/10 items-center justify-center active:scale-95 shadow-2xl"
+          style={{ 
+            width: 68, 
+            height: 68, 
+            borderColor: isAnchored ? Colors.secondary : 'rgba(255,255,255,0.25)',
+            shadowColor: isAnchored ? Colors.secondary : '#00E5FF',
+            shadowOpacity: 0.35,
+            shadowRadius: 12
+          }}
         >
-          <Aperture size={32} color={isAnchored ? Colors.secondary : 'white'} />
+          <Aperture size={30} color={isAnchored ? Colors.secondary : '#00E5FF'} />
         </Pressable>
-        <Text className="text-[10px] text-white/40 mt-2 font-label uppercase tracking-widest text-center">
-          {isAnchored ? 'שחרר נעילה' : 'מקם הולוגרמה בחלל'}
+        <Text className="text-[9px] text-white/50 mt-2 font-label uppercase tracking-widest text-center" style={{ fontFamily: 'Rubik-Medium' }}>
+          {isAnchored ? 'שחרר נעילת הולוגרמה' : 'קבע מיקום הולוגרמה בחלל'}
         </Text>
       </View>
     </View>
