@@ -157,6 +157,14 @@ export default function ProfileScreen() {
             onPress={() => router.push('/friends' as any)} 
           />
 
+          <MenuItem 
+            icon={Film} 
+            title="גילוי מעגלי — CineArc Scroll" 
+            description="דפדפו בקטלוג הסרטים בתנועה מעגלית תלת-ממדית מבוססת מחוות גלילה!"
+            color="#E5FF00" 
+            onPress={() => router.push('/cinearc' as any)} 
+          />
+
           {/* ── AI Studio Section ── */}
           <View className="mt-2 mb-1">
             <Text style={{ fontFamily: 'Rubik-Medium', fontSize: 13, color: 'rgba(255,255,255,0.35)', letterSpacing: 1 }}>

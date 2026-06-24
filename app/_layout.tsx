@@ -275,6 +275,13 @@ function RootLayoutNav() {
           }}
         />
         <Stack.Screen
+          name="cinearc"
+          options={{
+            animation: 'slide_from_bottom',
+            presentation: 'modal',
+          }}
+        />
+        <Stack.Screen
           name="cinejournal"
           options={{
             animation: 'slide_from_bottom',
