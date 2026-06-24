@@ -244,11 +244,14 @@ const CinematicFeedItem = React.memo(function CinematicFeedItem({ movie, isActiv
 
     // Subscribe to player status change events
     let subscription: any;
-    let errorSubscription: any;
     if (player && typeof player.addListener === 'function') {
       subscription = player.addListener('statusChange', (event: any) => {
         const status = event?.status || player.status;
+        const error = event?.error;
         console.log(`[CinematicFeedItem] Status change event for "${movie.title}":`, status);
+        if (error) {
+          console.error(`[CinematicFeedItem] Player error for "${movie.title}":`, error);
+        }
         if (status === 'ready-to-play' || status === 'readyToPlay') {
           setIsVideoLoaded(true);
           clearTimeout(timer);
@@ -257,19 +260,12 @@ const CinematicFeedItem = React.memo(function CinematicFeedItem({ movie, isActiv
           }
         }
       });
-
-      errorSubscription = player.addListener('error', (error: any) => {
-        console.error(`[CinematicFeedItem] Native Player Error for "${movie.title}":`, error);
-      });
     }
 
     return () => {
       if (timer) clearTimeout(timer);
       if (subscription && typeof subscription.remove === 'function') {
         subscription.remove();
-      }
-      if (errorSubscription && typeof errorSubscription.remove === 'function') {
-        errorSubscription.remove();
       }
     };
   }, [isActive, player]);

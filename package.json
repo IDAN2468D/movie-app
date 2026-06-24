@@ -9,7 +9,7 @@
     "web": "expo start --web",
     "test": "jest",
     "lint": "eslint .",
-    "postinstall": "node scripts/copy-lazyktype.js"
+    "postinstall": "node scripts/copy-lazyktype.js && patch-package"
   },
   "dependencies": {
     "@expo-google-fonts/anton": "^0.4.2",
@@ -81,6 +81,7 @@
     "zustand": "^5.0.13"
   },
   "devDependencies": {
+    "patch-package": "^8.0.0",
     "@eslint/eslintrc": "^3.3.5",
     "@expo/ngrok": "^4.1.3",
     "@react-native/jest-preset": "^0.85.3",
