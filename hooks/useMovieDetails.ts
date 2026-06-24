@@ -69,7 +69,7 @@ export const useMovieDetails = (id: string | undefined) => {
   const themeColors = useMovieTheme(movie as any);
 
   // Background Video Player
-  const player = Video?.useVideoPlayer('https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', (player: any) => {
+  const player = Video?.useVideoPlayer('https://www.w3schools.com/html/mov_bbb.mp4', (player: any) => {
     player.loop = true;
     player.muted = true;
     player.play();

@@ -112,12 +112,12 @@ export default function CinematicFeed({ movies }: CinematicFeedProps) {
 function getDirectTrailerUrl(movie: TMDBMovie): string {
   // Using ultra-lightweight 2MB-3MB optimized loops for instant buffering on mobile networks
   const videos = {
-    sciFi: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
-    animation: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-    action: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-    adventure: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-    comedy: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
-    drama: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+    sciFi: 'https://vjs.zencdn.net/v/oceans.mp4',
+    animation: 'https://www.w3schools.com/html/mov_bbb.mp4',
+    action: 'https://media.w3.org/2010/05/sintel/trailer.mp4',
+    adventure: 'https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-576p.mp4',
+    comedy: 'https://www.w3schools.com/html/movie.mp4',
+    drama: 'https://media.w3.org/2010/05/sintel/trailer.mp4',
   };
 
   if (!movie.genre_ids || movie.genre_ids.length === 0) {
