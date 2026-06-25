@@ -72,25 +72,54 @@ if (!AudioVal) {
 }
 
 if (!VideoVal) {
-  VideoVal = React.forwardRef(({ style, source, resizeMode, shouldPlay, isLooping, onPlaybackStatusUpdate, ...props }: any, ref: any) => {
+  VideoVal = React.forwardRef(({ style, source, resizeMode, shouldPlay: initialShouldPlay = false, isLooping, onPlaybackStatusUpdate, ...props }: any, ref: any) => {
+    const [isPlaying, setIsPlaying] = React.useState(initialShouldPlay);
+    const positionMillisRef = React.useRef(0);
+
+    React.useEffect(() => {
+      setIsPlaying(initialShouldPlay);
+    }, [initialShouldPlay]);
+
     // Simulate periodic playback status update for haptics triggering
     React.useEffect(() => {
-      if (shouldPlay && onPlaybackStatusUpdate) {
-        let elapsed = 0;
+      if (isPlaying && onPlaybackStatusUpdate) {
         const interval = setInterval(() => {
-          elapsed += 500;
+          positionMillisRef.current += 500;
           onPlaybackStatusUpdate({
             isLoaded: true,
-            positionMillis: elapsed,
-            didJustFinish: elapsed >= 30000,
+            positionMillis: positionMillisRef.current,
+            isPlaying: true,
+            didJustFinish: positionMillisRef.current >= 30000,
           });
-          if (elapsed >= 30000) {
-            elapsed = 0; // Loop
+          if (positionMillisRef.current >= 30000) {
+            positionMillisRef.current = 0; // Loop
           }
         }, 500);
         return () => clearInterval(interval);
       }
-    }, [shouldPlay, onPlaybackStatusUpdate]);
+    }, [isPlaying, onPlaybackStatusUpdate]);
+
+    React.useImperativeHandle(ref, () => ({
+      playAsync: async () => {
+        setIsPlaying(true);
+        return { isPlaying: true };
+      },
+      pauseAsync: async () => {
+        setIsPlaying(false);
+        return { isPlaying: false };
+      },
+      replayAsync: async () => {
+        positionMillisRef.current = 0;
+        setIsPlaying(true);
+        return { isPlaying: true };
+      },
+      getPositionAsync: async () => {
+        return { positionMillis: positionMillisRef.current };
+      },
+      getStatusAsync: async () => {
+        return { isPlaying, positionMillis: positionMillisRef.current, isLoaded: true };
+      }
+    }));
 
     return (
       <View style={[{ backgroundColor: '#0A0A0A', justifyContent: 'center', alignItems: 'center' }, style]}>
