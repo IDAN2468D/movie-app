@@ -3,6 +3,7 @@
  * Root Layout - CineBook
  * Sets up dark theme, RTL, fonts, and navigation container.
  */
+import "../global.css";
 import { useEffect } from 'react';
 import { I18nManager, StatusBar, DevSettings, LogBox } from 'react-native';
 
@@ -10,7 +11,6 @@ import { I18nManager, StatusBar, DevSettings, LogBox } from 'react-native';
 LogBox.ignoreLogs([
   '[Reanimated] Writing to `value` during component render',
 ]);
-import "../global.css";
 import { DarkTheme, ThemeProvider } from 'expo-router/react-navigation';
 import { Stack, router, useSegments, useRootNavigationState } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -105,7 +105,7 @@ function NavigationGuard() {
     if (!isAuthenticated) {
       // Allow login, auth, and onboarding
       const isPublicRoute = currentSegment === 'login' || currentSegment === 'auth' || currentSegment === 'onboarding';
-      
+
       if (!isPublicRoute) {
         console.log('Redirecting to Login (Unauthenticated)');
         setTimeout(() => router.replace('/login'), 0);
@@ -166,8 +166,8 @@ export default function RootLayout() {
   }
 
   return (
-    <PersistQueryClientProvider 
-      client={queryClient} 
+    <PersistQueryClientProvider
+      client={queryClient}
       persistOptions={{ persister, maxAge: 1000 * 60 * 60 * 24 }}
     >
       <GestureHandlerRootView style={{ flex: 1 }}>
@@ -188,7 +188,7 @@ function RootLayoutNav() {
       <Stack
         screenOptions={{
           headerShown: false,
-          contentStyle: { 
+          contentStyle: {
             backgroundColor: Colors.background,
           },
           animation: 'slide_from_bottom',
