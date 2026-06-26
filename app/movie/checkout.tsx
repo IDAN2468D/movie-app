@@ -12,10 +12,10 @@ import { useSnacksStore } from '@/store/useSnacksStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useSquadBookingStore } from '@/store/useSquadBookingStore';
 import { Video } from '@/utils/SafeModules';
-import Animated, { 
-  FadeInDown, 
-  FadeIn, 
-  ZoomIn, 
+import Animated, {
+  FadeInDown,
+  FadeIn,
+  ZoomIn,
   FadeOut
 } from 'react-native-reanimated';
 import { cssInterop } from 'react-native-css-interop';
@@ -33,7 +33,7 @@ cssInterop(LinearGradient, { className: 'style' });
 
 export default function CheckoutScreen() {
   const insets = useSafeAreaInsets();
-  
+
   const {
     selectedMovieTitle,
     selectedMoviePoster,
@@ -83,7 +83,7 @@ export default function CheckoutScreen() {
         <View className="mt-6 rounded-3xl overflow-hidden border border-white/10 bg-surfaceLight p-4">
           <View className="flex-row gap-4">
             {selectedMoviePoster ? (
-              <Image 
+              <Image
                 source={{ uri: `${POSTER_SIZES.medium}${selectedMoviePoster}` }}
                 className="w-24 h-36 rounded-xl"
                 resizeMode="cover"
@@ -123,8 +123,8 @@ export default function CheckoutScreen() {
               </View>
             ))}
           </View>
-          
-          <Pressable 
+
+          <Pressable
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setIsInviteModalVisible(true);
@@ -171,7 +171,7 @@ export default function CheckoutScreen() {
           <View className="mt-6 items-start w-full">
             <Text className="text-h3 text-white mb-3 font-display">אופן הגשת הכיבוד</Text>
             <View className="w-full flex-row gap-3">
-              <Pressable 
+              <Pressable
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setDeliveryMode('immediate');
@@ -188,8 +188,8 @@ export default function CheckoutScreen() {
                 <Text style={{ fontFamily: 'Rubik-Bold', fontSize: 14, color: deliveryMode === 'immediate' ? Colors.primary : 'white' }}>איסוף עצמי 🍿</Text>
                 <Text style={{ fontFamily: 'Assistant-Regular', fontSize: 10, color: '#A1A1AA', marginTop: 4, textAlign: 'center' }}>איסוף מהיר מהדלפק</Text>
               </Pressable>
-              
-              <Pressable 
+
+              <Pressable
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setDeliveryMode('pre-sync');
@@ -218,12 +218,12 @@ export default function CheckoutScreen() {
               <Text className="text-[10px] text-secondary font-bold uppercase tracking-widest">עוקף תור 🍿</Text>
             </View>
           </View>
-          
+
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row -mx-5 px-5" contentContainerStyle={{ gap: 24 }}>
             {items.map((snack) => {
               const count = snacksInCart.find(i => i.id === snack.id)?.quantity || 0;
               return (
-                <Pressable 
+                <Pressable
                   key={snack.id}
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -233,10 +233,10 @@ export default function CheckoutScreen() {
                 >
                   <View className="w-20 h-20 bg-background/50 rounded-2xl items-center justify-center mb-3 overflow-visible">
                     {snack.image ? (
-                      <Image 
-                        source={snack.image} 
-                        className="w-16 h-16" 
-                        resizeMode="contain" 
+                      <Image
+                        source={snack.image}
+                        className="w-16 h-16"
+                        resizeMode="contain"
                       />
                     ) : (
                       <Popcorn color={Colors.primary} size={32} opacity={0.6} />
@@ -265,19 +265,19 @@ export default function CheckoutScreen() {
               <Users size={18} color={Colors.secondary} />
               <Text className="text-h3 text-white font-display text-right">לובי הזמנה קבוצתי פעיל: {squadCode}</Text>
             </View>
-            
+
             {/* List group member bill shares */}
             {sessionDetails.members.map((member) => {
               const memberSeatsCount = sessionDetails.lockedSeats.filter(s => s.userId === member.userId).length;
               const memberSeatsCost = memberSeatsCount * selectedShowtime.price;
-              
-              const memberSnacksCost = member.snacks 
+
+              const memberSnacksCost = member.snacks
                 ? member.snacks.reduce((sum, s) => sum + s.price * s.quantity, 0)
                 : 0;
-                
+
               const memberShare = memberSeatsCost + memberSnacksCost;
               const isMe = member.userId === user?.id;
-              
+
               return (
                 <View key={member.userId} className="flex-row-reverse justify-between mb-3.5" style={{ flexDirection: 'row-reverse' }}>
                   <View className="flex-row-reverse items-center gap-2" style={{ flexDirection: 'row-reverse' }}>
@@ -302,7 +302,7 @@ export default function CheckoutScreen() {
               <Text className="text-body text-white/50 font-body">סה״כ לקבוצה</Text>
               <Text className="text-body text-white/80 font-display">
                 ₪{(
-                  sessionDetails.lockedSeats.length * selectedShowtime.price + 
+                  sessionDetails.lockedSeats.length * selectedShowtime.price +
                   sessionDetails.members.reduce((sum, m) => sum + (m.snacks ? m.snacks.reduce((sSum, s) => sSum + s.price * s.quantity, 0) : 0), 0)
                 ).toFixed(0)}
               </Text>
@@ -347,10 +347,10 @@ export default function CheckoutScreen() {
         {/* Payment Method Section */}
         <View className="mt-10 items-start mb-10">
           <Text className="text-h3 text-white mb-4 font-display">אמצעי תשלום</Text>
-          
+
           {user?.paymentMethods && user.paymentMethods.length > 0 ? (
             user.paymentMethods.map((method) => (
-              <View 
+              <View
                 key={method.id}
                 className="w-full bg-surfaceLight p-5 rounded-3xl border border-secondary/20 flex-row-reverse items-center justify-between"
               >
@@ -369,7 +369,7 @@ export default function CheckoutScreen() {
               </View>
             ))
           ) : (
-            <Pressable 
+            <Pressable
               onPress={async () => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 await addVirtualCard();
@@ -386,11 +386,11 @@ export default function CheckoutScreen() {
       </ScrollView>
 
       {/* Premium Footer Payment Button */}
-      <View 
+      <View
         className="px-6 pt-4 border-t border-white/5 bg-background/80 backdrop-blur-xl"
         style={{ paddingBottom: Math.max(insets.bottom + 20, 40) }}
       >
-        <Pressable 
+        <Pressable
           onPress={handlePayment}
           disabled={isProcessing}
           className={`h-16 rounded-2xl overflow-hidden shadow-2xl  ${isProcessing ? 'opacity-70' : ''}`}
@@ -411,21 +411,21 @@ export default function CheckoutScreen() {
 
       {/* Cinematic Success Animation Overlay */}
       {showAnimation && (
-        <Animated.View 
+        <Animated.View
           entering={FadeIn.duration(800)}
           exiting={FadeOut.duration(500)}
           className="absolute inset-0 z-50 items-center justify-center bg-black/95"
         >
           <View className="absolute inset-0 bg-black/40" />
-          
+
           {/* MGM Intro Layer */}
           {!isIntroFinished && (
-            <Animated.View 
+            <Animated.View
               entering={FadeIn.duration(500)}
               exiting={FadeOut.duration(500)}
               className="absolute inset-0 z-50 bg-black items-center justify-center"
             >
-              <Animated.View 
+              <Animated.View
                 entering={ZoomIn.duration(1000).springify().damping(12)}
                 className="items-center justify-center"
               >
@@ -436,14 +436,14 @@ export default function CheckoutScreen() {
                   }}
                   style={({ pressed }) => [{ transform: [{ scale: pressed ? 0.95 : 1 }] }]}
                 >
-                  <Image 
-                    source={require('../../assets/images/mgm_lion_hologram.png')}
+                  <Image
+                    source={require('../../assets/images/mgm_lion_hologram.jpg')}
                     style={{ width: 260, height: 260, borderRadius: 130 }}
                     resizeMode="cover"
                     className="border-4 border-secondary/35 shadow-2xl"
                   />
                 </Pressable>
-                <Animated.View 
+                <Animated.View
                   entering={FadeInDown.delay(600).duration(800)}
                   className="mt-8 px-5 py-2.5 rounded-full border border-secondary/30 bg-secondary/10 flex-row items-center gap-2"
                   style={{ flexDirection: 'row-reverse' }}
@@ -455,16 +455,16 @@ export default function CheckoutScreen() {
             </Animated.View>
           )}
 
-          
+
           {/* Animated Background Glows */}
           {isIntroFinished && (
             <View className="absolute inset-0 overflow-hidden pointer-events-none">
-              <Animated.View 
+              <Animated.View
                 entering={FadeIn.delay(200)}
                 className="absolute w-[500px] h-[500px] rounded-full bg-primary/20 blur-[100px]"
                 style={{ top: '10%', left: '-20%' }}
               />
-              <Animated.View 
+              <Animated.View
                 entering={FadeIn.delay(400)}
                 className="absolute w-[400px] h-[400px] rounded-full bg-secondary/15 blur-[80px]"
                 style={{ bottom: '10%', right: '-10%' }}
@@ -473,77 +473,77 @@ export default function CheckoutScreen() {
           )}
 
           {isIntroFinished && (
-            <Animated.View 
+            <Animated.View
               entering={ZoomIn.duration(1000).springify().damping(15)}
               className="items-center z-10 overflow-visible"
             >
-            {/* The Golden Ticket with Floating Animation */}
-            <Animated.View entering={FadeInDown.delay(600).duration(800)}>
-              <Animated.View 
-                className="shadow-2xl"
-                style={[ticketAnimatedStyle, { shadowColor: Colors.secondary, shadowOpacity: 0.6 }]}
-              >
-                {/* Corner Success Badge on Ticket */}
-                <Animated.View 
-                  entering={ZoomIn.delay(1200)}
-                  className="absolute -top-4 -right-4 w-12 h-12 bg-secondary rounded-full items-center justify-center z-30 shadow-lg border-4 border-black"
+              {/* The Golden Ticket with Floating Animation */}
+              <Animated.View entering={FadeInDown.delay(600).duration(800)}>
+                <Animated.View
+                  className="shadow-2xl"
+                  style={[ticketAnimatedStyle, { shadowColor: Colors.secondary, shadowOpacity: 0.6 }]}
                 >
-                  <CheckCircle2 size={24} color={Colors.background} />
-                </Animated.View>
+                  {/* Corner Success Badge on Ticket */}
+                  <Animated.View
+                    entering={ZoomIn.delay(1200)}
+                    className="absolute -top-4 -right-4 w-12 h-12 bg-secondary rounded-full items-center justify-center z-30 shadow-lg border-4 border-black"
+                  >
+                    <CheckCircle2 size={24} color={Colors.background} />
+                  </Animated.View>
 
-                {/* Sparkles on Ticket Corners */}
-                <Animated.View 
-                  entering={FadeIn.delay(1400)}
-                  className="absolute -top-8 -left-8 z-20"
-                >
-                  <Sparkles size={40} color={Colors.secondary} />
-                </Animated.View>
-                <Animated.View 
-                  entering={FadeIn.delay(1600)}
-                  className="absolute -bottom-6 -right-6 z-20"
-                >
-                  <Sparkles size={30} color={Colors.white} />
-                </Animated.View>
+                  {/* Sparkles on Ticket Corners */}
+                  <Animated.View
+                    entering={FadeIn.delay(1400)}
+                    className="absolute -top-8 -left-8 z-20"
+                  >
+                    <Sparkles size={40} color={Colors.secondary} />
+                  </Animated.View>
+                  <Animated.View
+                    entering={FadeIn.delay(1600)}
+                    className="absolute -bottom-6 -right-6 z-20"
+                  >
+                    <Sparkles size={30} color={Colors.white} />
+                  </Animated.View>
 
-                <Image 
-                  source={require('../../assets/images/golden_ticket.png')}
-                  style={{ width: 310, height: 175, borderRadius: 24 }}
-                  resizeMode="contain"
-                />
-                
-                {/* Shine effect overlay */}
-                <Animated.View 
-                  className="absolute inset-0 bg-white/20 rounded-3xl overflow-hidden"
-                  entering={FadeIn.delay(1000).duration(2000)}
-                >
-                  <LinearGradient
-                    colors={['transparent', 'rgba(255,255,255,0.4)', 'transparent']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    className="absolute inset-0"
-                    style={{ transform: [{ translateX: -100 }] }}
+                  <Image
+                    source={require('../../assets/images/golden_ticket.png')}
+                    style={{ width: 310, height: 175, borderRadius: 24 }}
+                    resizeMode="contain"
                   />
+
+                  {/* Shine effect overlay */}
+                  <Animated.View
+                    className="absolute inset-0 bg-white/20 rounded-3xl overflow-hidden"
+                    entering={FadeIn.delay(1000).duration(2000)}
+                  >
+                    <LinearGradient
+                      colors={['transparent', 'rgba(255,255,255,0.4)', 'transparent']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      className="absolute inset-0"
+                      style={{ transform: [{ translateX: -100 }] }}
+                    />
+                  </Animated.View>
                 </Animated.View>
               </Animated.View>
-            </Animated.View>
 
-            <Animated.View 
-              entering={FadeInDown.delay(1200).springify().damping(12)}
-              className="mt-16 items-center bg-white/5 p-8 rounded-[40px] border border-white/10 backdrop-blur-md"
-            >
-              <Text className="text-secondary text-3xl font-bold tracking-[4px] uppercase mb-3 text-center" style={{ fontFamily: 'Outfit-Bold' }}>
-                הזמנה אושרה!
-              </Text>
-              <View className="h-1 w-20 bg-secondary/30 rounded-full mb-4" />
-              <Text className="text-white/80 text-xl text-center px-6 leading-relaxed" style={{ fontFamily: 'Inter-Regular' }}>
-                הסרט <Text className="text-white font-bold">{selectedMovieTitle}</Text> מחכה לך.{'\n'}תהנה מחוויה קולנועית מושלמת.
-              </Text>
-            </Animated.View>
+              <Animated.View
+                entering={FadeInDown.delay(1200).springify().damping(12)}
+                className="mt-16 items-center bg-white/5 p-8 rounded-[40px] border border-white/10 backdrop-blur-md"
+              >
+                <Text className="text-secondary text-3xl font-bold tracking-[4px] uppercase mb-3 text-center" style={{ fontFamily: 'Outfit-Bold' }}>
+                  הזמנה אושרה!
+                </Text>
+                <View className="h-1 w-20 bg-secondary/30 rounded-full mb-4" />
+                <Text className="text-white/80 text-xl text-center px-6 leading-relaxed" style={{ fontFamily: 'Inter-Regular' }}>
+                  הסרט <Text className="text-white font-bold">{selectedMovieTitle}</Text> מחכה לך.{'\n'}תהנה מחוויה קולנועית מושלמת.
+                </Text>
+              </Animated.View>
             </Animated.View>
           )}
 
           {/* Bottom hint */}
-          <Animated.View 
+          <Animated.View
             entering={FadeIn.delay(3000)}
             className="absolute bottom-12 items-center"
           >
@@ -556,8 +556,8 @@ export default function CheckoutScreen() {
       <Modal visible={showModal} transparent animationType="fade">
         <View className="flex-1 bg-black/80 items-center justify-center px-8">
           <View className="absolute inset-0 bg-black/60" />
-          <Animated.View 
-            entering={FadeInDown.springify()} 
+          <Animated.View
+            entering={FadeInDown.springify()}
             className="bg-surface p-8 rounded-[40px] items-center w-full border border-white/10"
           >
             <View className="w-20 h-20 rounded-full bg-secondary items-center justify-center mb-6">
@@ -568,11 +568,11 @@ export default function CheckoutScreen() {
               הכרטיסים שלך מחכים לך באזור האישי.{'\n'}
               שלחנו לך גם אימייל עם קוד ה-QR לסריקה מהירה בכניסה.
             </Text>
-            
+
             {/* Redesigned Apple & Google Wallet Buttons Row */}
             <View className="flex-row gap-3 w-full mb-4">
               {/* Apple Wallet */}
-              <Pressable 
+              <Pressable
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                   setShowShekelRain(true);
@@ -585,7 +585,7 @@ export default function CheckoutScreen() {
               </Pressable>
 
               {/* Google Wallet */}
-              <Pressable 
+              <Pressable
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                   setShowShekelRain(true);
@@ -601,27 +601,27 @@ export default function CheckoutScreen() {
               </Pressable>
             </View>
 
-            <Pressable 
+            <Pressable
               onPress={handleFinish}
               className="w-full h-14 bg-white rounded-2xl items-center justify-center"
             >
               <Text className="text-background font-bold text-h3 font-display">חזרה לכרטיסים</Text>
             </Pressable>
           </Animated.View>
-          
+
           {showShekelRain && (
-            <ShekelRain 
-              amount={finalTotal} 
-              onAnimationEnd={() => setShowShekelRain(false)} 
+            <ShekelRain
+              amount={finalTotal}
+              onAnimationEnd={() => setShowShekelRain(false)}
             />
           )}
         </View>
       </Modal>
 
 
-      <InviteModal 
-        visible={isInviteModalVisible} 
-        onClose={() => setIsInviteModalVisible(false)} 
+      <InviteModal
+        visible={isInviteModalVisible}
+        onClose={() => setIsInviteModalVisible(false)}
         movieTitle={selectedMovieTitle}
       />
     </View>
