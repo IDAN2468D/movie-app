@@ -42,7 +42,6 @@
           "cameraPermission": "אפשר לסינבוק גישה למצלמה כדי לסרוק כרטיסים."
         }
       ],
-
       [
         "expo-location",
         {
@@ -59,7 +58,18 @@
           "backgroundColor": "#09090B"
         }
       ],
-      "expo-status-bar"
+      "expo-status-bar",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "reactNativeArchitectures": ["armeabi-v7a", "arm64-v8a"],
+            "extraParams": {
+              "org.gradle.jvmargs": "-Xmx2048m -XX:MaxMetaspaceSize=512m"
+            }
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
