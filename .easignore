@@ -1,0 +1,8 @@
+node_modules/
+.expo/
+.bundle/
+.eas/
+*.log
+android/
+ios/
+dist/
