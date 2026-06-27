@@ -6,8 +6,6 @@
 import "../global.css";
 import { useEffect } from 'react';
 import { I18nManager, StatusBar, DevSettings, LogBox } from 'react-native';
-import { verifyInstallation } from 'nativewind';
-verifyInstallation();
 
 // Silence specific development warnings
 LogBox.ignoreLogs([
