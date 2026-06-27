@@ -233,20 +233,40 @@ export default function SplashScreen() {
   }));
 
   return (
-    <View className="flex-1 bg-background justify-center items-center overflow-hidden">
+    <View style={styles.container}>
       <LinearGradient
         colors={[Colors.background, '#111122', Colors.background]}
-        className="absolute inset-0"
+        style={StyleSheet.absoluteFill}
       />
 
       {/* ─── BACKGROUND NEON GLOWS ─── */}
       <Animated.View 
-        className="absolute w-72 h-72 rounded-full bg-primary/10 blur-3xl"
-        style={[animatedGlow1Style, { start: -40, top: -40 }]} 
+        style={[
+          animatedGlow1Style, 
+          { 
+            position: 'absolute',
+            width: 288, 
+            height: 288, 
+            borderRadius: 144, 
+            backgroundColor: 'rgba(255, 20, 100, 0.1)',
+            start: -40, 
+            top: -40,
+          }
+        ]} 
       />
       <Animated.View 
-        className="absolute w-80 h-80 rounded-full bg-secondary/5 blur-3xl"
-        style={[animatedGlow2Style, { end: -40, bottom: -40 }]} 
+        style={[
+          animatedGlow2Style, 
+          { 
+            position: 'absolute',
+            width: 320, 
+            height: 320, 
+            borderRadius: 160, 
+            backgroundColor: 'rgba(229, 255, 0, 0.05)',
+            end: -40, 
+            bottom: -40,
+          }
+        ]} 
       />
 
       {/* ─── DUST PARTICLES ─── */}
@@ -255,9 +275,9 @@ export default function SplashScreen() {
       ))}
 
       {/* ─── LOGO CONTAINER ─── */}
-      <Animated.View testID="splash-logo-container" style={animatedLogoStyle} className="items-center justify-center">
+      <Animated.View testID="splash-logo-container" style={[animatedLogoStyle, styles.logoContainer]}>
         {/* Glass Card */}
-        <View className="w-32 h-32 rounded-[40px] bg-white/5 items-center justify-center border border-white/10 shadow-2xl mb-6 backdrop-blur-xl overflow-hidden">
+        <View style={styles.glassCard}>
           <Ionicons name="film-outline" size={60} color={Colors.primary} />
           
           {/* Projector Light Sweep Overlay */}
@@ -282,11 +302,11 @@ export default function SplashScreen() {
           </Animated.View>
         </View>
 
-        <Text testID="splash-app-title" className="text-4xl font-display text-white tracking-widest font-bold">
+        <Text testID="splash-app-title" style={styles.title}>
           CineBook
         </Text>
         
-        <Text style={{ fontFamily: 'Assistant-Medium', textAlign: 'right', writingDirection: 'rtl' }} className="text-white/50 mt-2 text-lg">
+        <Text style={styles.subtitle}>
           חוויה קולנועית. מחדש.
         </Text>
       </Animated.View>
@@ -301,22 +321,10 @@ export default function SplashScreen() {
               router.replace('/(tabs)');
             }
           }}
-          style={{
-            position: 'absolute',
-            bottom: 110,
-            paddingHorizontal: 24,
-            paddingVertical: 16,
-            backgroundColor: 'rgba(255, 20, 100, 0.15)',
-            borderColor: 'rgba(255, 20, 100, 0.3)',
-            borderWidth: 1,
-            borderRadius: 16,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+          style={styles.biometricButton}
         >
           <Ionicons name="finger-print-outline" size={22} color={Colors.primary} style={{ marginEnd: 8 }} />
-          <Text style={{ fontFamily: 'Rubik-Bold', color: '#FFFFFF', fontSize: 16, textAlign: 'right', writingDirection: 'rtl' }}>
+          <Text style={styles.biometricText}>
             התחברות עם זיהוי ביומטרי
           </Text>
         </TouchableOpacity>
@@ -329,10 +337,91 @@ export default function SplashScreen() {
           console.log('Onboarding RESET from Splash');
           router.replace('/'); // Reload splash
         }}
-        className="absolute bottom-10 px-4 py-2 bg-white/5 rounded-full border border-white/10"
+        style={styles.debugButton}
       >
-        <Text className="text-white/20 text-xs">Reset Onboarding (Debug)</Text>
+        <Text style={styles.debugText}>Reset Onboarding (Debug)</Text>
       </TouchableOpacity>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  logoContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  glassCard: {
+    width: 128,
+    height: 128,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    marginBottom: 24,
+    overflow: 'hidden',
+    // Shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 20,
+  },
+  title: {
+    fontSize: 36,
+    fontFamily: 'Anton-Regular',
+    color: '#FFFFFF',
+    letterSpacing: 6,
+    fontWeight: 'bold',
+  },
+  subtitle: {
+    fontFamily: 'Assistant-Medium',
+    textAlign: 'center',
+    writingDirection: 'rtl',
+    color: 'rgba(255, 255, 255, 0.5)',
+    marginTop: 8,
+    fontSize: 18,
+  },
+  biometricButton: {
+    position: 'absolute',
+    bottom: 110,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    backgroundColor: 'rgba(255, 20, 100, 0.15)',
+    borderColor: 'rgba(255, 20, 100, 0.3)',
+    borderWidth: 1,
+    borderRadius: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  biometricText: {
+    fontFamily: 'Rubik-Bold',
+    color: '#FFFFFF',
+    fontSize: 16,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  },
+  debugButton: {
+    position: 'absolute',
+    bottom: 40,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  debugText: {
+    color: 'rgba(255, 255, 255, 0.2)',
+    fontSize: 12,
+  },
+});
