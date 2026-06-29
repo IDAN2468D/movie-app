@@ -172,7 +172,7 @@ export default function RootLayout() {
     >
       <GestureHandlerRootView style={{ flex: 1 }}>
         <ThemeProvider value={CineDarkTheme}>
-          <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
+          <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
           <RootLayoutNav />
         </ThemeProvider>
       </GestureHandlerRootView>
@@ -197,10 +197,18 @@ function RootLayoutNav() {
         <Stack.Screen name="login" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen
+          name="movie/scanner"
+          options={{
+            animation: 'slide_from_bottom',
+            presentation: 'fullScreenModal',
+          }}
+        />
+        <Stack.Screen
           name="movie/[id]"
           options={{
             animation: 'slide_from_left',
             presentation: 'card',
+            statusBarTranslucent: true,
           }}
         />
         <Stack.Screen

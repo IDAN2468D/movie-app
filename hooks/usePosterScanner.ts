@@ -26,9 +26,17 @@ export function usePosterScanner() {
         setScannerState('success');
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         
-        // Navigate to the movie screen after a brief delay to show success state
+        // Navigate to the CineVision stamp screen to trigger the digital stamp morph animation
         setTimeout(() => {
-          router.push(`/movie/${result.movieId}`);
+          router.push({
+            pathname: '/movie/cinevision',
+            params: {
+              movieId: String(result.movieId),
+              movieTitle: result.movieTitle || 'סרט כללי',
+              scannedPhotoUri: imageUri,
+              autoMint: 'true',
+            }
+          } as any);
           // Reset state after navigation
           setTimeout(() => setScannerState('idle'), 500);
         }, 1000);

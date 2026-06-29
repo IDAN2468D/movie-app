@@ -52,6 +52,7 @@ export const VideoSchema = z.object({
   name: z.string(),
   site: z.string(),
   type: z.string(),
+  official: z.boolean().optional(),
 });
 
 /**

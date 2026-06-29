@@ -22,7 +22,8 @@ const MovieTrailer: React.FC<MovieTrailerProps> = ({ movieId, backdropPath, titl
 
   useEffect(() => {
     getMovieVideos(movieId).then(videos => {
-      const trailer = videos.find(v => v.type === 'Trailer' && v.site === 'YouTube') || 
+      const trailer = videos.find(v => v.official && v.type === 'Trailer' && v.site === 'YouTube') ||
+                      videos.find(v => v.type === 'Trailer' && v.site === 'YouTube') || 
                       videos.find(v => v.site === 'YouTube');
       if (trailer) setVideo(trailer);
       setLoading(false);

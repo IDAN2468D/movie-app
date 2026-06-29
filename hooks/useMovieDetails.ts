@@ -38,6 +38,30 @@ function getNext7Days(): { label: string; date: string; dayName: string }[] {
   return result;
 }
 
+function getDirectTrailerUrl(movie: any): string {
+  const videos = {
+    sciFi: 'https://vjs.zencdn.net/v/oceans.mp4',
+    animation: 'https://www.w3schools.com/html/mov_bbb.mp4',
+    action: 'https://media.w3.org/2010/05/sintel/trailer.mp4',
+    adventure: 'https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-576p.mp4',
+    comedy: 'https://www.w3schools.com/html/movie.mp4',
+    drama: 'https://media.w3.org/2010/05/sintel/trailer.mp4',
+  };
+
+  const genreIds = movie.genre_ids || movie.genres?.map((g: any) => g.id) || [];
+  if (genreIds.length === 0) {
+    return videos.drama;
+  }
+
+  const mainGenre = genreIds[0];
+  if (mainGenre === 878) return videos.sciFi;
+  if (mainGenre === 16) return videos.animation;
+  if (mainGenre === 28) return videos.action;
+  if (mainGenre === 12) return videos.adventure;
+  if (mainGenre === 35) return videos.comedy;
+  return videos.drama;
+}
+
 export const useMovieDetails = (id: string | undefined) => {
   const movieId = id ? parseInt(id, 10) : 0;
 
@@ -68,12 +92,27 @@ export const useMovieDetails = (id: string | undefined) => {
   // 3. UI Hooks integration
   const themeColors = useMovieTheme(movie as any);
 
-  // Background Video Player
-  const player = Video?.useVideoPlayer('https://www.w3schools.com/html/mov_bbb.mp4', (player: any) => {
-    player.loop = true;
-    player.muted = true;
-    player.play();
+  // Background Video Player playing the cinematic loop matching the movie's genre
+  const directTrailerUrl = movie ? getDirectTrailerUrl(movie) : '';
+  const player = Video.useVideoPlayer(directTrailerUrl || null, (p: any) => {
+    p.loop = true;
+    p.muted = true;
+    p.play();
   });
+
+  // Dynamically replace player source when movie data is loaded
+  useEffect(() => {
+    if (player && directTrailerUrl) {
+      const currentSource = typeof player.source === 'string' ? player.source : player.source?.uri;
+      if (currentSource !== directTrailerUrl) {
+        if (typeof player.replace === 'function') {
+          player.replace(directTrailerUrl);
+        } else {
+          player.source = directTrailerUrl;
+        }
+      }
+    }
+  }, [player, directTrailerUrl]);
 
   // 4. Animation State
   const scrollY = useSharedValue(0);

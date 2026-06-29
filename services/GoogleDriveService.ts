@@ -479,6 +479,279 @@ export class GoogleDriveService {
   }
 
   /**
+   * Prompts authentication and uploads a custom stamp image directly to Google Drive
+   */
+  /**
+   * Generates a fully-designed, perforated postage stamp HTML template.
+   */
+  private static generateStampHTML(movieTitle: string, posterDataUri: string): string {
+    return `<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      background-color: #09090B;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: 'Assistant', 'Rubik', system-ui, sans-serif;
+    }
+    .stamp-wrapper {
+      position: relative;
+      width: 320px;
+      height: 440px;
+      background-color: #121214;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+    .stamp-inner {
+      position: absolute;
+      top: 10px;
+      bottom: 10px;
+      left: 10px;
+      right: 10px;
+      border-radius: 8px;
+      overflow: hidden;
+      background-image: url('${posterDataUri}');
+      background-size: cover;
+      background-position: center;
+    }
+    .tint {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.25);
+    }
+    .details {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 16px;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      color: #FAFAF7;
+    }
+    .row-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .country-he {
+      font-size: 20px;
+      font-weight: 700;
+      color: #FAFAF7;
+    }
+    .country-en {
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.7);
+    }
+    .row-mid {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-top: 8px;
+    }
+    .price {
+      font-size: 16px;
+      font-weight: 700;
+      color: #FAFAF7;
+    }
+    .year {
+      font-size: 11px;
+      color: rgba(255,255,255,0.6);
+    }
+    .row-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding-top: 8px;
+    }
+    .title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #FAFAF7;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+      text-align: right;
+    }
+    .badge {
+      background: #FF1464;
+      color: white;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 3px 6px;
+      border-radius: 10px;
+      margin-right: 8px;
+    }
+    /* Perforation holes */
+    .hole {
+      width: 14px;
+      height: 14px;
+      background-color: #09090B;
+      border-radius: 50%;
+      position: absolute;
+    }
+  </style>
+</head>
+<body>
+  <div class="stamp-wrapper">
+    <!-- Top & Bottom Perforations -->
+    ${Array.from({ length: 10 }).map((_, i) => `<div class="hole" style="top: -7px; left: ${i * 30 + 20}px;"></div>`).join('')}
+    ${Array.from({ length: 10 }).map((_, i) => `<div class="hole" style="bottom: -7px; left: ${i * 30 + 20}px;"></div>`).join('')}
+    
+    <!-- Left & Right Perforations -->
+    ${Array.from({ length: 14 }).map((_, i) => `<div class="hole" style="left: -7px; top: ${i * 29 + 25}px;"></div>`).join('')}
+    ${Array.from({ length: 14 }).map((_, i) => `<div class="hole" style="right: -7px; top: ${i * 29 + 25}px;"></div>`).join('')}
+
+    <div class="stamp-inner">
+      <div class="tint"></div>
+      <div class="details">
+        <div class="row-top">
+          <span class="country-he">ישראל</span>
+          <span class="country-en">ISRAEL</span>
+        </div>
+        <div class="row-mid">
+          <span class="price">4.20 ש"ח</span>
+          <span class="year">2026</span>
+        </div>
+        <div class="row-bottom">
+          <span class="title">${movieTitle}</span>
+          <span class="badge">CINEBOOK</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+  }
+
+  /**
+   * Prompts authentication and uploads the fully-designed stamp PDF directly to Google Drive
+   */
+  public static async uploadStampToDrive(stampImage: string, movieTitle: string): Promise<{ success: boolean; message?: string }> {
+    if (!isGoogleSigninAvailable) {
+      console.log('[GoogleDriveService] Expo Go / Mock mode detected. Running simulated Google Drive stamp upload...');
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      Alert.alert(
+        'סימולציית שמירה ב-Drive',
+        'מפתח יקר: עקב ריצה ב-Expo Go, ביצענו סימולציית שמירה והעלאה מוצלחת של הבול המעוצב השלם ל-Google Drive שלך! 📄🚀',
+        [{ text: 'מצוין' }]
+      );
+      return { success: true };
+    }
+
+    try {
+      console.log('[GoogleDriveService] Starting Google Auth for stamp upload...');
+      this.configureGoogle();
+
+      let currentUser = GoogleSignin.getCurrentUser();
+      const targetScope = 'https://www.googleapis.com/auth/drive.file';
+
+      if (!currentUser) {
+        await GoogleSignin.hasPlayServices();
+        await GoogleSignin.signIn();
+        currentUser = GoogleSignin.getCurrentUser();
+      } else {
+        const hasScope = currentUser.scopes && currentUser.scopes.includes(targetScope);
+        if (!hasScope) {
+          await GoogleSignin.addScopes({ scopes: [targetScope] });
+          currentUser = GoogleSignin.getCurrentUser();
+        }
+      }
+
+      const tokens = await GoogleSignin.getTokens();
+      const accessToken = tokens.accessToken;
+
+      if (!accessToken) {
+        throw new Error('Failed to retrieve access token from Google');
+      }
+
+      // Convert the stamp background image to Base64
+      let posterDataUri = stampImage;
+      let tempFileUri = '';
+      if (stampImage.startsWith('http')) {
+        const base64Url = await this.getBase64FromUrl(stampImage);
+        if (base64Url) {
+          posterDataUri = base64Url;
+        }
+      } else {
+        const base64Local = await FileSystem.readAsStringAsync(stampImage, { encoding: 'base64' });
+        posterDataUri = `data:image/jpeg;base64,${base64Local}`;
+      }
+
+      // Generate the full stamp design HTML
+      const htmlContent = this.generateStampHTML(movieTitle, posterDataUri);
+
+      // Print full design to PDF
+      console.log('[GoogleDriveService] Rendering full stamp design to PDF...');
+      const pdfFile = await Print.printToFileAsync({ html: htmlContent });
+      const pdfUri = pdfFile.uri;
+
+      const base64Pdf = await FileSystem.readAsStringAsync(pdfUri, {
+        encoding: 'base64',
+      });
+
+      const fileName = `CineBook_Stamp_${movieTitle.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
+      const boundary = 'foo_bar_cinebook_boundary';
+      const metadata = JSON.stringify({
+        name: fileName,
+        mimeType: 'application/pdf',
+      });
+
+      const multipartBody = 
+        `\r\n--${boundary}\r\n` +
+        `Content-Type: application/json; charset=UTF-8\r\n\r\n` +
+        `${metadata}\r\n` +
+        `\r\n--${boundary}\r\n` +
+        `Content-Type: application/pdf\r\n` +
+        `Content-Transfer-Encoding: base64\r\n\r\n` +
+        `${base64Pdf}\r\n` +
+        `\r\n--${boundary}--\r\n`;
+
+      const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': `multipart/related; boundary=${boundary}`,
+          'Content-Length': String(multipartBody.length),
+        },
+        body: multipartBody,
+      });
+
+      const responseText = await response.text();
+      
+      // Clean up the temporary PDF file
+      try {
+        await FileSystem.deleteAsync(pdfUri, { idempotent: true });
+      } catch {}
+
+      if (response.ok) {
+        return { success: true };
+      } else {
+        const errorData = JSON.parse(responseText);
+        return { 
+          success: false, 
+          message: errorData.error?.message || 'שגיאה בהעלאת הבול לגוגל דרייב' 
+        };
+      }
+    } catch (error: any) {
+      console.error('[GoogleDriveService] Stamp Upload Error:', error);
+      return { success: false, message: error.message || 'שגיאת חיבור לשרתי גוגל' };
+    }
+  }
+
+  /**
    * Downloads a remote image and converts it to a Base64 Data URI
    */
   private static async getBase64FromUrl(url: string): Promise<string | null> {

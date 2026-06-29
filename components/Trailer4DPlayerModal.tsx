@@ -72,9 +72,12 @@ const Trailer4DPlayerModal: React.FC<Trailer4DPlayerModalProps> = ({
     return () => stopHapticEngine();
   }, [playing, is4DEnabled, startHapticEngine, stopHapticEngine]);
 
-  // Clean up when modal closes
+  // Control playback when modal visibility changes
   useEffect(() => {
-    if (!isVisible) {
+    if (isVisible) {
+      // Small delay to ensure WebView is ready
+      setTimeout(() => setPlaying(true), 500);
+    } else {
       setPlaying(false);
       stopHapticEngine();
     }
@@ -127,6 +130,8 @@ const Trailer4DPlayerModal: React.FC<Trailer4DPlayerModalProps> = ({
             play={playing}
             videoId={videoKey}
             onChangeState={onStateChange}
+            forceAndroidAutoplay={true}
+            webViewStyle={{ opacity: 0.99 }}
             initialPlayerParams={{
               modestbranding: true,
               rel: false,

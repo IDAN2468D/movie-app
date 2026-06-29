@@ -13,6 +13,8 @@ import {
   I18nManager,
   StyleSheet,
   Alert,
+  StatusBar,
+  Platform,
 } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import * as Haptics from 'expo-haptics';
@@ -254,6 +256,7 @@ export default function MovieDetailsScreen() {
 
   return (
     <View className="flex-1 bg-background">
+      <StatusBar translucent={true} backgroundColor="transparent" barStyle="light-content" />
       {/* Scroll-Progress Indicator Bar */}
       <Animated.View 
         style={[
@@ -410,7 +413,7 @@ export default function MovieDetailsScreen() {
       <View className="absolute top-0 start-0 end-0 z-20">
         <Pressable
           className="absolute start-4"
-          style={{ top: insets.top + 10 }}
+          style={{ top: Platform.OS === 'android' ? Math.max(insets.top, 40) + 8 : insets.top + 10 }}
           onPress={handleBack}
         >
           <BlurView intensity={40} tint="dark" className="w-11 h-11 rounded-full overflow-hidden border border-white/10 items-center justify-center bg-black/25">
@@ -424,7 +427,7 @@ export default function MovieDetailsScreen() {
 
         <Pressable
           className="absolute end-4"
-          style={{ top: insets.top + 10 }}
+          style={{ top: Platform.OS === 'android' ? Math.max(insets.top, 40) + 8 : insets.top + 10 }}
           onPress={handleToggleFavorite}
         >
           <BlurView intensity={40} tint="dark" className="w-11 h-11 rounded-full overflow-hidden border border-white/10 items-center justify-center bg-black/25">
@@ -438,7 +441,7 @@ export default function MovieDetailsScreen() {
 
         <Pressable
           className="absolute end-16"
-          style={{ top: insets.top + 10 }}
+          style={{ top: Platform.OS === 'android' ? Math.max(insets.top, 40) + 8 : insets.top + 10 }}
           onPress={handleGroupWatchPress}
         >
           <BlurView intensity={40} tint="dark" className="w-11 h-11 rounded-full overflow-hidden border border-white/10 items-center justify-center bg-black/25">
@@ -454,7 +457,7 @@ export default function MovieDetailsScreen() {
 
         <Pressable
           className="absolute end-28"
-          style={{ top: insets.top + 10 }}
+          style={{ top: Platform.OS === 'android' ? Math.max(insets.top, 40) + 8 : insets.top + 10 }}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             setIsPrismActive(prev => !prev);
@@ -669,6 +672,13 @@ export default function MovieDetailsScreen() {
             </Pressable>
           </ScrollEntrance>
 
+          {/* Trailer Discovery */}
+          <MovieTrailer 
+            movieId={movie.id} 
+            backdropPath={movie.backdrop_path} 
+            title={movie.title} 
+          />
+
           {movie.overview ? (
             <ScrollEntrance scrollY={scrollY}>
               <View className="mt-8">
@@ -720,14 +730,6 @@ export default function MovieDetailsScreen() {
               </View>
             </ScrollEntrance>
           ) : null}
-
-          {/* Trailer Discovery */}
-          <MovieTrailer 
-            movieId={movie.id} 
-            backdropPath={movie.backdrop_path} 
-            title={movie.title} 
-          />
-
 
           {/* AI Insights */}
           {insights ? (

@@ -117,6 +117,16 @@ export class AIService {
           return JSON.parse(sliced);
         } catch (e2: any) {
           try {
+            // If AI returned multiple comma-separated JSON objects instead of one
+            const asArray = JSON.parse(`[${sliced}]`);
+            if (Array.isArray(asArray) && asArray.length > 0) {
+              return asArray[0];
+            }
+          } catch {
+            // ignore and proceed to sanitization
+          }
+
+          try {
             let sanitized = sliced
               .replace(/([a-zA-Z0-9א-ת])"([a-zA-Z0-9א-ת])/g, '$1\\"$2')
               .replace(/[\u201C\u201D\u201E\u201F\u2033\u2036]/g, '"')
