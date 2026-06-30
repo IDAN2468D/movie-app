@@ -3,6 +3,7 @@ import { View, Text, Pressable, Image, StyleSheet, Dimensions, I18nManager, Acti
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useLocalSearchParams, router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -82,6 +83,8 @@ export default function CineVisionScreen() {
   const scanLineY = useSharedValue(0);
   const stampScale = useSharedValue(1);
   const stampTranslateY = useSharedValue(0);
+  const stampFloatY = useSharedValue(0);
+  const stampRotate = useSharedValue(0);
   const ambientGlowOpacity = useSharedValue(0);
   const successUIPosition = useSharedValue(100);
 
@@ -141,6 +144,24 @@ export default function CineVisionScreen() {
       true
     );
 
+    stampFloatY.value = withRepeat(
+      withSequence(
+        withTiming(-6, { duration: 1500 }),
+        withTiming(6, { duration: 1500 })
+      ),
+      -1,
+      true
+    );
+
+    stampRotate.value = withRepeat(
+      withSequence(
+        withTiming(0.04, { duration: 2000 }),
+        withTiming(-0.04, { duration: 2000 })
+      ),
+      -1,
+      true
+    );
+
     return () => {
       resetCineVision();
     };
@@ -165,7 +186,8 @@ export default function CineVisionScreen() {
   const stampAnimatedStyle = useAnimatedStyle(() => ({
     transform: [
       { scale: stampScale.value },
-      { translateY: stampTranslateY.value }
+      { translateY: stampTranslateY.value + stampFloatY.value },
+      { rotateZ: `${stampRotate.value}rad` }
     ]
   }));
 
@@ -479,53 +501,86 @@ export default function CineVisionScreen() {
         <View style={styles.stampCanvas} pointerEvents="none">
           <Animated.View 
             style={[styles.stampCard, stampAnimatedStyle]} 
-            className="bg-[#2E5B9A] border-4 border-white"
+            className="border-[3px] border-[#e2e8f0] shadow-2xl"
           >
+            {/* Silver Foil Backing */}
+            <View style={StyleSheet.absoluteFill} className="bg-slate-200 rounded-[8px]" />
+
+            {/* The Poster Background (Full bleed) */}
+            <View style={StyleSheet.absoluteFill} className="rounded-[8px] overflow-hidden m-1 bg-black">
+              <Image 
+                source={{ uri: capturedImage }}
+                style={StyleSheet.absoluteFill}
+                resizeMode="cover"
+              />
+              {/* Top Vignette for text readability */}
+              <LinearGradient
+                colors={['rgba(0,0,0,0.8)', 'transparent']}
+                style={{ height: 100, width: '100%' }}
+              />
+              {/* Bottom Vignette */}
+              <LinearGradient
+                colors={['transparent', 'rgba(0,0,0,0.8)']}
+                style={{ position: 'absolute', bottom: 0, height: 120, width: '100%' }}
+              />
+            </View>
+
+            {/* Specular Gloss Overlay - Now restricted inside the poster area */}
+            <View style={StyleSheet.absoluteFill} className="rounded-[8px] overflow-hidden m-1" pointerEvents="none">
+              <LinearGradient
+                colors={['rgba(255,255,255,0)', 'rgba(255,255,255,0.4)', 'rgba(255,255,255,0)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[StyleSheet.absoluteFill, { transform: [{ rotate: '45deg' }, { scale: 1.5 }] }]}
+              />
+            </View>
+
             {/* Inner Content Wrapper */}
-            <View style={StyleSheet.absoluteFill} className="p-2 items-center justify-between">
+            <View style={StyleSheet.absoluteFill} className="p-3 justify-between">
               
-              {/* Top Section: Classic Bold White "ישראל" */}
-              <Text className="text-white text-3xl font-bold tracking-widest text-center mt-2" style={{ fontFamily: 'Rubik-Bold' }}>
-                ישראל
-              </Text>
-
-              {/* Middle Section: Circular Coin Medallion with movie poster background */}
-              <View style={styles.coinContainer} className="border-4 border-white/40 shadow-xl overflow-hidden justify-center items-center">
-                <Image 
-                  source={{ uri: capturedImage }}
-                  style={StyleSheet.absoluteFill}
-                  resizeMode="cover"
-                />
-                {/* Horizontal Dark Banner: "בול סרט" */}
-                <View className="absolute bg-black/75 px-4 py-1.5 border-y border-white/20 w-full items-center">
-                  <Text className="text-white text-xs font-bold tracking-wider" style={{ fontFamily: 'Assistant-Bold' }}>
-                    בול סרט
-                  </Text>
-                </View>
-              </View>
-
-              {/* Side Verticals (Simulated ancient text) */}
-              <Text className="absolute text-[8px] text-white/70 font-semibold rotate-90" style={{ left: 8, top: '48%', transform: [{ rotate: '-90deg' }] }}>
-                CINEBOOK SPECIAL
-              </Text>
-              <Text className="absolute text-[8px] text-white/70 font-semibold rotate-90" style={{ right: 8, top: '48%', transform: [{ rotate: '90deg' }] }}>
-                {movieTitle || 'סרט כללי'}
-              </Text>
-
-              {/* Bottom Section: LTR price & Arabic israel label */}
-              <View className="w-full flex-row justify-between items-end px-2 mb-2">
-                <View style={{ flexDirection: 'row-reverse', alignItems: 'baseline' }}>
-                  <Text className="text-white text-2xl font-bold" style={{ fontFamily: 'Assistant-Bold' }}>
-                    4.20
-                  </Text>
-                  <Text className="text-white text-xs font-bold marginStart-1">
-                    ISRAEL
-                  </Text>
-                </View>
-                <Text className="text-white text-base font-bold" style={{ fontFamily: 'Assistant-Bold' }}>
-                  اسرائيل
+              {/* Top Section */}
+              <View className="flex-row justify-between items-start mt-1">
+                <Text className="text-white text-4xl font-bold tracking-widest shadow-lg" style={{ fontFamily: 'Rubik-Bold', textShadowColor: 'rgba(0,0,0,0.8)', textShadowRadius: 10 }}>
+                  ישראל
                 </Text>
+                <View className="bg-primary/90 px-3 py-1 rounded-full border border-white/30 shadow-lg">
+                  <Text className="text-white text-[10px] font-bold tracking-widest uppercase">
+                    CineStamp™
+                  </Text>
+                </View>
               </View>
+
+              {/* Bottom Glass Panel Section */}
+              <BlurView intensity={50} tint="dark" className="w-full rounded-xl overflow-hidden border border-white/20 p-3 shadow-2xl mb-1">
+                <Text className="text-white text-lg font-bold mb-1" style={{ fontFamily: 'Assistant-Bold', textAlign: 'left' }} numberOfLines={1}>
+                  {movieTitle || 'סרט כללי'}
+                </Text>
+                
+                <View className="flex-row justify-between items-end mt-2">
+                  <View>
+                    <Text className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{ textAlign: 'left' }}>
+                      ערך נקוב
+                    </Text>
+                    <View style={{ flexDirection: 'row-reverse', alignItems: 'baseline' }}>
+                      <Text className="text-[#D4FF00] text-3xl font-bold" style={{ fontFamily: 'Assistant-Bold' }}>
+                        4.20
+                      </Text>
+                      <Text className="text-white/80 text-sm font-bold marginStart-1">
+                        ₪
+                      </Text>
+                    </View>
+                  </View>
+                  
+                  <View className="items-end">
+                    <Text className="text-white/50 text-[8px] tracking-widest font-bold mb-1.5">
+                      EDITION 2026
+                    </Text>
+                    <Text className="text-white text-sm font-bold opacity-90" style={{ fontFamily: 'Assistant-Bold' }}>
+                      اسرائيل • ISRAEL
+                    </Text>
+                  </View>
+                </View>
+              </BlurView>
 
             </View>
 

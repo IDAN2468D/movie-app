@@ -940,12 +940,12 @@ ${watchlistInfo}
   }
 
   /**
-   * Generates a rich, cinematic actor biography using Gemini 3.5 Flash.
+   * Generates a rich, cinematic actor biography using Gemini 3.1 Flash Lite.
    */
   static async generateActorBiography(actorName: string): Promise<any> {
     const model = this.getModel(
       "You are a professional film historian and cinematic expert for CineBook. Generate an engaging, visually organized biography in Hebrew for the given actor. Break your response down into the requested Markdown headers. Maintain a high-end, cinematic narrative tone. Format all movie names, awards, and historical data neatly.",
-      "gemini-3.5-flash"
+      "gemini-3.1-flash-lite"
     );
     
     if (!model) {

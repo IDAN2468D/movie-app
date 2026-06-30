@@ -35,11 +35,11 @@ const TraitBar = ({ label, value, index }: { label: string, value: number, index
 
   return (
     <View className="mb-4">
-      <View className="flex-row-reverse justify-between items-center mb-1">
-        <Text className="text-white/90 font-body text-[14px]" style={{ textAlign: 'right' }}>{label}</Text>
+      <View className="flex-row justify-between items-center mb-1">
+        <Text className="text-white/90 font-body text-[14px]" style={{ textAlign: 'left' }}>{label}</Text>
         <Text className="text-primary font-display text-[14px]">{value}%</Text>
       </View>
-      <View className="h-2 w-full bg-white/10 rounded-full overflow-hidden flex-row-reverse">
+      <View className="h-2 w-full bg-white/10 rounded-full overflow-hidden flex-row">
         <Animated.View className="h-full bg-primary rounded-full" style={barStyle} />
       </View>
     </View>
@@ -221,9 +221,9 @@ export default function ActorBiographyScreen() {
                 className="bg-white/10 rounded-3xl p-6 border border-white/10 overflow-hidden relative"
               >
                 <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-                <View className="flex-row-reverse items-center justify-start mb-6 gap-2">
+                <View className="flex-row items-center justify-start mb-6 gap-2">
                   <Award size={18} color={Colors.primary} />
-                  <Text className="text-white text-h3 font-display" style={{ textAlign: 'right' }}>ניתוח תכונות משחק</Text>
+                  <Text className="text-white text-h3 font-display" style={{ textAlign: 'left' }}>ניתוח תכונות משחק</Text>
                 </View>
                 <View>
                   <TraitBar label="דרמה ויכולת רגשית" value={biography.תכונות_משחק.דרמה || 0} index={0} />
@@ -240,14 +240,14 @@ export default function ActorBiographyScreen() {
                 entering={FadeInDown.springify().damping(14).delay(500)}
                 className="mt-2"
               >
-                <View className="flex-row-reverse items-center justify-start mb-4 gap-2 px-2">
+                <View className="flex-row items-center justify-start mb-4 gap-2 px-2">
                   <Film size={18} color={Colors.secondary} />
-                  <Text className="text-white text-h3 font-display" style={{ textAlign: 'right' }}>תפקידים אייקונים</Text>
+                  <Text className="text-white text-h3 font-display" style={{ textAlign: 'left' }}>תפקידים אייקונים</Text>
                 </View>
                 <ScrollView 
                   horizontal 
                   showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{ paddingHorizontal: 10, gap: 16, flexDirection: 'row-reverse' }}
+                  contentContainerStyle={{ paddingHorizontal: 10, gap: 16, flexDirection: 'row' }}
                 >
                   {biography.תפקידים_אייקונים.map((role: any, idx: number) => (
                     <Animated.View 
@@ -259,9 +259,9 @@ export default function ActorBiographyScreen() {
                         style={{ transform: [{ scale: 1 }] }}
                       >
                         <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-                        <Text className="text-white font-display text-[18px] mb-1" style={{ textAlign: 'right' }}>{role.שם_הסרט}</Text>
-                        <Text className="text-primary font-body text-[14px] mb-3" style={{ textAlign: 'right' }}>{role.שם_הדמות}</Text>
-                        <View className="bg-white/10 self-end px-3 py-1 rounded-full">
+                        <Text className="text-white font-display text-[18px] mb-1" style={{ textAlign: 'left' }}>{role.שם_הסרט}</Text>
+                        <Text className="text-primary font-body text-[14px] mb-3" style={{ textAlign: 'left' }}>{role.שם_הדמות}</Text>
+                        <View className="bg-white/10 self-start px-3 py-1 rounded-full">
                           <Text className="text-white/60 text-[12px] font-body">{role.שנת_יציאה}</Text>
                         </View>
                       </Pressable>
@@ -278,9 +278,9 @@ export default function ActorBiographyScreen() {
                 className="bg-white/10 rounded-3xl p-6 border border-white/10 overflow-hidden relative"
               >
                 <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-                <View className="flex-row-reverse items-center justify-start mb-6 gap-2">
+                <View className="flex-row items-center justify-start mb-6 gap-2">
                   <Gamepad2 size={18} color={Colors.primary} />
-                  <Text className="text-white text-h3 font-display" style={{ textAlign: 'right' }}>בחן את עצמך</Text>
+                  <Text className="text-white text-h3 font-display" style={{ textAlign: 'left' }}>בחן את עצמך</Text>
                 </View>
                 
                 {biography.שאלון_טריוויה.map((q: any, qIndex: number) => {
@@ -289,7 +289,7 @@ export default function ActorBiographyScreen() {
                   
                   return (
                     <View key={qIndex} className="mb-8">
-                      <Text className="text-white/90 text-h4 font-display mb-4" style={{ textAlign: 'right' }}>
+                      <Text className="text-white/90 text-h4 font-display mb-4" style={{ textAlign: 'left' }}>
                         {qIndex + 1}. {q.שאלה}
                       </Text>
                       <View className="gap-3">
@@ -320,9 +320,9 @@ export default function ActorBiographyScreen() {
                                   answerTrivia(qIndex, optIndex, isCorrect);
                                 }
                               }}
-                              className={`${bgColor} border ${borderColor} rounded-2xl p-4 flex-row-reverse justify-between items-center`}
+                              className={`${bgColor} border ${borderColor} rounded-2xl p-4 flex-row justify-between items-center`}
                             >
-                              <Text className="text-white font-body text-[14px]" style={{ textAlign: 'right' }}>{option}</Text>
+                              <Text className="text-white font-body text-[14px]" style={{ textAlign: 'left' }}>{option}</Text>
                               {isAnswered && isCorrect && <Text className="text-green-400">✓</Text>}
                               {isAnswered && isSelected && !isCorrect && <Text className="text-red-400">✗</Text>}
                             </TouchableOpacity>
@@ -345,17 +345,17 @@ export default function ActorBiographyScreen() {
                 className="bg-white/10 rounded-3xl p-6 border border-white/10 overflow-hidden relative"
               >
                 <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-                <View className="flex-row-reverse items-center justify-start mb-4 gap-2">
+                <View className="flex-row items-center justify-start mb-4 gap-2">
                   <Sparkles size={18} color={Colors.primary} />
-                  <Text className="text-white text-h3 font-display" style={{ textAlign: 'right' }}>פרטי טריוויה מפתיעים</Text>
+                  <Text className="text-white text-h3 font-display" style={{ textAlign: 'left' }}>פרטי טריוויה מפתיעים</Text>
                 </View>
                 <View className="gap-4">
                   {biography.טריוויה.map((fact: string, index: number) => (
-                    <View key={index} className="flex-row-reverse justify-start items-start gap-3">
+                    <View key={index} className="flex-row justify-start items-start gap-3">
                       <View className="w-2 h-2 rounded-full bg-primary mt-2" />
                       <Text 
                         className="text-white/80 leading-relaxed font-body flex-1"
-                        style={{ textAlign: 'right', writingDirection: 'rtl', marginEnd: 8 }}
+                        style={{ textAlign: 'left', writingDirection: 'ltr', marginStart: 8 }}
                       >
                         {fact}
                       </Text>
