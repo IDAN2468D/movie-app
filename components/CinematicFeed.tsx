@@ -32,7 +32,6 @@ import { useBookingStore } from '@/store/useBookingStore';
 import { getImageSource, handleImageError } from '@/utils/ImageUtils';
 import { getMovieVideos, getGenreName, type TMDBMovie, type TMDBVideo } from '@/lib/tmdb';
 import { cssInterop } from 'react-native-css-interop';
-import { VideoView, useVideoPlayer, isVideoSupported } from '../utils/SafeModules';
 
 // Required for NativeWind v4 compatibility with Expo components
 cssInterop(BlurView, { className: 'style' });
@@ -154,130 +153,7 @@ const CinematicFeedItem = React.memo(function CinematicFeedItem({ movie, isActiv
   const [backdropSrc, setBackdropSrc] = useState(getImageSource(movie.backdrop_path, 'backdrop', 'original'));
   const [video, setVideo] = useState<TMDBVideo | null>(null);
 
-  // Direct cinematic trailer mapping
-  const directTrailerUrl = getDirectTrailerUrl(movie);
 
-  // Audio muting state (default true for silent autoplay)
-  const [isMuted, setIsMuted] = useState(true);
-  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
-
-  // Initialize expo-video player safely with null/active sources to prevent resource starvation
-  const player = useVideoPlayer(isActive ? directTrailerUrl : null, (p: any) => {
-    if (p) {
-      p.loop = true;
-      p.muted = isMuted;
-      if (isActive) {
-        p.play();
-      }
-    }
-  });
-
-  const videoOpacity = useSharedValue(0);
-
-  // Sync opacity with loaded state and ensure play command is sent
-  useEffect(() => {
-    videoOpacity.value = withTiming(isVideoLoaded ? 1 : 0, { duration: 600 });
-    if (isVideoLoaded && isActive && player) {
-      player.muted = isMuted;
-      player.play();
-    }
-  }, [isVideoLoaded, isActive, player, isMuted]);
-
-  const videoAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: videoOpacity.value,
-  }));
-
-  // Keep player sync'd with active state, muted preference, and source allocation
-  useEffect(() => {
-    if (player) {
-      if (isActive) {
-        const currentSource = typeof player.source === 'string' 
-          ? player.source 
-          : player.source?.uri;
-
-        if (currentSource !== directTrailerUrl) {
-          console.log(`[CinematicFeedItem] Hot-loading active trailer for "${movie.title}":`, directTrailerUrl);
-          player.source = directTrailerUrl;
-        }
-        player.muted = isMuted;
-        player.loop = true;
-        player.play();
-      } else {
-        if (player.source !== null) {
-          console.log(`[CinematicFeedItem] Releasing hardware decoder for "${movie.title}"`);
-          player.pause();
-          player.source = null;
-        }
-      }
-    }
-  }, [isActive, player, isMuted, directTrailerUrl, movie.title]);
-
-  // Handle smooth transition cross-fade timing with robust native-event listener
-  useEffect(() => {
-    if (!isActive || !isVideoSupported) {
-      setIsVideoLoaded(false);
-      return;
-    }
-
-    console.log(`[CinematicFeedItem] Listening to player events for "${movie.title}". Current status:`, player?.status);
-
-    let timer: any;
-
-    // Fallback timer: force video fade-in after 1.5 seconds if native events don't fire
-    timer = setTimeout(() => {
-      console.log(`[CinematicFeedItem] Fallback timer fired for "${movie.title}". Setting isVideoLoaded = true`);
-      setIsVideoLoaded(true);
-      if (player && isActive) {
-        player.play();
-      }
-    }, 1500);
-
-    // If player status is already ready, set loaded immediately
-    if (player && (player.status === 'ready-to-play' || player.status === 'readyToPlay')) {
-      console.log(`[CinematicFeedItem] Player already ready for "${movie.title}"`);
-      setIsVideoLoaded(true);
-      clearTimeout(timer);
-      if (isActive) {
-        player.play();
-      }
-    }
-
-    // Subscribe to player status change events
-    let subscription: any;
-    if (player && typeof player.addListener === 'function') {
-      subscription = player.addListener('statusChange', (event: any) => {
-        const status = event?.status || player.status;
-        const error = event?.error;
-        console.log(`[CinematicFeedItem] Status change event for "${movie.title}":`, status);
-        if (error) {
-          console.error(`[CinematicFeedItem] Player error for "${movie.title}":`, error);
-        }
-        if (status === 'ready-to-play' || status === 'readyToPlay') {
-          setIsVideoLoaded(true);
-          clearTimeout(timer);
-          if (isActive) {
-            player.play();
-          }
-        }
-      });
-    }
-
-    return () => {
-      if (timer) clearTimeout(timer);
-      if (subscription && typeof subscription.remove === 'function') {
-        subscription.remove();
-      }
-    };
-  }, [isActive, player]);
-
-  const handleToggleMute = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const newMuted = !isMuted;
-    setIsMuted(newMuted);
-    if (player) {
-      player.muted = newMuted;
-    }
-  };
 
   // Refresh image source if movie changes
   useEffect(() => {
@@ -351,21 +227,6 @@ const CinematicFeedItem = React.memo(function CinematicFeedItem({ movie, isActiv
           onError={handleImageError(setBackdropSrc, 'backdrop')}
         />
 
-        {/* Video Overlay Layer - Fades in dynamically only when fully loaded */}
-        {isVideoSupported && (
-          <Animated.View
-            style={[StyleSheet.absoluteFill, videoAnimatedStyle]}
-          >
-            <VideoView
-              player={player}
-              style={StyleSheet.absoluteFill}
-              contentFit="cover"
-              nativeControls={false}
-              allowsFullscreen={false}
-              showsPlaybackControls={false}
-            />
-          </Animated.View>
-        )}
       </View>
 
       {/* Glass Overlay Dark Gradients */}

@@ -330,17 +330,6 @@ export default function SplashScreen() {
         </TouchableOpacity>
       )}
 
-      {/* Temporary Debug Button - Remove after testing */}
-      <TouchableOpacity
-        onPress={async () => {
-          await useAuthStore.getState().resetOnboarding();
-          console.log('Onboarding RESET from Splash');
-          router.replace('/'); // Reload splash
-        }}
-        style={styles.debugButton}
-      >
-        <Text style={styles.debugText}>Reset Onboarding (Debug)</Text>
-      </TouchableOpacity>
     </View>
   );
 }
@@ -409,19 +398,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'right',
     writingDirection: 'rtl',
-  },
-  debugButton: {
-    position: 'absolute',
-    bottom: 40,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  debugText: {
-    color: 'rgba(255, 255, 255, 0.2)',
-    fontSize: 12,
   },
 });

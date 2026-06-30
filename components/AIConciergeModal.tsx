@@ -229,87 +229,92 @@ export default function AIConciergeModal({ visible, onClose, onNavigate: parentN
               {messages.map((msg) => {
                 const isUser = msg.role === 'user';
                 const isCommandMsg = msg.content.startsWith('⚡');
-                return (
-                  <Animated.View 
-                    key={msg.id}
-                    entering={isUser ? FadeInRight.springify() : FadeInLeft.springify()}
-                    className={`mb-5 flex-row items-end gap-2 ${isUser ? 'justify-start' : 'justify-end'}`}
-                  >
-                    {isUser ? (
-                      <>
-                        <View className="w-8 h-8 rounded-full bg-primary items-center justify-center border border-white/20">
-                          <User size={14} color="white" />
-                        </View>
-                        <View 
+                
+                if (isUser) {
+                  return (
+                    <Animated.View 
+                      key={msg.id}
+                      entering={FadeInRight.springify()}
+                      className="mb-5 flex-row items-end gap-2 justify-start"
+                    >
+                      <View className="w-8 h-8 rounded-full bg-primary items-center justify-center border border-white/20">
+                        <User size={14} color="white" />
+                      </View>
+                      <View 
+                        style={{
+                          backgroundColor: Colors.primary,
+                          borderTopLeftRadius: 20,
+                          borderTopRightRadius: 20,
+                          borderBottomLeftRadius: 20,
+                          borderBottomRightRadius: 4,
+                          padding: 14,
+                          maxWidth: '80%',
+                          borderWidth: 1,
+                          borderColor: 'rgba(255,255,255,0.2)',
+                          shadowColor: Colors.primary,
+                          shadowOffset: { width: 0, height: 4 },
+                          shadowOpacity: 0.2,
+                          shadowRadius: 8,
+                          elevation: 4
+                        }}
+                      >
+                        <Text 
+                          className="text-[15px] font-body leading-relaxed text-white text-start"
                           style={{
-                            backgroundColor: Colors.primary,
-                            borderTopLeftRadius: 20,
-                            borderTopRightRadius: 20,
-                            borderBottomLeftRadius: 20,
-                            borderBottomRightRadius: 4,
-                            padding: 14,
-                            maxWidth: '80%',
-                            borderWidth: 1,
-                            borderColor: 'rgba(255,255,255,0.2)',
-                            shadowColor: Colors.primary,
-                            shadowOffset: { width: 0, height: 4 },
-                            shadowOpacity: 0.2,
-                            shadowRadius: 8,
-                            elevation: 4
+                            textAlign: 'right',
+                            writingDirection: 'rtl',
                           }}
                         >
-                          <Text 
-                            className="text-[15px] font-body leading-relaxed text-white text-start"
-                            style={{
-                              textAlign: 'right',
-                              writingDirection: 'rtl',
-                            }}
-                          >
-                            {msg.content}
-                          </Text>
-                        </View>
-                      </>
-                    ) : (
-                      <>
-                        <View 
+                          {msg.content}
+                        </Text>
+                      </View>
+                    </Animated.View>
+                  );
+                } else {
+                  return (
+                    <Animated.View 
+                      key={msg.id}
+                      entering={FadeInLeft.springify()}
+                      className="mb-5 flex-row items-end gap-2 justify-end"
+                    >
+                      <View 
+                        style={{
+                          backgroundColor: isCommandMsg ? 'rgba(255, 20, 100, 0.1)' : 'rgba(255,255,255,0.06)',
+                          borderTopLeftRadius: 20,
+                          borderTopRightRadius: 20,
+                          borderBottomLeftRadius: 4,
+                          borderBottomRightRadius: 20,
+                          padding: 14,
+                          maxWidth: '80%',
+                          borderWidth: 1,
+                          borderColor: isCommandMsg ? 'rgba(255, 20, 100, 0.25)' : 'rgba(255,255,255,0.1)',
+                          shadowColor: '#000',
+                          shadowOffset: { width: 0, height: 4 },
+                          shadowOpacity: 0.2,
+                          shadowRadius: 8,
+                          elevation: 4
+                        }}
+                      >
+                        <Text 
+                          className="text-[15px] font-body leading-relaxed text-white/90 text-left"
                           style={{
-                            backgroundColor: isCommandMsg ? 'rgba(255, 20, 100, 0.1)' : 'rgba(255,255,255,0.06)',
-                            borderTopLeftRadius: 20,
-                            borderTopRightRadius: 20,
-                            borderBottomLeftRadius: 4,
-                            borderBottomRightRadius: 20,
-                            padding: 14,
-                            maxWidth: '80%',
-                            borderWidth: 1,
-                            borderColor: isCommandMsg ? 'rgba(255, 20, 100, 0.25)' : 'rgba(255,255,255,0.1)',
-                            shadowColor: '#000',
-                            shadowOffset: { width: 0, height: 4 },
-                            shadowOpacity: 0.2,
-                            shadowRadius: 8,
-                            elevation: 4
+                            textAlign: 'left',
+                            writingDirection: 'ltr',
                           }}
                         >
-                          <Text 
-                            className="text-[15px] font-body leading-relaxed text-white/90 text-left"
-                            style={{
-                              textAlign: 'left',
-                              writingDirection: 'ltr',
-                            }}
-                          >
-                            {msg.content}
-                          </Text>
-                        </View>
-                        <View className="w-8 h-8 rounded-full bg-white/5 border border-white/10 items-center justify-center">
-                          {isCommandMsg ? (
-                            <Command size={14} color={Colors.primary} />
-                          ) : (
-                            <Zap size={14} color={Colors.primary} />
-                          )}
-                        </View>
-                      </>
-                    )}
-                  </Animated.View>
-                );
+                          {msg.content}
+                        </Text>
+                      </View>
+                      <View className="w-8 h-8 rounded-full bg-white/5 border border-white/10 items-center justify-center">
+                        {isCommandMsg ? (
+                          <Command size={14} color={Colors.primary} />
+                        ) : (
+                          <Zap size={14} color={Colors.primary} />
+                        )}
+                      </View>
+                    </Animated.View>
+                  );
+                }
               })}
               
               {isLoading && (

@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, Pressable, Platform, I18nManager } from 'react-native';
+import { View, Text, StyleSheet, Image, Pressable, Platform, I18nManager, ScrollView, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { 
   FadeInDown, 
+  FadeInRight,
   useAnimatedScrollHandler, 
   useSharedValue, 
   useAnimatedStyle, 
@@ -14,11 +15,36 @@ import Animated, {
   withRepeat,
   withTiming
 } from 'react-native-reanimated';
-import { ChevronRight, ChevronLeft, Sparkles, Star } from 'lucide-react-native';
+import { ChevronRight, ChevronLeft, Sparkles, Star, Film, Gamepad2, Award } from 'lucide-react-native';
 import { Colors } from '@/constants/Theme';
 import { useActorStore } from '@/store/useActorStore';
 import { getImageSource, handleImageError } from '@/utils/ImageUtils';
 import * as Haptics from 'expo-haptics';
+
+// --- Traits Analyzer Component ---
+const TraitBar = ({ label, value, index }: { label: string, value: number, index: number }) => {
+  const progress = useSharedValue(0);
+  
+  useEffect(() => {
+    progress.value = withTiming(value, { duration: 1000 + index * 200 });
+  }, [value, index]);
+  
+  const barStyle = useAnimatedStyle(() => ({
+    width: `${progress.value}%`,
+  }));
+
+  return (
+    <View className="mb-4">
+      <View className="flex-row-reverse justify-between items-center mb-1">
+        <Text className="text-white/90 font-body text-[14px]" style={{ textAlign: 'right' }}>{label}</Text>
+        <Text className="text-primary font-display text-[14px]">{value}%</Text>
+      </View>
+      <View className="h-2 w-full bg-white/10 rounded-full overflow-hidden flex-row-reverse">
+        <Animated.View className="h-full bg-primary rounded-full" style={barStyle} />
+      </View>
+    </View>
+  );
+};
 
 export default function ActorBiographyScreen() {
   const { id, name, profilePath } = useLocalSearchParams<{ id: string; name: string; profilePath: string }>();
@@ -26,12 +52,15 @@ export default function ActorBiographyScreen() {
   const insets = useSafeAreaInsets();
   const [imageSource, setImageSource] = useState<any>(getImageSource(profilePath || null, 'profile', 'large'));
   
-  const { cache, isLoading, error, fetchBiography } = useActorStore();
-  const biography = name ? cache[name] : null;
+  const { 
+    cache, isLoading, error, fetchBiography,
+    activeQuestionIndex, chosenAnswers, score, answerTrivia 
+  } = useActorStore();
+  const biography = name ? cache[name as string] : null;
 
   useEffect(() => {
     if (name) {
-      fetchBiography(name);
+      fetchBiography(name as string);
     }
   }, [name, fetchBiography]);
 
@@ -131,7 +160,7 @@ export default function ActorBiographyScreen() {
           </Animated.View>
           <Animated.Text 
             entering={FadeInDown.springify().damping(14).delay(100)}
-            className="text-white text-h1 font-display mt-6"
+            className="text-white text-h1 font-display mt-6 text-center"
           >
             {name}
           </Animated.Text>
@@ -155,13 +184,13 @@ export default function ActorBiographyScreen() {
               className="bg-white/10 rounded-3xl p-6 border border-white/10 overflow-hidden relative"
             >
               <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-              <View className="flex-row items-center justify-start mb-4 gap-2">
+              <View className="flex-row-reverse items-center justify-start mb-4 gap-2">
                 <Sparkles size={18} color={Colors.primary} />
-                <Text className="text-white text-h3 font-display" style={{ textAlign: 'left' }}>תקציר ביוגרפי</Text>
+                <Text className="text-white text-h3 font-display" style={{ textAlign: 'right' }}>תקציר ביוגרפי</Text>
               </View>
               <Text 
                 className="text-white/80 leading-relaxed font-body"
-                style={{ textAlign: 'left', writingDirection: 'ltr', marginStart: 4 }}
+                style={{ textAlign: 'right', writingDirection: 'rtl', marginEnd: 4 }}
               >
                 {biography.תקציר_ביוגרפי}
               </Text>
@@ -173,36 +202,160 @@ export default function ActorBiographyScreen() {
               className="bg-white/10 rounded-3xl p-6 border border-white/10 overflow-hidden relative"
             >
               <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-              <View className="flex-row items-center justify-start mb-4 gap-2">
+              <View className="flex-row-reverse items-center justify-start mb-4 gap-2">
                 <Star size={18} color={Colors.secondary} />
-                <Text className="text-white text-h3 font-display" style={{ textAlign: 'left' }}>חותם אמנותי</Text>
+                <Text className="text-white text-h3 font-display" style={{ textAlign: 'right' }}>חותם אמנותי</Text>
               </View>
               <Text 
                 className="text-white/80 leading-relaxed font-body"
-                style={{ textAlign: 'left', writingDirection: 'ltr', marginStart: 4 }}
+                style={{ textAlign: 'right', writingDirection: 'rtl', marginEnd: 4 }}
               >
                 {biography.חותם_אמנותי}
               </Text>
             </Animated.View>
 
-            {/* Trivia */}
-            {biography.טריוויה && biography.טריוויה.length > 0 && (
+            {/* Acting Traits Analyzer */}
+            {biography.תכונות_משחק && (
               <Animated.View 
                 entering={FadeInDown.springify().damping(14).delay(400)}
                 className="bg-white/10 rounded-3xl p-6 border border-white/10 overflow-hidden relative"
               >
                 <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-                <View className="flex-row items-center justify-start mb-4 gap-2">
+                <View className="flex-row-reverse items-center justify-start mb-6 gap-2">
+                  <Award size={18} color={Colors.primary} />
+                  <Text className="text-white text-h3 font-display" style={{ textAlign: 'right' }}>ניתוח תכונות משחק</Text>
+                </View>
+                <View>
+                  <TraitBar label="דרמה ויכולת רגשית" value={biography.תכונות_משחק.דרמה || 0} index={0} />
+                  <TraitBar label="כריזמה ונוכחות מסך" value={biography.תכונות_משחק.כריזמה || 0} index={1} />
+                  <TraitBar label="גיוון ויכולת השתנות" value={biography.תכונות_משחק.גיוון || 0} index={2} />
+                  <TraitBar label="תזמון קומי" value={biography.תכונות_משחק.קומדיה || 0} index={3} />
+                </View>
+              </Animated.View>
+            )}
+
+            {/* Iconic Roles Slider */}
+            {biography.תפקידים_אייקונים && biography.תפקידים_אייקונים.length > 0 && (
+              <Animated.View 
+                entering={FadeInDown.springify().damping(14).delay(500)}
+                className="mt-2"
+              >
+                <View className="flex-row-reverse items-center justify-start mb-4 gap-2 px-2">
+                  <Film size={18} color={Colors.secondary} />
+                  <Text className="text-white text-h3 font-display" style={{ textAlign: 'right' }}>תפקידים אייקונים</Text>
+                </View>
+                <ScrollView 
+                  horizontal 
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ paddingHorizontal: 10, gap: 16, flexDirection: 'row-reverse' }}
+                >
+                  {biography.תפקידים_אייקונים.map((role: any, idx: number) => (
+                    <Animated.View 
+                      entering={FadeInRight.delay(500 + idx * 100).springify()} 
+                      key={idx}
+                    >
+                      <Pressable 
+                        className="bg-white/10 rounded-3xl p-5 border border-white/10 w-64 overflow-hidden relative active:scale-95"
+                        style={{ transform: [{ scale: 1 }] }}
+                      >
+                        <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+                        <Text className="text-white font-display text-[18px] mb-1" style={{ textAlign: 'right' }}>{role.שם_הסרט}</Text>
+                        <Text className="text-primary font-body text-[14px] mb-3" style={{ textAlign: 'right' }}>{role.שם_הדמות}</Text>
+                        <View className="bg-white/10 self-end px-3 py-1 rounded-full">
+                          <Text className="text-white/60 text-[12px] font-body">{role.שנת_יציאה}</Text>
+                        </View>
+                      </Pressable>
+                    </Animated.View>
+                  ))}
+                </ScrollView>
+              </Animated.View>
+            )}
+
+            {/* Interactive Trivia */}
+            {biography.שאלון_טריוויה && biography.שאלון_טריוויה.length > 0 && (
+              <Animated.View 
+                entering={FadeInDown.springify().damping(14).delay(600)}
+                className="bg-white/10 rounded-3xl p-6 border border-white/10 overflow-hidden relative"
+              >
+                <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+                <View className="flex-row-reverse items-center justify-start mb-6 gap-2">
+                  <Gamepad2 size={18} color={Colors.primary} />
+                  <Text className="text-white text-h3 font-display" style={{ textAlign: 'right' }}>בחן את עצמך</Text>
+                </View>
+                
+                {biography.שאלון_טריוויה.map((q: any, qIndex: number) => {
+                  const isAnswered = chosenAnswers[qIndex] !== undefined;
+                  const chosenOption = chosenAnswers[qIndex];
+                  
+                  return (
+                    <View key={qIndex} className="mb-8">
+                      <Text className="text-white/90 text-h4 font-display mb-4" style={{ textAlign: 'right' }}>
+                        {qIndex + 1}. {q.שאלה}
+                      </Text>
+                      <View className="gap-3">
+                        {q.אפשרויות.map((option: string, optIndex: number) => {
+                          const isCorrect = optIndex === q.תשובה_נכונה;
+                          const isSelected = chosenOption === optIndex;
+                          
+                          let bgColor = 'bg-white/5';
+                          let borderColor = 'border-white/10';
+                          
+                          if (isAnswered) {
+                            if (isCorrect) {
+                              bgColor = 'bg-green-500/20';
+                              borderColor = 'border-green-500/50';
+                            } else if (isSelected) {
+                              bgColor = 'bg-red-500/20';
+                              borderColor = 'border-red-500/50';
+                            }
+                          }
+                          
+                          return (
+                            <TouchableOpacity 
+                              key={optIndex}
+                              activeOpacity={0.7}
+                              onPress={() => {
+                                if (!isAnswered) {
+                                  Haptics.impactAsync(isCorrect ? Haptics.ImpactFeedbackStyle.Heavy : Haptics.ImpactFeedbackStyle.Light);
+                                  answerTrivia(qIndex, optIndex, isCorrect);
+                                }
+                              }}
+                              className={`${bgColor} border ${borderColor} rounded-2xl p-4 flex-row-reverse justify-between items-center`}
+                            >
+                              <Text className="text-white font-body text-[14px]" style={{ textAlign: 'right' }}>{option}</Text>
+                              {isAnswered && isCorrect && <Text className="text-green-400">✓</Text>}
+                              {isAnswered && isSelected && !isCorrect && <Text className="text-red-400">✗</Text>}
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  );
+                })}
+                <View className="items-center mt-2 border-t border-white/10 pt-4">
+                  <Text className="text-white/60 font-body">הניקוד שלך: <Text className="text-primary font-display">{score}</Text> מתוך {Object.keys(chosenAnswers).length}</Text>
+                </View>
+              </Animated.View>
+            )}
+
+            {/* General Trivia Details */}
+            {biography.טריוויה && biography.טריוויה.length > 0 && (
+              <Animated.View 
+                entering={FadeInDown.springify().damping(14).delay(700)}
+                className="bg-white/10 rounded-3xl p-6 border border-white/10 overflow-hidden relative"
+              >
+                <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+                <View className="flex-row-reverse items-center justify-start mb-4 gap-2">
                   <Sparkles size={18} color={Colors.primary} />
-                  <Text className="text-white text-h3 font-display" style={{ textAlign: 'left' }}>פרטי טריוויה מפתיעים</Text>
+                  <Text className="text-white text-h3 font-display" style={{ textAlign: 'right' }}>פרטי טריוויה מפתיעים</Text>
                 </View>
                 <View className="gap-4">
-                  {biography.טריוויה.map((fact, index) => (
-                    <View key={index} className="flex-row justify-start items-start gap-3">
+                  {biography.טריוויה.map((fact: string, index: number) => (
+                    <View key={index} className="flex-row-reverse justify-start items-start gap-3">
                       <View className="w-2 h-2 rounded-full bg-primary mt-2" />
                       <Text 
                         className="text-white/80 leading-relaxed font-body flex-1"
-                        style={{ textAlign: 'left', writingDirection: 'ltr', marginStart: 8 }}
+                        style={{ textAlign: 'right', writingDirection: 'rtl', marginEnd: 8 }}
                       >
                         {fact}
                       </Text>

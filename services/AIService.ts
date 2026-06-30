@@ -47,12 +47,13 @@ interface WatchlistAnalysis {
 }
 
 export interface VoiceCommand {
-  type: 'search' | 'navigate' | 'watchlist_analyze' | 'mood' | 'info' | 'chat' | 'booking_restaurant' | 'booking_uber';
+  type: 'search' | 'navigate' | 'watchlist_analyze' | 'mood' | 'info' | 'chat' | 'booking_restaurant' | 'booking_uber' | 'booking_movie';
   params?: {
     query?: string;
     genre?: string;
     screen?: string;
     mood?: string;
+    movieName?: string;
   };
   displayText: string;
 }
@@ -634,6 +635,7 @@ ${watchlistInfo}
 4. mood - המלצה לפי מצב רוח ("אני עצוב", "משהו מצחיק", "מצב רוח רומנטי")
 5. info - מידע כללי ("מה מוקרן עכשיו?", "מה פופולרי?")
 6. chat - שיחה רגילה שאינה פקודה
+7. booking_movie - הזמנת כרטיס לסרט ספציפי ("הזמן לי כרטיס לדדפול", "אני רוצה לראות את ספיידרמן")
 
 קודי ז'אנרים: 28=אקשן, 35=קומדיה, 27=אימה, 10749=רומנטיקה, 878=מד"ב, 18=דרמה, 53=מתח, 16=אנימציה, 10751=משפחה, 12=הרפתקאות`);
 
@@ -652,7 +654,8 @@ ${watchlistInfo}
     "query": "מילות חיפוש (רק עבור search)",
     "genre": "קודי ז'אנרים מופרדים בפסיק (רק עבור search)",
     "screen": "שם המסך (רק עבור navigate): profile / search / tickets / watchlist / home",
-    "mood": "תיאור מצב הרוח (רק עבור mood)"
+    "mood": "תיאור מצב הרוח (רק עבור mood)",
+    "movieName": "שם הסרט (רק עבור booking_movie)"
   },
   "displayText": "הודעה קצרה ומלהיבה בעברית שתוצג למשתמש שמסבירה מה אתה הולך לעשות (עד 12 מילים, עם אימוג'י מתאים)"
 }
@@ -660,6 +663,7 @@ ${watchlistInfo}
 דוגמאות:
 - "חפש לי סרט אקשן" → {"type":"search","params":{"genre":"28"},"displayText":"🔍 מחפש סרטי אקשן מומלצים בשבילך..."}
 - "לך לפרופיל" → {"type":"navigate","params":{"screen":"profile"},"displayText":"📍 מנווט אותך לפרופיל שלך..."}
+- "הזמן לי כרטיס לסרט ספיידרמן" → {"type":"booking_movie","params":{"movieName":"ספיידרמן"},"displayText":"🎟️ מזמין לך כרטיסים לספיידרמן..."}
 - "מה דעתך על הסרט הזה" → {"type":"chat","params":{},"displayText":"💬 בוא נדבר על זה!"}` ;
 
         const result = await model.generateContent(prompt);
@@ -667,7 +671,7 @@ ${watchlistInfo}
         const parsed = this.parseJSON(text) as VoiceCommand;
 
         // Validate the returned type
-        const validTypes = ['search', 'navigate', 'watchlist_analyze', 'mood', 'info', 'chat'];
+        const validTypes = ['search', 'navigate', 'watchlist_analyze', 'mood', 'info', 'chat', 'booking_movie'];
         if (!validTypes.includes(parsed.type)) {
           parsed.type = 'chat';
         }
@@ -705,11 +709,16 @@ ${watchlistInfo}
       };
     }
 
-    // Navigation commands
+    // Navigation and Booking
+    if (lower.includes('הזמן לי') || lower.includes('רוצה לראות את')) {
+      const match = text.match(/(?:הזמן לי כרטיס ל|רוצה לראות את|הזמן סרט)\s+(.+)/i);
+      const movieName = match ? match[1].trim() : 'סרט חדש';
+      return { type: 'booking_movie', params: { movieName }, displayText: `🎟️ מזמין לך כרטיסים ל${movieName}...` };
+    }
     if (lower.includes('פרופיל') || lower.includes('הגדרות')) {
       return { type: 'navigate', params: { screen: 'profile' }, displayText: '📍 מנווט לפרופיל שלך...' };
     }
-    if (lower.includes('כרטיס') || lower.includes('הזמנ')) {
+    if (lower.includes('הכרטיסים שלי') || lower.includes('מסך כרטיסים') || lower.includes('הראה לי כרטיס')) {
       return { type: 'navigate', params: { screen: 'tickets' }, displayText: '🎫 פותח את הכרטיסים שלך...' };
     }
     if (lower.includes('חיפוש') || lower.includes('גלה') || lower.includes('גילוי')) {
@@ -948,12 +957,29 @@ ${watchlistInfo}
 {
   "תקציר_ביוגרפי": "Short poetic narrative overview in Hebrew (about 3-4 sentences)",
   "חותם_אמנותי": "Acting style signature details in Hebrew (about 3 sentences)",
-  "טריוויה": [
-    "Fact 1 in Hebrew",
-    "Fact 2 in Hebrew",
-    "Fact 3 in Hebrew"
+  "טריוויה": ["Fact 1 in Hebrew", "Fact 2 in Hebrew", "Fact 3 in Hebrew"],
+  "תכונות_משחק": {
+    "דרמה": 95,
+    "כריזמה": 88,
+    "גיוון": 92,
+    "קומדיה": 75
+  },
+  "שאלון_טריוויה": [
+    {
+      "שאלה": "Trivia question in Hebrew",
+      "אפשרויות": ["Option 1", "Option 2", "Option 3", "Option 4"],
+      "תשובה_נכונה": 0
+    }
+  ],
+  "תפקידים_אייקונים": [
+    {
+      "שם_הסרט": "Movie Name in Hebrew",
+      "שם_הדמות": "Character Name in Hebrew",
+      "שנת_יציאה": "Release Year"
+    }
   ]
-}`;
+}
+הקפד על 3 שאלות ב'שאלון_טריוויה' ו-3 עד 5 תפקידים ב'תפקידים_אייקונים'. הערכים ב'תכונות_משחק' צריכים להיות מספרים בין 1 ל-100.`;
 
     return await this.withRetry(async () => {
       const result = await model.generateContent(prompt);

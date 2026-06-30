@@ -4,8 +4,9 @@ import * as Haptics from 'expo-haptics';
 import { useSharedValue, withRepeat, withSequence, withTiming, useAnimatedStyle } from 'react-native-reanimated';
 import { AIService, type VoiceCommand } from '@/services/AIService';
 import { useWatchlistStore } from '@/store/useWatchlistStore';
-import { getGenreName } from '@/lib/tmdb';
+import { getGenreName, searchMovies } from '@/lib/tmdb';
 import { useVoiceRecording } from '@/hooks/useVoiceRecording';
+import { useBookingStore } from '@/store/useBookingStore';
 
 interface Message {
   id: string;
@@ -175,6 +176,50 @@ export const useAIConcierge = ({ visible, onNavigate }: UseAIConciergeOptions) =
           setMessages(prev => [...prev, infoMsg]);
           if (isTTSEnabled) AIService.speak(infoResponse);
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          break;
+        }
+
+        case 'booking_movie': {
+          const movieName = command.params?.movieName || 'סרט חדש';
+          const searchResults = await searchMovies(movieName);
+          const movieToBook = searchResults.length > 0 ? searchResults[0] : null;
+
+          if (movieToBook) {
+            // Generate a random ticket ID
+            const ticketId = 'TKT-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+            
+            // Create a fake showtime and seats for the AI booking
+            const newTicket = {
+              id: ticketId,
+              movieId: movieToBook.id,
+              movieTitle: movieToBook.title,
+              moviePoster: movieToBook.poster_path,
+              date: new Date().toISOString().split('T')[0],
+              showtime: { id: 'ai-gen', time: '21:30', format: 'VIP', price: 65, hall: 'אולם 1 (VIP)' },
+              seats: [
+                { row: 'E', number: 8, type: 'vip', status: 'selected' },
+                { row: 'E', number: 9, type: 'vip', status: 'selected' }
+              ],
+              totalPrice: 130,
+              bookingDate: new Date().toISOString(),
+              deliveryMode: 'immediate'
+            };
+
+            // Add the ticket directly to the store
+            useBookingStore.setState((state: any) => ({ myTickets: [newTicket, ...state.myTickets] }));
+
+            const content = `🎟️ **הזמנת כרטיסים הושלמה!**\nהזמנתי עבורך 2 כרטיסי VIP לסרט "${movieToBook.title}" להערב בשעה 21:30.\n\nהכרטיסים נוספו למסך 'הכרטיסים שלי'. צפייה מהנה!`;
+            const msg: Message = { id: (Date.now() + 1).toString(), role: 'model', content };
+            setMessages(prev => [...prev, msg]);
+            if (isTTSEnabled) AIService.speak(content);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          } else {
+            const content = `😅 לא הצלחתי למצוא את הסרט "${movieName}". אולי התכוונת לסרט אחר?`;
+            const msg: Message = { id: (Date.now() + 1).toString(), role: 'model', content };
+            setMessages(prev => [...prev, msg]);
+            if (isTTSEnabled) AIService.speak(content);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+          }
           break;
         }
 
