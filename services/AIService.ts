@@ -73,11 +73,11 @@ export class AIService {
     "נתח את רשימת הצפייה שלי"
   ];
 
-  private static getModel(systemInstruction?: string) {
+  private static getModel(systemInstruction?: string, modelOverride?: string) {
     if (!this.API_KEY) return null;
     const genAI = new GoogleGenerativeAI(this.API_KEY);
     return genAI.getGenerativeModel({
-      model: this.MODEL_NAME,
+      model: modelOverride || this.MODEL_NAME,
       systemInstruction: systemInstruction ? { role: 'system', parts: [{ text: systemInstruction }] } : undefined
     });
   }
@@ -925,6 +925,38 @@ ${watchlistInfo}
 
     return await this.withRetry(async () => {
       const result = await model.generateContent(modelPrompt);
+      const text = result.response.text();
+      return this.parseJSON(text);
+    });
+  }
+
+  /**
+   * Generates a rich, cinematic actor biography using Gemini 3.5 Flash.
+   */
+  static async generateActorBiography(actorName: string): Promise<any> {
+    const model = this.getModel(
+      "You are a professional film historian and cinematic expert for CineBook. Generate an engaging, visually organized biography in Hebrew for the given actor. Break your response down into the requested Markdown headers. Maintain a high-end, cinematic narrative tone. Format all movie names, awards, and historical data neatly.",
+      "gemini-3.5-flash"
+    );
+    
+    if (!model) {
+      throw new Error("Gemini API Key missing on client");
+    }
+
+    const prompt = `צור ביוגרפיה קולנועית מרתקת בעברית עבור השחקן/ית: ${actorName}.
+החזר אך ורק אובייקט JSON תקין (ללא בלוקי markdown או הערות) במבנה הבא:
+{
+  "תקציר_ביוגרפי": "Short poetic narrative overview in Hebrew (about 3-4 sentences)",
+  "חותם_אמנותי": "Acting style signature details in Hebrew (about 3 sentences)",
+  "טריוויה": [
+    "Fact 1 in Hebrew",
+    "Fact 2 in Hebrew",
+    "Fact 3 in Hebrew"
+  ]
+}`;
+
+    return await this.withRetry(async () => {
+      const result = await model.generateContent(prompt);
       const text = result.response.text();
       return this.parseJSON(text);
     });

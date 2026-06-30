@@ -72,6 +72,15 @@ import CinePrism from '@/components/CinePrism';
 import AuraSyncBackground from '@/components/AuraSyncBackground';
 import CineSymphony from '@/components/CineSymphony';
 
+let WebView: any = null;
+if (Platform.OS !== 'web') {
+  try {
+    WebView = require('react-native-webview').WebView;
+  } catch (e) {
+    console.warn('react-native-webview loading failed', e);
+  }
+}
+
 // Interop external components to support NativeWind className
 cssInterop(LinearGradient, { className: 'style' });
 
@@ -132,6 +141,13 @@ export default function MovieDetailsScreen() {
   // States for images
   const [backdropSource, setBackdropSource] = useState<any>(null);
   const [posterSource, setPosterSource] = useState<any>(null);
+  const [hasBackgroundVideoError, setHasBackgroundVideoError] = useState(false);
+  const [backgroundVideoIndex, setBackgroundVideoIndex] = useState(0);
+
+  useEffect(() => {
+    setHasBackgroundVideoError(false);
+    setBackgroundVideoIndex(0);
+  }, [id]);
 
   useEffect(() => {
     if (movie) {
@@ -297,7 +313,7 @@ export default function MovieDetailsScreen() {
               />
               
               {backdropSource && (
-                <Animated.View className="absolute inset-0 opacity-40">
+                <Animated.View className="absolute inset-0 opacity-85">
                   <Image
                     source={backdropSource}
                     className="w-full h-full"
@@ -306,29 +322,8 @@ export default function MovieDetailsScreen() {
                   />
                 </Animated.View>
               )}
-              <BlurView intensity={70} tint="dark" className="absolute inset-0" />
+              <BlurView intensity={35} tint="dark" className="absolute inset-0" />
             </View>
-          )}
-
-          {/* Cinematic Background Video Layer */}
-          {Video?.VideoView && player ? (
-            <Video.VideoView
-              player={player}
-              nativeControls={false}
-              contentFit="cover"
-              style={{ 
-                position: 'absolute', 
-                top: 0, 
-                left: 0, 
-                right: 0, 
-                bottom: 0, 
-                opacity: 0.5,
-                backgroundColor: 'transparent'
-              }}
-              pointerEvents="none"
-            />
-          ) : (
-            <View className="absolute inset-0 bg-black/40" />
           )}
 
           <LinearGradient
@@ -1108,9 +1103,22 @@ export default function MovieDetailsScreen() {
  */
 function CastItem({ castMember }: { castMember: any }) {
   const [source, setSource] = useState(getImageSource(castMember.profile_path, 'profile', 'medium'));
+  const router = useRouter();
 
   return (
-    <View className="items-center w-20">
+    <Pressable 
+      className="items-center w-20 active:scale-95"
+      onPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        router.push({
+          pathname: `/movie/actor/${castMember.id}` as any,
+          params: { 
+            name: castMember.name, 
+            profilePath: castMember.profile_path || '' 
+          }
+        });
+      }}
+    >
       <Image
         source={source}
         className="w-20 h-20 rounded-full border border-border"
@@ -1120,7 +1128,7 @@ function CastItem({ castMember }: { castMember: any }) {
       <Text className="text-caption text-white mt-2 text-center font-body" numberOfLines={2}>
         {castMember.name}
       </Text>
-    </View>
+    </Pressable>
   );
 }
 

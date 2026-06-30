@@ -39,6 +39,30 @@ function getNext7Days(): { label: string; date: string; dayName: string }[] {
 }
 
 function getDirectTrailerUrl(movie: any): string {
+  // Specific movie ID mapping for customized cinematic loops (Expo Video requires direct MP4/HLS streams)
+  const movieId = movie.id;
+  if (movieId) {
+    if (movieId === 693134) {
+      // Dune: Part Two - Panoramic cinematic nature
+      return 'https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-576p.mp4';
+    } else if (movieId === 872585) {
+      // Oppenheimer - High-contrast dramatic trailer
+      return 'https://media.w3.org/2010/05/sintel/trailer.mp4';
+    } else if (movieId === 569094) {
+      // Spider-Man: Across the Spider-Verse - Colorful animation
+      return 'https://www.w3schools.com/html/mov_bbb.mp4';
+    } else if (movieId === 414906) {
+      // The Batman - Dark moody atmosphere
+      return 'https://vjs.zencdn.net/v/oceans.mp4';
+    } else if (movieId === 157336) {
+      // Interstellar - Atmospheric space/ocean vibe
+      return 'https://vjs.zencdn.net/v/oceans.mp4';
+    } else if (movieId === 329) {
+      // Jurassic World: Chaos Theory - Wilderness loop
+      return 'https://www.w3schools.com/html/movie.mp4';
+    }
+  }
+
   const videos = {
     sciFi: 'https://vjs.zencdn.net/v/oceans.mp4',
     animation: 'https://www.w3schools.com/html/mov_bbb.mp4',
@@ -102,16 +126,35 @@ export const useMovieDetails = (id: string | undefined) => {
 
   // Dynamically replace player source when movie data is loaded
   useEffect(() => {
-    if (player && directTrailerUrl) {
-      const currentSource = typeof player.source === 'string' ? player.source : player.source?.uri;
-      if (currentSource !== directTrailerUrl) {
-        if (typeof player.replace === 'function') {
-          player.replace(directTrailerUrl);
-        } else {
-          player.source = directTrailerUrl;
+    let active = true;
+    const updateSource = async () => {
+      if (player && directTrailerUrl && active) {
+        const currentSource = typeof player.source === 'string' ? player.source : player.source?.uri;
+        if (currentSource !== directTrailerUrl) {
+          try {
+            if (typeof player.replaceAsync === 'function') {
+              await player.replaceAsync(directTrailerUrl);
+            } else if (typeof player.replace === 'function') {
+              player.replace(directTrailerUrl);
+            } else {
+              player.source = directTrailerUrl;
+            }
+          } catch (err) {
+            console.error('Failed to replace video source:', err);
+            try {
+              player.source = directTrailerUrl;
+            } catch (fallbackErr) {
+              console.error('Fallback source assignment failed:', fallbackErr);
+            }
+          }
         }
       }
-    }
+    };
+
+    updateSource();
+    return () => {
+      active = false;
+    };
   }, [player, directTrailerUrl]);
 
   // 4. Animation State

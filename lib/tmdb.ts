@@ -197,16 +197,32 @@ function getMockResponse(endpoint: string, params: Record<string, string>): any 
   }
 
   if (movieVideosMatch) {
+    const id = parseInt(movieVideosMatch[1], 10);
+    let keys = ['dQw4w9WgXcQ']; // default fallback
+    
+    if (id === 693134) {
+      keys = ['Way9Dexny3w', 'U2QAEBL30BY', '8g18jFHCLUY']; // חולית: חלק שני
+    } else if (id === 872585) {
+      keys = ['uYPbbksJxIg', 'yLYc7V-Nlh4', 'F3OxA8-9m20']; // אופנהיימר
+    } else if (id === 569094) {
+      keys = ['cqGjhVJWtEg', 'g4HnBzAL5KQ', 'shW9i6k8Mc0']; // ספיידרמן: ברחבי ממדי העכביש
+    } else if (id === 414906) {
+      keys = ['mqqft2x_Aa4', 'JKa05jV775o', 'NLOp_6uPccQ']; // באטמן
+    } else if (id === 157336) {
+      keys = ['zSWdZAIBOQE', '0vxOhd4qlnA', 'LYS2O1Rl7f8']; // בין כוכבים
+    } else if (id === 329) {
+      keys = ['Jj4vP7T2aEg', 'hXZS08N4m6E', 'tN8NnS8iBwc']; // עולם היורה: תאוריית הכאוס
+    }
+
     return {
-      results: [
-        {
-          id: 'mock_trailer_1',
-          key: 'dQw4w9WgXcQ',
-          name: 'Official Trailer',
-          site: 'YouTube',
-          type: 'Trailer'
-        }
-      ]
+      results: keys.map((key, idx) => ({
+        id: `mock_trailer_${id}_${idx}`,
+        key: key,
+        name: idx === 0 ? 'Official Trailer' : idx === 1 ? 'Official Trailer #2' : 'Teaser',
+        site: 'YouTube',
+        type: 'Trailer',
+        official: true
+      }))
     };
   }
 
