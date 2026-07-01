@@ -8,6 +8,7 @@ import { ChevronRight, ChevronLeft, ShoppingCart, Plus, Minus, Trash2, Grip, Spa
 import { Colors } from '@/constants/Theme';
 import { SnackItem, useSnacksStore } from '@/store/useSnacksStore';
 import { useBookingStore } from '@/store/useBookingStore';
+import { useCineSnacksAIStore } from '@/store/useCineSnacksAIStore';
 import { AIService } from '@/services/AIService';
 import Animated, { 
   FadeInDown, 
@@ -166,27 +167,12 @@ export default function SnacksScreen() {
   const movieTitle = useBookingStore(state => state.selectedMovieTitle);
   const showtime = useBookingStore(state => state.selectedShowtime);
 
-  const [recIds, setRecIds] = useState<string[]>([]);
-  const [isRecLoading, setIsRecLoading] = useState(false);
+  const { recommendedIds: recIds, isLoading: isRecLoading, fetchRecommendations } = useCineSnacksAIStore();
 
   useEffect(() => {
-    const fetchRecommendations = async () => {
-      if (!movieTitle) return;
-      setIsRecLoading(true);
-      try {
-        const ids = await AIService.getSnackRecommendations(
-          movieTitle,
-          showtime?.format,
-          showtime?.time
-        );
-        setRecIds(ids);
-      } catch (err) {
-        console.error('[SnacksScreen] Failed to fetch AI recommendations:', err);
-      } finally {
-        setIsRecLoading(false);
-      }
-    };
-    fetchRecommendations();
+    if (movieTitle) {
+      fetchRecommendations(movieTitle, undefined, showtime?.format, showtime?.time);
+    }
   }, [movieTitle, showtime]);
 
   const recommendedSnacks = React.useMemo(() => {
@@ -471,11 +457,16 @@ export default function SnacksScreen() {
                 
                 {/* Snack List Row */}
                 <View className="flex-row flex-wrap gap-2.5 justify-start">
-                  {recommendedSnacks.map(snack => (
-                    <View key={snack.id} className="flex-row items-center gap-2 bg-[#09090B] px-3 py-1.5 rounded-xl border border-white/10">
-                      {snack.image && <Image source={snack.image} className="w-6 h-6" resizeMode="contain" />}
-                      <Text className="text-white text-[11px] font-bold font-assistant">{snack.name}</Text>
-                    </View>
+                  {recommendedSnacks.map((snack, idx) => (
+                    <Animated.View 
+                      key={snack.id} 
+                      entering={ZoomIn.springify().damping(12).mass(0.5).delay(idx * 50)}
+                      className="flex-row items-center gap-2 px-3 py-1.5 rounded-xl border border-white/10 overflow-hidden bg-white/10"
+                    >
+                      <BlurView intensity={30} tint="light" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+                      {snack.image && <Image source={snack.image} className="w-6 h-6" resizeMode="contain" style={{ zIndex: 1 }} />}
+                      <Text className="text-white text-[11px] font-bold font-assistant" style={{ zIndex: 1 }}>{snack.name}</Text>
+                    </Animated.View>
                   ))}
                 </View>
 
@@ -494,11 +485,12 @@ export default function SnacksScreen() {
                     colors={[Colors.secondary, '#B8CC00']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
-                    className="w-full py-3 flex-row items-center justify-center gap-2"
+                    className="w-full py-3 flex-row-reverse items-center justify-center gap-2"
+                    style={{ paddingStart: 12, paddingEnd: 12 }}
                   >
                     <Sparkles size={14} color={Colors.background} />
-                    <Text className="font-bold text-background text-sm font-sans">
-                      הוסף את כל המארז לסל • ₪{totalRecPrice}
+                    <Text className="font-bold text-background text-sm font-sans" style={{ writingDirection: 'ltr' }}>
+                      ₪{totalRecPrice} • הוסף את כל המארז לסל
                     </Text>
                   </LinearGradient>
                 </Pressable>
