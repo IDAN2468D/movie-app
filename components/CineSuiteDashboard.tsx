@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Trophy, Moon, Sparkles, ChevronLeft, Popcorn, Clock } from 'lucide-react-native';
+import { Trophy, Moon, Sparkles, ChevronLeft, Popcorn, Clock, Library } from 'lucide-react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Animated, { 
@@ -17,6 +17,7 @@ import { Colors } from '@/constants/Theme';
 import { useLoyalty } from '@/hooks/useLoyalty';
 import { usePremiumStore } from '@/store/usePremiumStore';
 import { useBookingStore } from '@/store/useBookingStore';
+import { useWatchlistStore } from '@/store/useWatchlistStore';
 
 export default function CineSuiteDashboard() {
   const { points, currentTier, nextTier, pointsRemaining, progressPercent } = useLoyalty();
@@ -114,6 +115,18 @@ export default function CineSuiteDashboard() {
   const handleTheaterModePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     toggleInTheaterMode();
+  };
+
+  const watchlistCount = useWatchlistStore(state => state.movies.length);
+
+  const handleLibraryPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.push('/(tabs)/watchlist' as any);
+  };
+
+  const handleSpherePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.push('/movie/sphere' as any);
   };
 
   const handleCineMatchPress = () => {
@@ -235,6 +248,68 @@ export default function CineSuiteDashboard() {
           <View className="flex-row items-center justify-end gap-1">
             <Text className="text-white/60 text-xs font-medium font-assistant">למימוש הטבות באזור האישי</Text>
             <ChevronLeft size={14} color="rgba(255, 255, 255, 0.6)" />
+          </View>
+        </BlurView>
+      </Pressable>
+
+      {/* Cinema Library Quick Access Banner Card */}
+      <Pressable 
+        onPress={handleLibraryPress}
+        className="rounded-[24px] overflow-hidden border border-primary/30 shadow-lg shadow-primary/10"
+      >
+        <BlurView intensity={35} tint="dark" className="p-4 bg-primary/10 flex-row justify-between items-center">
+          <View className="flex-row items-center gap-3">
+            <View className="w-11 h-11 rounded-2xl bg-primary/20 border border-primary/40 items-center justify-center">
+              <Library size={22} color={Colors.primary} />
+            </View>
+            <View className="items-start">
+              <Text 
+                className="text-white text-base font-bold font-assistant text-left"
+                style={{ writingDirection: 'rtl' }}
+              >
+                ספריית הקולנוע שלי 🍿
+              </Text>
+              <Text 
+                className="text-white/60 text-xs font-assistant text-left mt-0.5"
+                style={{ writingDirection: 'rtl' }}
+              >
+                {watchlistCount > 0 ? `${watchlistCount} סרטים שמורים • יומן צפייה ומזכרות` : 'אוסף הסרטים והיומן האישי שלך'}
+              </Text>
+            </View>
+          </View>
+          <View className="w-8 h-8 rounded-full bg-white/10 items-center justify-center">
+            <ChevronLeft size={16} color="#FFF" />
+          </View>
+        </BlurView>
+      </Pressable>
+
+      {/* CineSphere 3D Movie Galaxy Banner Card */}
+      <Pressable 
+        onPress={handleSpherePress}
+        className="rounded-[24px] overflow-hidden border border-secondary/30 shadow-lg shadow-secondary/10"
+      >
+        <BlurView intensity={35} tint="dark" className="p-4 bg-secondary/10 flex-row justify-between items-center">
+          <View className="flex-row items-center gap-3">
+            <View className="w-11 h-11 rounded-2xl bg-secondary/20 border border-secondary/40 items-center justify-center">
+              <Sparkles size={22} color={Colors.secondary} />
+            </View>
+            <View className="items-start">
+              <Text 
+                className="text-white text-base font-bold font-assistant text-left"
+                style={{ writingDirection: 'rtl' }}
+              >
+                ספירת הקולנוע 3D 🌌
+              </Text>
+              <Text 
+                className="text-white/60 text-xs font-assistant text-left mt-0.5"
+                style={{ writingDirection: 'rtl' }}
+              >
+                חוויית גילוי סרטים אינטראקטיבית במרחב תלת-ממדי
+              </Text>
+            </View>
+          </View>
+          <View className="w-8 h-8 rounded-full bg-white/10 items-center justify-center">
+            <ChevronLeft size={16} color="#FFF" />
           </View>
         </BlurView>
       </Pressable>

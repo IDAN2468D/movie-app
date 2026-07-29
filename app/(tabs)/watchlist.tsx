@@ -1,146 +1,275 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React from 'react';
-import { View, Text, FlatList, StyleSheet, Pressable, Image, Dimensions } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { View, Text, StyleSheet, Pressable, TextInput, FlatList } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Bookmark, Trash2, Star, Play, Calendar } from 'lucide-react-native';
+import { Library, Search, Sparkles, BookOpen, Gift, ChevronLeft } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { BlurView } from 'expo-blur';
-import Animated, { FadeInRight, Layout } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeInDown, Layout } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 
-import { Colors, POSTER_SIZES, Typography, Radius } from '@/constants/Theme';
-import { TMDBMovie } from '@/lib/tmdb';
+import { Colors } from '@/constants/Theme';
 import { useWatchlistScreen } from '@/hooks/useWatchlistScreen';
-
-const { width } = Dimensions.get('window');
-const ITEM_HEIGHT = 170;
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+import LibraryStatsCard from '@/components/library/LibraryStatsCard';
+import LibraryCategoryTabs, { LibraryCategory } from '@/components/library/LibraryCategoryTabs';
+import LibraryMovieCard from '@/components/library/LibraryMovieCard';
 
 export default function WatchlistScreen() {
   const insets = useSafeAreaInsets();
   const { movies, handleRemove } = useWatchlistScreen();
 
-  const renderItem = ({ item, index }: { item: TMDBMovie; index: number }) => (
-    <AnimatedPressable
-      entering={FadeInRight.delay(index * 100).duration(500)}
-      layout={Layout.springify()}
-      onPress={() => router.push(`/movie/${item.id}`)}
-      className="mb-4 mx-5 overflow-hidden"
-      style={{ height: ITEM_HEIGHT, borderRadius: 24 }}
-    >
-      <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
-      <View className="flex-row flex-1 border border-white/10 rounded-[24px] overflow-hidden">
-        {/* Poster Image - Now on the Left */}
-        <View className="w-32 h-full shadow-2xl">
-          <Image
-            source={{ uri: `${POSTER_SIZES.small}${item.poster_path}` }}
-            className="w-full h-full"
-            resizeMode="cover"
-          />
-          <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.6)']}
-            className="absolute inset-0"
-          />
-        </View>
-        
-        {/* Content Area - To the right of the picture */}
-        <View className="flex-1 p-4 justify-between items-start">
-          <View className="items-start w-full">
-            <Text 
-              className="text-white text-[20px] text-left font-bold leading-tight" 
-              style={{ fontFamily: 'Rubik-Bold' }} 
-              numberOfLines={2}
-            >
-              {item.title}
-            </Text>
-            
-            <View className="flex-row items-center mt-3 gap-3">
-              {/* Rating */}
-              <View className="flex-row items-center bg-secondary/20 px-2.5 py-1 rounded-lg border border-secondary/30">
-                <Star size={14} color={Colors.secondary} fill={Colors.secondary} />
-                <Text className="text-secondary text-[13px] font-bold ms-1.5" style={{ fontFamily: 'Rubik-Medium' }}>
-                  {item.vote_average.toFixed(1)}
-                </Text>
-              </View>
-              
-              {/* Year */}
-              <View className="flex-row items-center bg-white/5 px-2.5 py-1 rounded-lg border border-white/10">
-                <Calendar size={14} color={Colors.textSecondary} />
-                <Text className="text-textSecondary text-[13px] ms-1.5" style={{ fontFamily: 'Rubik-Regular' }}>
-                  {item.release_date?.split('-')[0]}
-                </Text>
-              </View>
-            </View>
-          </View>
+  const [activeTab, setActiveTab] = useState<LibraryCategory>('watchlist');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
 
-          <View className="flex-row justify-between items-center w-full mt-2">
-            <Pressable
-              onPress={(e) => {
-                e.stopPropagation();
-                handleRemove(item.id);
-              }}
-              className="bg-error/10 p-2.5 rounded-2xl border border-error/20"
-              style={({ pressed }) => [pressed && { opacity: 0.6, scale: 0.9 }]}
-            >
-              <Trash2 size={20} color="#ff4444" />
-            </Pressable>
+  // Filter movies based on search query
+  const filteredMovies = useMemo(() => {
+    if (!searchQuery.trim()) return movies;
+    return movies.filter(m => 
+      m.title.toLowerCase().includes(searchQuery.toLowerCase().trim())
+    );
+  }, [movies, searchQuery]);
 
-            <View className="bg-primary px-5 py-2.5 rounded-2xl shadow-lg" style={{ shadowColor: Colors.primary, shadowOpacity: 0.2 }}>
-               <Text className="text-background text-[13px] font-bold" style={{ fontFamily: 'Rubik-Bold' }}>צפה עכשיו</Text>
-            </View>
-          </View>
-        </View>
-      </View>
-    </AnimatedPressable>
-  );
+  const totalWatchHours = useMemo(() => {
+    return Math.round(movies.length * 2.1);
+  }, [movies.length]);
 
-  return (
-    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
-      {/* Visual Accents */}
-      <View className="absolute top-[-50] left-[-50] w-[200] h-[200] bg-secondary/5 rounded-full blur-[80px]" />
-      <View className="absolute bottom-[100] right-[-100] w-[300] h-[300] bg-primary/5 rounded-full blur-[100px]" />
-      
-      {/* Header */}
-      <View className="flex-row justify-between items-center px-6 py-6">
-        <View className="items-start">
-          <Text className="text-[32px] text-white text-left font-bold tracking-tight" style={{ fontFamily: 'Rubik-Bold' }}>רשימת צפייה</Text>
-          <Text className="text-[15px] text-textSecondary text-left opacity-80" style={{ fontFamily: 'Rubik-Regular' }}>{movies.length} סרטים שאהבת</Text>
+  const handleSelectMovie = (movieId: number) => {
+    router.push(`/movie/${movieId}` as any);
+  };
+
+  const renderHeader = () => (
+    <View style={styles.headerContainer}>
+      {/* Title & Badge */}
+      <View style={styles.titleRow}>
+        <View style={styles.titleTextGroup}>
+          <Text style={styles.mainTitle}>ספריית הקולנוע</Text>
+          <Text style={styles.subTitle}>{movies.length} סרטים באוסף האישי שלך</Text>
         </View>
-        <View className="bg-primary/20 p-3.5 rounded-[20px] border border-primary/20">
-          <Bookmark size={28} color={Colors.primary} fill={Colors.primary} />
+        <View style={styles.headerIconWrapper}>
+          <Library size={24} color={Colors.primary} />
         </View>
       </View>
 
-      {movies.length > 0 ? (
-        <Animated.FlatList
-          data={movies}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={{ paddingBottom: 130, paddingTop: 10 }}
-          showsVerticalScrollIndicator={false}
-          itemLayoutAnimation={Layout.springify()}
-        />
-      ) : (
-        <View className="flex-1 justify-center items-center px-10">
-          <BlurView intensity={15} tint="dark" className="p-12 rounded-[50px] border border-white/10 items-center overflow-hidden">
-            <View className="bg-surfaceLight p-10 rounded-[40px] mb-8 shadow-2xl border border-white/5">
-              <Bookmark size={72} color={Colors.textMuted} />
-            </View>
-            <Text className="text-[24px] text-white text-center font-bold" style={{ fontFamily: 'Rubik-Bold' }}>הרשימה ריקה</Text>
-            <Text className="text-[16px] text-textSecondary text-center mt-4 leading-6" style={{ fontFamily: 'Rubik-Regular' }}>
-              עוד לא הוספת סרטים לרשימת הצפייה שלך.{"\n"}זה הזמן למצוא משהו מעניין!
-            </Text>
-            
-            <Pressable
-              onPress={() => router.push('/(tabs)/search')}
-              className="mt-12 bg-primary px-12 py-4.5 rounded-2xl shadow-2xl" style={{ shadowColor: Colors.primary, shadowOpacity: 0.4 }}
-            >
-              <Text className="text-background font-bold text-[18px]" style={{ fontFamily: 'Rubik-Bold' }}>גלה סרטים</Text>
-            </Pressable>
+      {/* Stats Summary Card */}
+      <LibraryStatsCard
+        movieCount={movies.length}
+        totalHours={totalWatchHours}
+        collectiblesCount={3}
+      />
+
+      {/* Sub Category Switcher Tabs */}
+      <LibraryCategoryTabs
+        activeTab={activeTab}
+        onTabChange={(tab) => {
+          if (tab === 'journal') {
+            router.push('/cinejournal' as any);
+          } else if (tab === 'collectibles') {
+            router.push('/cinecollect' as any);
+          } else {
+            setActiveTab(tab);
+          }
+        }}
+      />
+
+      {/* Search Input Bar (Only when in Watchlist tab) */}
+      {activeTab === 'watchlist' && (
+        <View style={styles.searchBarWrapper}>
+          <BlurView intensity={25} tint="dark" style={styles.searchBlur}>
+            <Search size={18} color="rgba(255, 255, 255, 0.4)" style={{ marginEnd: 10 }} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="חפש בספרייה האישית שלך..."
+              placeholderTextColor="rgba(255, 255, 255, 0.4)"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              textAlign="right"
+            />
           </BlurView>
         </View>
       )}
     </View>
   );
+
+  return (
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Background Visual Accents */}
+      <View style={styles.bgGlowTop} />
+      <View style={styles.bgGlowBottom} />
+
+      {activeTab === 'watchlist' && (
+        <FlatList
+          data={filteredMovies}
+          keyExtractor={(item) => item.id.toString()}
+          ListHeaderComponent={renderHeader}
+          renderItem={({ item }) => (
+            <LibraryMovieCard
+              movie={item}
+              onSelect={handleSelectMovie}
+              onRemove={handleRemove}
+            />
+          )}
+          contentContainerStyle={{ paddingBottom: 120 }}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <BlurView intensity={20} tint="dark" style={styles.emptyCard}>
+                <View style={styles.emptyIconCircle}>
+                  <Library size={48} color={Colors.primary} />
+                </View>
+                <Text style={styles.emptyTitle}>הספרייה שלך ריקה</Text>
+                <Text style={styles.emptyDescription}>
+                  עדיין לא הוספת סרטים לספרייה האישית שלך.{"\n"}גלה סרטים חדשים והוסף אותם עכשיו!
+                </Text>
+                <Pressable
+                  onPress={() => router.push('/(tabs)/search')}
+                  style={styles.exploreBtn}
+                >
+                  <Text style={styles.exploreBtnText}>גלה סרטים בקטלוג</Text>
+                </Pressable>
+              </BlurView>
+            </View>
+          }
+        />
+      )}
+    </View>
+  );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  bgGlowTop: {
+    position: 'absolute',
+    top: -60,
+    left: -60,
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor: 'rgba(139, 92, 246, 0.08)',
+  },
+  bgGlowBottom: {
+    position: 'absolute',
+    bottom: 80,
+    right: -80,
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    backgroundColor: 'rgba(229, 255, 0, 0.06)',
+  },
+  headerContainer: {
+    paddingTop: 16,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+  titleTextGroup: {
+    alignItems: 'flex-start',
+  },
+  mainTitle: {
+    color: '#FFFFFF',
+    fontSize: 28,
+    fontWeight: '800',
+    fontFamily: 'Rubik-Bold',
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  },
+  subTitle: {
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 14,
+    fontFamily: 'Rubik-Regular',
+    marginTop: 2,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  },
+  headerIconWrapper: {
+    width: 48,
+    height: 48,
+    borderRadius: 20,
+    backgroundColor: 'rgba(139, 92, 246, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchBarWrapper: {
+    marginHorizontal: 20,
+    marginBottom: 18,
+    borderRadius: 18,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  searchBlur: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+  },
+  searchInput: {
+    flex: 1,
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontFamily: 'Rubik-Regular',
+  },
+  emptyContainer: {
+    paddingHorizontal: 20,
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  emptyCard: {
+    width: '100%',
+    padding: 32,
+    borderRadius: 32,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  emptyIconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(139, 92, 246, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '700',
+    fontFamily: 'Rubik-Bold',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyDescription: {
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 14,
+    fontFamily: 'Rubik-Regular',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  exploreBtn: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: 18,
+  },
+  exploreBtnText: {
+    color: '#000000',
+    fontSize: 15,
+    fontWeight: '700',
+    fontFamily: 'Rubik-Bold',
+  },
+});

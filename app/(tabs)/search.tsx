@@ -51,6 +51,7 @@ import { type TMDBMovie, getGenreName } from '@/lib/tmdb';
 import { useSearch } from '@/hooks/useSearch';
 import AIOrb from '@/components/AIOrb';
 import * as Haptics from 'expo-haptics';
+import { playSpatialTone } from '@/utils/SoundEffects';
 import { Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
@@ -438,31 +439,34 @@ export default function SearchScreen() {
         </Reanimated.View>
       )}
 
-      {/* Floating Galaxy Button (FAB) for CineSphere */}
+      {/* Floating Orbit Button (FAB) for CineSphere 3D */}
       <View style={{ position: 'absolute', bottom: insets.bottom + 85, right: 20, zIndex: 99 }}>
         <Pressable
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            playSpatialTone(800, 0.5);
             router.push('/movie/sphere' as any);
           }}
           style={({ pressed }) => [
             {
-              width: 56,
-              height: 56,
-              borderRadius: 28,
-              backgroundColor: Colors.primary,
+              width: 58,
+              height: 58,
+              borderRadius: 29,
+              backgroundColor: 'rgba(139, 92, 246, 0.85)',
               justifyContent: 'center',
               alignItems: 'center',
+              borderWidth: 1.5,
+              borderColor: 'rgba(255, 255, 255, 0.4)',
               shadowColor: Colors.primary,
               shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.4,
-              shadowRadius: 10,
-              elevation: 8,
-              opacity: pressed ? 0.8 : 1,
+              shadowOpacity: 0.7,
+              shadowRadius: 12,
+              elevation: 10,
+              transform: [{ scale: pressed ? 0.92 : 1 }],
             }
           ]}
         >
-          <Ionicons name="planet-outline" size={26} color="white" />
+          <Sparkles size={24} color="#FFF" />
         </Pressable>
       </View>
     </View>

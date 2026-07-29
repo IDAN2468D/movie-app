@@ -5,7 +5,7 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { View, StyleSheet, Platform } from 'react-native';
-import { Home, Search, Ticket, User, Bookmark } from 'lucide-react-native';
+import { Home, Search, Ticket, User, Library } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAcousticEngine } from '../../hooks/useAcousticEngine';
 
@@ -71,10 +71,10 @@ export default function TabLayout() {
         name="watchlist"
         listeners={screenListeners}
         options={{
-          title: 'רשימה',
+          title: 'ספרייה',
           tabBarIcon: ({ color, size, focused }) => (
             <View style={focused ? styles.activeIconWrapper : undefined}>
-              <Bookmark size={size} color={focused ? '#8B5CF6' : color} />
+              <Library size={size} color={focused ? '#8B5CF6' : color} />
             </View>
           ),
         }}

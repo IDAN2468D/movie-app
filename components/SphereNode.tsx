@@ -4,6 +4,8 @@ import Animated, { useAnimatedStyle, SharedValue } from 'react-native-reanimated
 import { TMDBMovie } from '@/lib/tmdb';
 import { Colors, POSTER_SIZES } from '@/constants/Theme';
 
+import { playSpatialTone } from '@/utils/SoundEffects';
+
 interface SphereNodeProps {
   movie: TMDBMovie;
   index: number;
@@ -23,6 +25,11 @@ export default function SphereNode({
   isActive,
   onPress,
 }: SphereNodeProps) {
+  const handlePress = () => {
+    const pan = (index / (totalNodes - 1)) * 1.6 - 0.8;
+    playSpatialTone(600 + index * 30, pan);
+    onPress();
+  };
   // Compute initial unit coordinates on the Fibonacci sphere
   const initialPos = useMemo(() => {
     const y = 1 - (index / (totalNodes - 1)) * 2; // y: 1 to -1
@@ -100,7 +107,7 @@ export default function SphereNode({
         },
       ]}
     >
-      <Pressable onPress={onPress} style={styles.pressable}>
+      <Pressable onPress={handlePress} style={styles.pressable}>
         <Image source={posterSource} style={styles.poster} resizeMode="cover" />
       </Pressable>
     </Animated.View>
