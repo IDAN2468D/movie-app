@@ -33,7 +33,7 @@ jobs:
       - name: Type Check
         run: |
           if [ -d "./movie-app" ]; then cd ./movie-app; fi
-          npx tsc
+          npx tsc --noEmit
 
       - name: Run Tests
         run: |
