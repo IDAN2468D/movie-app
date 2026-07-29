@@ -23,20 +23,20 @@ jobs:
 
       - name: 📦 Install Dependencies
         run: |
-          cd movie-app
+          if [ -d "./movie-app" ]; then cd ./movie-app; fi
           npm ci
 
       - name: 🔍 Lint Check
         run: |
-          cd movie-app
+          if [ -d "./movie-app" ]; then cd ./movie-app; fi
           npm run lint
 
       - name: 🏗️ Type Check (TSC)
         run: |
-          cd movie-app
+          if [ -d "./movie-app" ]; then cd ./movie-app; fi
           npx tsc --noEmit
 
       - name: 🧪 Unit Tests (Jest)
         run: |
-          cd movie-app
+          if [ -d "./movie-app" ]; then cd ./movie-app; fi
           npm test

@@ -20,20 +20,24 @@ jobs:
           cache-dependency-path: '**/package-lock.json'
 
       - name: Install dependencies
-        working-directory: ./movie-app
-        run: npm ci
+        run: |
+          if [ -d "./movie-app" ]; then cd ./movie-app; fi
+          npm ci
 
       - name: Linting
-        working-directory: ./movie-app
-        run: npm run lint
+        run: |
+          if [ -d "./movie-app" ]; then cd ./movie-app; fi
+          npm run lint
 
       - name: Type Check
-        working-directory: ./movie-app
-        run: npx tsc
+        run: |
+          if [ -d "./movie-app" ]; then cd ./movie-app; fi
+          npx tsc
 
       - name: Run Tests
-        working-directory: ./movie-app
-        run: npm test
+        run: |
+          if [ -d "./movie-app" ]; then cd ./movie-app; fi
+          npm test
 
   build_check:
     needs: validate
@@ -49,12 +53,14 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Install dependencies
-        working-directory: ./movie-app
-        run: npm ci
+        run: |
+          if [ -d "./movie-app" ]; then cd ./movie-app; fi
+          npm ci
 
       - name: Build Dry Run (Android)
-        working-directory: ./movie-app
-        run: npx eas build --platform android --profile development --non-interactive --local --no-wait
+        run: |
+          if [ -d "./movie-app" ]; then cd ./movie-app; fi
+          npx eas build --platform android --profile development --non-interactive --local --no-wait
         continue-on-error: true
 
   deploy_preview:
@@ -72,9 +78,11 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Install dependencies
-        working-directory: ./movie-app
-        run: npm ci
+        run: |
+          if [ -d "./movie-app" ]; then cd ./movie-app; fi
+          npm ci
 
       - name: Publish Update (CD)
-        working-directory: ./movie-app
-        run: npx eas update --auto --non-interactive
+        run: |
+          if [ -d "./movie-app" ]; then cd ./movie-app; fi
+          npx eas update --auto --non-interactive
