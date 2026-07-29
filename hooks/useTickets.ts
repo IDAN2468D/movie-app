@@ -9,7 +9,7 @@ export const useTickets = () => {
   const { data: myTickets = [], refetch, isLoading } = useMyTicketsQuery();
   const { biometricsEnabled, authenticateBiometrics } = useAuthStore();
   
-  const [isUnlocked, setIsUnlocked] = useState(!biometricsEnabled);
+  const [isUnlocked, setIsUnlocked] = useState(() => !biometricsEnabled);
   const [selectedTicket, setSelectedTicket] = useState<BookedTicket | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isScannerVisible, setIsScannerVisible] = useState(false);
@@ -20,10 +20,8 @@ export const useTickets = () => {
       authenticateBiometrics('אימות ביומטרי נדרש לצפייה בכרטיסים שלך').then((success) => {
         setIsUnlocked(success);
       });
-    } else {
-      setIsUnlocked(true);
     }
-  }, [biometricsEnabled]);
+  }, [biometricsEnabled, isUnlocked]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

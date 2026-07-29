@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import 'react-native-gesture-handler/jestSetup';
 
 jest.mock('expo-local-authentication', () => ({

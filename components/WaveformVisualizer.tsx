@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, SharedValue } from 'react-native-reanimated';
@@ -9,21 +10,23 @@ interface WaveformVisualizerProps {
 
 const BAR_COUNT = 16;
 
-export const WaveformVisualizer: React.FC<WaveformVisualizerProps> = ({
-  isPlaying,
-  glowIntensity,
-}) => {
-  // 120Hz Zero-Reflow GPU scaleY SharedValues (strictly NO height reflows)
-  const scaleYValues = Array.from({ length: BAR_COUNT }, () => useSharedValue(0.2));
+interface WaveformBarProps {
+  index: number;
+  isPlaying: boolean;
+  glowIntensity?: SharedValue<number>;
+}
+
+const WaveformBar: React.FC<WaveformBarProps> = ({ index, isPlaying, glowIntensity }) => {
+  const scaleValue = useSharedValue(0.2);
 
   useEffect(() => {
     let active = true;
-    const timeouts: any[] = [];
+    let timeoutId: any;
 
-    const animateBar = (index: number) => {
+    const animateBar = () => {
       if (!active) return;
       if (!isPlaying) {
-        scaleYValues[index].value = withTiming(0.15, { duration: 300 });
+        scaleValue.value = withTiming(0.15, { duration: 300 });
         return;
       }
 
@@ -31,52 +34,53 @@ export const WaveformVisualizer: React.FC<WaveformVisualizerProps> = ({
       const targetScale = Math.min(1.0, (0.2 + Math.random() * 0.8) * intensityMult);
       const duration = 100 + Math.random() * 160;
 
-      scaleYValues[index].value = withTiming(targetScale, { duration });
+      scaleValue.value = withTiming(targetScale, { duration });
 
-      const t = setTimeout(() => animateBar(index), duration);
-      timeouts.push(t);
+      timeoutId = setTimeout(animateBar, duration);
     };
 
     if (isPlaying) {
-      for (let i = 0; i < BAR_COUNT; i++) {
-        animateBar(i);
-      }
+      animateBar();
     } else {
-      scaleYValues.forEach((s) => {
-        s.value = withTiming(0.15, { duration: 300 });
-      });
+      scaleValue.value = withTiming(0.15, { duration: 300 });
     }
 
     return () => {
       active = false;
-      timeouts.forEach(clearTimeout);
+      if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [isPlaying]);
+  }, [isPlaying, glowIntensity]);
 
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scaleY: scaleValue.value }],
+    };
+  });
+
+  const isQuantum = index % 3 === 0;
+  const isEmerald = index % 3 === 1;
+
+  return (
+    <Animated.View
+      style={[
+        styles.bar,
+        isQuantum ? styles.barQuantum : isEmerald ? styles.barEmerald : styles.barRuby,
+        animatedStyle,
+      ]}
+    />
+  );
+};
+
+export const WaveformVisualizer: React.FC<WaveformVisualizerProps> = ({
+  isPlaying,
+  glowIntensity,
+}) => {
   return (
     <View style={styles.container}>
       <View style={styles.specularTop} />
-      {scaleYValues.map((scaleValue, i) => {
-        const animatedStyle = useAnimatedStyle(() => {
-          return {
-            transform: [{ scaleY: scaleValue.value }],
-          };
-        });
-
-        const isQuantum = i % 3 === 0;
-        const isEmerald = i % 3 === 1;
-
-        return (
-          <Animated.View
-            key={i}
-            style={[
-              styles.bar,
-              isQuantum ? styles.barQuantum : isEmerald ? styles.barEmerald : styles.barRuby,
-              animatedStyle,
-            ]}
-          />
-        );
-      })}
+      {Array.from({ length: BAR_COUNT }).map((_, i) => (
+        <WaveformBar key={i} index={i} isPlaying={isPlaying} glowIntensity={glowIntensity} />
+      ))}
     </View>
   );
 };

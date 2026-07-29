@@ -84,6 +84,9 @@ jobs:
           npm ci || npm install
 
       - name: Publish Update (CD)
+        continue-on-error: true
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           if [ -d "./movie-app" ]; then cd ./movie-app; fi
           npx eas update --auto --non-interactive

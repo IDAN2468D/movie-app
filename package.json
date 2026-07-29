@@ -8,7 +8,7 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "test": "jest --passWithNoTests",
-    "lint": "eslint .",
+    "lint": "eslint . --no-report-unused-disable-directives",
     "postinstall": "node scripts/copy-lazyktype.js && patch-package"
   },
   "dependencies": {

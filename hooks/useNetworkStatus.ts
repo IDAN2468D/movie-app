@@ -7,7 +7,12 @@ import { onlineManager } from '@tanstack/react-query';
  * updating the TanStack Query onlineManager for robust offline capabilities.
  */
 export const useNetworkStatus = () => {
-  const [isOnline, setIsOnline] = useState<boolean>(true);
+  const [isOnline, setIsOnline] = useState<boolean>(() => {
+    if (Platform.OS === 'web' && typeof navigator !== 'undefined') {
+      return navigator.onLine;
+    }
+    return true;
+  });
 
   useEffect(() => {
     // 1. Web-Specific Listener
@@ -25,9 +30,11 @@ export const useNetworkStatus = () => {
       window.addEventListener('online', handleOnline);
       window.addEventListener('offline', handleOffline);
 
-      // Set initial state
-      setIsOnline(navigator.onLine);
-      onlineManager.setOnline(navigator.onLine);
+      queueMicrotask(() => {
+        if (typeof navigator !== 'undefined') {
+          onlineManager.setOnline(navigator.onLine);
+        }
+      });
 
       return () => {
         window.removeEventListener('online', handleOnline);

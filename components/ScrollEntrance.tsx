@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/immutability */
 import React, { useState } from 'react';
 import { Dimensions, StyleSheet } from 'react-native';
 import Animated, {
