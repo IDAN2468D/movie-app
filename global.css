@@ -3,5 +3,57 @@
 @tailwind utilities;
 
 @layer base {
-  /* You can add any global base styles here */
+  body {
+    background-color: #09090B;
+    color: #FAFAF7;
+    overflow-x: hidden;
+  }
+}
+
+@layer utilities {
+  /* Liquid Glass 4.5 Utility Tokens */
+  .glass-light {
+    background-color: rgba(255, 255, 255, 0.10);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .glass-medium {
+    background-color: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  .glass-deep {
+    background-color: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+  }
+
+  /* Specular Top Gradient Highlight */
+  .specular-highlight {
+    background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.10), transparent);
+  }
+
+  /* Quantum Glow Highlights */
+  .quantum-glow {
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.50);
+  }
+
+  .emerald-glow {
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.50);
+  }
+
+  .ruby-glow {
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.50);
+  }
+
+  /* 120Hz GPU Hardware Acceleration */
+  .gpu-layer {
+    will-change: transform, opacity;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
 }

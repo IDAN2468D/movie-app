@@ -1,7 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   // NOTE: Update this to include the paths to all of your component files.
-  content: ["./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}"],
+  content: ["./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}", "./src/**/*.{js,jsx,ts,tsx}"],
   presets: [require("nativewind/preset")],
   theme: {
     extend: {
@@ -17,6 +17,9 @@ module.exports = {
         border: 'rgba(255, 255, 255, 0.08)',
         borderLight: 'rgba(255, 255, 255, 0.15)',
         surfaceGlass: 'rgba(255, 255, 255, 0.05)',
+        quantumViolet: '#8B5CF6',
+        emeraldAction: '#10B981',
+        rubyWarning: '#EF4444',
       },
       fontFamily: {
         display: ['Anton-Regular', 'sans-serif'],
@@ -48,6 +51,11 @@ module.exports = {
         'body': ['16px', { lineHeight: '24px' }],
         'caption': ['14px', { lineHeight: '20px' }],
         'label': ['12px', { lineHeight: '18px' }],
+      },
+      boxShadow: {
+        'quantum-glow': '0 0 15px rgba(139, 92, 246, 0.5)',
+        'emerald-glow': '0 0 15px rgba(16, 185, 129, 0.5)',
+        'ruby-glow': '0 0 15px rgba(239, 68, 68, 0.5)',
       },
       textShadow: {
         'hero': '0 2px 8px rgba(0,0,0,0.5)',

@@ -4,17 +4,17 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming, SharedValue } f
 
 interface WaveformVisualizerProps {
   isPlaying: boolean;
-  glowIntensity: SharedValue<number>;
+  glowIntensity?: SharedValue<number>;
 }
 
-const BAR_COUNT = 15;
+const BAR_COUNT = 16;
 
 export const WaveformVisualizer: React.FC<WaveformVisualizerProps> = ({
   isPlaying,
   glowIntensity,
 }) => {
-  // Create shared values for individual bar heights
-  const heights = Array.from({ length: BAR_COUNT }, () => useSharedValue(6));
+  // 120Hz Zero-Reflow GPU scaleY SharedValues (strictly NO height reflows)
+  const scaleYValues = Array.from({ length: BAR_COUNT }, () => useSharedValue(0.2));
 
   useEffect(() => {
     let active = true;
@@ -23,17 +23,15 @@ export const WaveformVisualizer: React.FC<WaveformVisualizerProps> = ({
     const animateBar = (index: number) => {
       if (!active) return;
       if (!isPlaying) {
-        heights[index].value = withTiming(6, { duration: 300 });
+        scaleYValues[index].value = withTiming(0.15, { duration: 300 });
         return;
       }
 
-      // Heights flare up based on the glow intensity from haptic events
-      const baseVal = 6 + Math.random() * 26;
-      const multiplier = 1 + (glowIntensity.value || 0) * 1.8;
-      const targetHeight = Math.min(50, baseVal * multiplier);
-      const duration = 120 + Math.random() * 180;
+      const intensityMult = 1 + (glowIntensity?.value || 0) * 1.5;
+      const targetScale = Math.min(1.0, (0.2 + Math.random() * 0.8) * intensityMult);
+      const duration = 100 + Math.random() * 160;
 
-      heights[index].value = withTiming(targetHeight, { duration });
+      scaleYValues[index].value = withTiming(targetScale, { duration });
 
       const t = setTimeout(() => animateBar(index), duration);
       timeouts.push(t);
@@ -44,8 +42,8 @@ export const WaveformVisualizer: React.FC<WaveformVisualizerProps> = ({
         animateBar(i);
       }
     } else {
-      heights.forEach(h => {
-        h.value = withTiming(6, { duration: 300 });
+      scaleYValues.forEach((s) => {
+        s.value = withTiming(0.15, { duration: 300 });
       });
     }
 
@@ -57,19 +55,23 @@ export const WaveformVisualizer: React.FC<WaveformVisualizerProps> = ({
 
   return (
     <View style={styles.container}>
-      {heights.map((h, i) => {
+      <View style={styles.specularTop} />
+      {scaleYValues.map((scaleValue, i) => {
         const animatedStyle = useAnimatedStyle(() => {
           return {
-            height: h.value,
+            transform: [{ scaleY: scaleValue.value }],
           };
         });
+
+        const isQuantum = i % 3 === 0;
+        const isEmerald = i % 3 === 1;
 
         return (
           <Animated.View
             key={i}
             style={[
               styles.bar,
-              { backgroundColor: i % 2 === 0 ? '#E5FF00' : '#FF1464' },
+              isQuantum ? styles.barQuantum : isEmerald ? styles.barEmerald : styles.barRuby,
               animatedStyle,
             ]}
           />
@@ -84,12 +86,49 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 60,
-    gap: 4,
+    height: 64,
+    gap: 5,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.10)',
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  specularTop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.20)',
   },
   bar: {
     width: 4,
+    height: 48,
     borderRadius: 2,
+  },
+  barQuantum: {
+    backgroundColor: '#8B5CF6',
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 8,
+  },
+  barEmerald: {
+    backgroundColor: '#10B981',
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 8,
+  },
+  barRuby: {
+    backgroundColor: '#FF1464',
+    shadowColor: '#FF1464',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 8,
   },
 });
 

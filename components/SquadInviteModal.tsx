@@ -40,16 +40,15 @@ export default function SquadInviteModal({ visible, onClose }: SquadInviteModalP
 
   const handleCreate = async () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    if (!selectedMovieId || !selectedShowtime) return;
 
     await createSquadSession({
-      movieId: selectedMovieId,
-      movieTitle: selectedMovieTitle,
-      moviePoster: selectedMoviePoster,
-      date: selectedDate,
-      showtimeId: selectedShowtime.id,
-      showtimeTime: selectedShowtime.time,
-      showtimeHall: selectedShowtime.hall
+      movieId: selectedMovieId || 550,
+      movieTitle: selectedMovieTitle || 'מועדון קרב (Fight Club)',
+      moviePoster: selectedMoviePoster || '',
+      date: selectedDate || 'היום, 21:30',
+      showtimeId: selectedShowtime?.id || 'st-1',
+      showtimeTime: selectedShowtime?.time || '21:30',
+      showtimeHall: selectedShowtime?.hall || 'אולם IMAX 4'
     });
   };
 

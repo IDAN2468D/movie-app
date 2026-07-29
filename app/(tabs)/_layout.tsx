@@ -1,29 +1,34 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /**
- * Tab Layout - Premium Bottom Navigation
+ * Tab Layout - 120Hz Liquid Glass 4.5 Bottom Navigation
  */
+import React from 'react';
 import { Tabs } from 'expo-router';
-import { StyleSheet, Platform, ActivityIndicator, View } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import { Home, Search, Ticket, User, Bookmark } from 'lucide-react-native';
-import { Colors, Typography } from '@/constants/Theme';
-import { useEffect } from 'react';
-
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAuthStore } from '@/store/useAuthStore';
+import { useAcousticEngine } from '../../hooks/useAcousticEngine';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
+  const { playSpatialClick } = useAcousticEngine();
+
+  const screenListeners = {
+    tabPress: (e: any) => {
+      playSpatialClick(e);
+    },
+  };
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: Colors.textMuted,
+        tabBarActiveTintColor: '#8B5CF6',
+        tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.45)',
         tabBarStyle: {
-          backgroundColor: Colors.surface,
-          borderTopColor: Colors.border,
-          borderTopWidth: 0.5,
+          backgroundColor: 'rgba(18, 18, 20, 0.75)',
+          borderTopColor: 'rgba(255, 255, 255, 0.12)',
+          borderTopWidth: 1,
           paddingTop: 8,
           position: 'absolute',
           elevation: 0,
@@ -31,49 +36,83 @@ export default function TabLayout() {
           paddingBottom: insets.bottom > 0 ? insets.bottom : 20,
         },
         tabBarLabelStyle: {
-          fontSize: 13,
-          fontWeight: '500',
-          letterSpacing: 0.5,
+          fontSize: 12,
+          fontWeight: '600',
+          letterSpacing: 0.4,
+          fontFamily: 'Inter-Regular',
         },
       }}
     >
       <Tabs.Screen
         name="index"
+        listeners={screenListeners}
         options={{
           title: 'בית',
-          tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
+          tabBarIcon: ({ color, size, focused }) => (
+            <View style={focused ? styles.activeIconWrapper : undefined}>
+              <Home size={size} color={focused ? '#8B5CF6' : color} />
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
         name="search"
+        listeners={screenListeners}
         options={{
           title: 'חיפוש',
-          tabBarIcon: ({ color, size }) => <Search size={size} color={color} />,
+          tabBarIcon: ({ color, size, focused }) => (
+            <View style={focused ? styles.activeIconWrapper : undefined}>
+              <Search size={size} color={focused ? '#8B5CF6' : color} />
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
         name="watchlist"
+        listeners={screenListeners}
         options={{
           title: 'רשימה',
-          tabBarIcon: ({ color, size }) => <Bookmark size={size} color={color} />,
+          tabBarIcon: ({ color, size, focused }) => (
+            <View style={focused ? styles.activeIconWrapper : undefined}>
+              <Bookmark size={size} color={focused ? '#8B5CF6' : color} />
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
         name="tickets"
+        listeners={screenListeners}
         options={{
           title: 'כרטיסים',
-          tabBarIcon: ({ color, size }) => <Ticket size={size} color={color} />,
+          tabBarIcon: ({ color, size, focused }) => (
+            <View style={focused ? styles.activeIconWrapper : undefined}>
+              <Ticket size={size} color={focused ? '#8B5CF6' : color} />
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
         name="profile"
+        listeners={screenListeners}
         options={{
           title: 'פרופיל',
-          tabBarIcon: ({ color, size }) => <User size={size} color={color} />,
+          tabBarIcon: ({ color, size, focused }) => (
+            <View style={focused ? styles.activeIconWrapper : undefined}>
+              <User size={size} color={focused ? '#8B5CF6' : color} />
+            </View>
+          ),
         }}
       />
     </Tabs>
   );
 }
 
-// NativeWind migration complete - styles object removed
+const styles = StyleSheet.create({
+  activeIconWrapper: {
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+});
