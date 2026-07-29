@@ -316,6 +316,38 @@ export default function ProfileScreen() {
             onPress={() => router.push('/cinepredict' as any)} 
           />
 
+          <MenuItem 
+            icon={MapIcon} 
+            title="איסוף קבוצתי — CineSquad Carpool" 
+            description="סנכרון נסיעות משותפות, מסלול הגעה וחלוקת תשלום לקולנוע!"
+            color="#10B981" 
+            onPress={() => router.push('/cinesquad-carpool' as any)} 
+          />
+
+          <MenuItem 
+            icon={Video} 
+            title="סטודיו פילטרים — CineVision AI Studio" 
+            description="צלמו בסטייל קולנועי והפיקו חותמות אספנות מונפשות ל-Story!"
+            color="#FF1464" 
+            onPress={() => router.push('/cinevision-filter' as any)} 
+          />
+
+          <MenuItem 
+            icon={Sparkles} 
+            title="מפת רגשות אולם — CineVibe Heatmap" 
+            description="שתפו תגובות רגשיות וצפו במפת הדופק והרגש של הקהל באולם!"
+            color="#E5FF00" 
+            onPress={() => router.push('/cinevibe-heatmap' as any)} 
+          />
+
+          <MenuItem 
+            icon={Trophy} 
+            title="ארנק דיגיטלי — CinePass NFC Wallet" 
+            description="העבירו כרטיסים ל-Apple/Google Wallet לכניסה בנגישת NFC למתחמי VIP!"
+            color="#0AEFFF" 
+            onPress={() => router.push('/cinepass-wallet' as any)} 
+          />
+
           
           <Pressable 
             onPress={toggleInTheaterMode} 

@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
-import { View, Text, Pressable, StyleSheet, LayoutChangeEvent, GestureResponderEvent } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
-import { useAcousticEngine } from '../hooks/useAcousticEngine';
+import React from 'react';
+import { View, Text, Pressable, StyleSheet, GestureResponderEvent } from 'react-native';
+import { playSpatialTone } from '../utils/SoundEffects';
 
 export interface TabItem {
   id: string;
@@ -19,53 +18,23 @@ export const ZeroReflowTabs: React.FC<ZeroReflowTabsProps> = ({
   activeTabId,
   onTabSelect,
 }) => {
-  const { playSpatialClick } = useAcousticEngine();
-  const [tabWidths, setTabWidths] = useState<{ [key: string]: { x: number; width: number } }>({});
-  const indicatorX = useSharedValue(0);
-  const indicatorWidth = useSharedValue(0);
-
-  const indicatorAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ translateX: indicatorX.value }],
-      width: indicatorWidth.value,
-    };
-  });
-
-  const handleTabLayout = (id: string, event: LayoutChangeEvent) => {
-    const { x, width } = event.nativeEvent.layout;
-    setTabWidths((prev) => {
-      const updated = { ...prev, [id]: { x, width } };
-      if (id === activeTabId) {
-        indicatorX.value = withSpring(x, { stiffness: 100, damping: 15 });
-        indicatorWidth.value = withSpring(width, { stiffness: 100, damping: 15 });
-      }
-      return updated;
-    });
-  };
-
-  const handleTabPress = (id: string, e: GestureResponderEvent) => {
-    playSpatialClick(e);
-    if (tabWidths[id]) {
-      indicatorX.value = withSpring(tabWidths[id].x, { stiffness: 100, damping: 15 });
-      indicatorWidth.value = withSpring(tabWidths[id].width, { stiffness: 100, damping: 15 });
-    }
+  const handleTabPress = (id: string, index: number, e: GestureResponderEvent) => {
+    // Play audible audio frequency corresponding to selected mode (e.g. 400Hz, 600Hz, 800Hz)
+    const panOffset = (index / (tabs.length - 1)) * 1.8 - 0.9;
+    playSpatialTone(500 + index * 200, panOffset);
     onTabSelect(id);
   };
 
   return (
     <View style={styles.container}>
-      {/* Zero-Reflow GPU Sliding Tab Indicator */}
-      <Animated.View style={[styles.activeIndicator, indicatorAnimatedStyle]} />
-
       <View style={styles.tabRow}>
-        {tabs.map((tab) => {
+        {tabs.map((tab, index) => {
           const isActive = tab.id === activeTabId;
           return (
             <Pressable
               key={tab.id}
-              onLayout={(e) => handleTabLayout(tab.id, e)}
-              onPress={(e) => handleTabPress(tab.id, e)}
-              style={styles.tabButton}
+              onPress={(e) => handleTabPress(tab.id, index, e)}
+              style={[styles.tabButton, isActive && styles.activeTabBg]}
             >
               <Text style={[styles.tabText, isActive && styles.activeTabText]}>
                 {tab.label}
@@ -83,48 +52,43 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
     padding: 4,
-    position: 'relative',
     overflow: 'hidden',
   },
   tabRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
   },
   tabButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
     borderRadius: 16,
-    zIndex: 2,
     alignItems: 'center',
     justifyContent: 'center',
+    marginHorizontal: 2,
   },
-  tabText: {
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontFamily: 'Inter-Regular',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  activeTabText: {
-    color: '#FAFAF7',
-    fontWeight: '700',
-  },
-  activeIndicator: {
-    position: 'absolute',
-    top: 4,
-    bottom: 4,
-    backgroundColor: 'rgba(139, 92, 246, 0.25)',
-    borderRadius: 16,
+  activeTabBg: {
+    backgroundColor: 'rgba(139, 92, 246, 0.45)',
     borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.6)',
+    borderColor: '#8B5CF6',
     shadowColor: '#8B5CF6',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 15,
-    elevation: 6,
-    zIndex: 1,
+    shadowOpacity: 0.9,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  tabText: {
+    color: 'rgba(255, 255, 255, 0.5)',
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  activeTabText: {
+    color: '#FFF',
+    fontWeight: '800',
   },
 });
 

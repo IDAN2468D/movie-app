@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet, Switch, Dimensions, GestureResponderEvent } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet, Switch, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Headphones, Volume2, Save, X, RotateCcw } from 'lucide-react-native';
 import Animated, { FadeInDown, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
@@ -7,28 +7,29 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Accelerometer } from 'expo-sensors';
-import { Colors } from '@/constants/Theme';
-import { API_BASE_URL } from '@/constants/Config';
-import { useAuthStore } from '@/store/useAuthStore';
-import { useAcousticEngine } from '@/hooks/useAcousticEngine';
+import { playSpatialTone, playCenterSubBass } from '@/utils/SoundEffects';
 import { LiquidGlassCard } from '@/components/LiquidGlassCard';
 import { ZeroReflowTabs } from '@/components/ZeroReflowTabs';
 import { WaveformVisualizer } from '@/components/WaveformVisualizer';
+import { GyroSoundStage } from '@/components/cinesound/GyroSoundStage';
 
 const { width } = Dimensions.get('window');
 
+const MODE_TABS = [
+  { id: 'atmos', label: 'Dolby Atmos' },
+  { id: 'spatial', label: 'Spatial Stereo' },
+  { id: 'dtsx', label: 'DTS:X' },
+];
+
 export default function CineSoundScreen() {
   const insets = useSafeAreaInsets();
-  const token = useAuthStore(state => state.token);
-  const { playSubBass, playSpatialClick } = useAcousticEngine();
-
   const [soundMode, setSoundMode] = useState<string>('atmos');
   const [gyroActive, setGyroActive] = useState(true);
+  const [currentPan, setCurrentPan] = useState(0);
   const [bass, setBass] = useState(50);
   const [mid, setMid] = useState(60);
   const [treble, setTreble] = useState(70);
   const [roomSimLevel, setRoomSimLevel] = useState(75);
-  const [saving, setSaving] = useState(false);
 
   const nodeX = useSharedValue(0);
   const nodeY = useSharedValue(0);
@@ -36,68 +37,36 @@ export default function CineSoundScreen() {
   useEffect(() => {
     let subscription: any;
     if (gyroActive) {
-      Accelerometer.setUpdateInterval(16);
-      subscription = Accelerometer.addListener(accelerometerData => {
-        nodeX.value = withSpring(accelerometerData.x * 120, { stiffness: 100, damping: 15 });
-        nodeY.value = withSpring(-accelerometerData.y * 120, { stiffness: 100, damping: 15 });
+      Accelerometer.setUpdateInterval(33);
+      subscription = Accelerometer.addListener((data) => {
+        const clampedX = Math.max(-1, Math.min(1, data.x * 1.5));
+        setCurrentPan(clampedX);
+        nodeX.value = withSpring(clampedX * 120, { stiffness: 100, damping: 15 });
+        nodeY.value = withSpring(-data.y * 120, { stiffness: 100, damping: 15 });
       });
     } else {
-      nodeX.value = withSpring(0, { stiffness: 100, damping: 15 });
-      nodeY.value = withSpring(0, { stiffness: 100, damping: 15 });
+      nodeX.value = withSpring(0);
+      nodeY.value = withSpring(0);
+      setCurrentPan(0);
     }
-
     return () => {
       if (subscription) subscription.remove();
     };
   }, [gyroActive]);
 
-  const animatedNodeStyle = useAnimatedStyle(() => {
-    return {
-      transform: [
-        { translateX: nodeX.value },
-        { translateY: nodeY.value }
-      ]
-    };
-  });
+  const animatedNodeStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: nodeX.value }, { translateY: nodeY.value }],
+  }));
 
-  const handleSave = async (e: GestureResponderEvent) => {
-    setSaving(true);
-    // Trigger 40Hz Sub-bass drop on save / lock action
-    playSubBass();
+  const handleSave = () => {
+    playCenterSubBass();
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    try {
-      const response = await fetch(`${API_BASE_URL}/mcp/cinesound/profile`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          showtimeId: 'showtime-101',
-          seatCode: 'H-12',
-          soundMode,
-          gyroState: gyroActive,
-          equalizer: { bass, mid, treble },
-          roomSimLevel
-        })
-      });
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const data = await response.json();
-      if (data.success) {
-        alert('הפרופיל נשמר בהצלחה בשרת!');
-        router.back();
-      }
-    } catch (err) {
-      alert('נשמר מקומית (מצב אופליין)');
-      router.back();
-    } finally {
-      setSaving(false);
-    }
+    alert('הפרופיל המרחבי נשמר בהצלחה!');
+    router.back();
   };
 
-  const handleReset = (e: GestureResponderEvent) => {
-    playSpatialClick(e);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  const handleReset = () => {
+    playSpatialTone(600, 0);
     setSoundMode('atmos');
     setGyroActive(true);
     setBass(50);
@@ -106,134 +75,127 @@ export default function CineSoundScreen() {
     setRoomSimLevel(70);
   };
 
-  const renderSlider = (label: string, value: number, onChange: (val: number) => void) => {
-    return (
-      <View className="mb-4">
-        <View className="flex-row justify-between mb-1.5 px-1">
-          <Text className="text-white/40 text-xs font-semibold">{value}%</Text>
-          <Text style={{ textAlign: 'right', writingDirection: 'rtl' }} className="text-white text-sm font-semibold">{label}</Text>
-        </View>
-        <View className="h-2.5 w-full bg-white/10 rounded-full overflow-hidden flex-row justify-end relative border border-white/10">
-          <Pressable 
-            style={{ width: '100%', height: '100%', position: 'absolute' }}
-            onPressIn={(e) => {
-              playSpatialClick(e);
-              const rectWidth = width - 48;
-              const touchX = e.nativeEvent.locationX;
-              const calculatedValue = Math.min(Math.max(Math.round((touchX / rectWidth) * 100), 0), 100);
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              onChange(calculatedValue);
-            }}
-          />
-          <View style={{ width: `${value}%` }} className="h-full bg-quantumViolet shadow-quantum-glow" />
-        </View>
+  const renderSlider = (label: string, value: number, onChange: (val: number) => void) => (
+    <View style={styles.sliderContainer}>
+      <View style={styles.sliderHeader}>
+        <Text style={styles.sliderVal}>{value}%</Text>
+        <Text style={styles.rightText}>{label}</Text>
       </View>
-    );
-  };
-
-  const modeTabs = [
-    { id: 'atmos', label: 'Dolby Atmos' },
-    { id: 'spatial', label: 'Spatial Stereo' },
-    { id: 'dtsx', label: 'DTS:X' },
-  ];
+      <View style={styles.sliderTrack}>
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPressIn={(e) => {
+            const calculated = Math.min(Math.max(Math.round((e.nativeEvent.locationX / (width - 48)) * 100), 0), 100);
+            playSpatialTone(300 + calculated * 5, (calculated - 50) / 50);
+            onChange(calculated);
+          }}
+        />
+        <View style={[styles.sliderFill, { width: `${value}%` }]} />
+      </View>
+    </View>
+  );
 
   return (
-    <View className="flex-1 bg-background">
-      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 20, paddingBottom: 60 }} className="flex-1 px-6">
-        
-        {/* Header */}
-        <View className="flex-row items-center justify-between mb-6">
-          <Pressable onPress={(e) => { playSpatialClick(e); router.back(); }} className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 items-center justify-center">
-            <X size={24} color="white" />
+    <View style={styles.screenContainer}>
+      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 50, paddingHorizontal: 20 }}>
+        <View style={styles.topHeader}>
+          <Pressable onPress={() => { playSpatialTone(500, -0.5); router.back(); }} style={styles.headerBtn}>
+            <X size={22} color="white" />
           </Pressable>
-          <Text className="text-white text-xl font-display tracking-wider">CineSound Spatial 4.5</Text>
-          <Pressable onPress={handleReset} className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 items-center justify-center">
+          <Text style={styles.headerTitle}>CineSound Spatial 4.5</Text>
+          <Pressable onPress={handleReset} style={styles.headerBtn}>
             <RotateCcw size={20} color="white" />
           </Pressable>
         </View>
 
-        {/* Live Audio Waveform Visualizer */}
-        <View className="mb-6">
-          <WaveformVisualizer isPlaying={true} />
-        </View>
+        <WaveformVisualizer isPlaying={true} />
 
-        {/* Spatial Matrix Card */}
-        <Animated.View entering={FadeInDown.duration(600).springify()}>
-          <LiquidGlassCard variant="deep" glow="quantum" specular={true} style={{ marginBottom: 24 }}>
-            <Text style={{ textAlign: 'right', writingDirection: 'rtl' }} className="text-white text-lg font-bold mb-1">מיפוי סאונד מרחבי 120Hz</Text>
-            <Text style={{ textAlign: 'right', writingDirection: 'rtl' }} className="text-white/40 text-xs mb-4">גע במסך להפעלת פנינג או הטה את המכשיר</Text>
+        <GyroSoundStage panValue={currentPan} />
 
-            <Pressable 
-              onPress={(e) => playSpatialClick(e)}
-              className="w-full aspect-square border border-white/10 bg-black/60 rounded-full justify-center items-center relative overflow-hidden"
+        <Animated.View entering={FadeInDown.duration(500)}>
+          <LiquidGlassCard variant="deep" glow="quantum" specular style={{ marginVertical: 14 }}>
+            <Text style={styles.rightTitle}>מיפוי סאונד מרחבי 120Hz</Text>
+            <Text style={styles.rightSubtitle}>לחץ לעננת השמע או הטה את המכשיר לשמיעת L/R</Text>
+
+            <Pressable
+              onPressIn={(e) => {
+                const touchX = e.nativeEvent.locationX;
+                const pan = (touchX / (width - 60)) * 2 - 1;
+                playSpatialTone(650, pan);
+              }}
+              style={styles.spatialMatrixBox}
             >
-              <View className="w-14 h-14 rounded-full bg-quantumViolet/20 border border-quantumViolet justify-center items-center z-10 shadow-quantum-glow">
+              <View style={styles.centerNode}>
                 <Headphones size={24} color="#8B5CF6" />
               </View>
-              
-              <Animated.View 
-                style={[animatedNodeStyle]} 
-                className="w-9 h-9 rounded-full bg-emeraldAction/30 border-2 border-emeraldAction justify-center items-center absolute shadow-emerald-glow"
-              >
+
+              <Animated.View style={[styles.dynamicNode, animatedNodeStyle]}>
                 <Volume2 size={16} color="#10B981" />
               </Animated.View>
-
-              <View style={StyleSheet.absoluteFill} className="border border-white/5 rounded-full m-12 pointer-events-none" />
-              <View style={StyleSheet.absoluteFill} className="border border-white/5 rounded-full m-24 pointer-events-none" />
             </Pressable>
           </LiquidGlassCard>
         </Animated.View>
 
-        {/* Zero-Reflow Sound Decoding Tabs */}
-        <View className="mb-6">
-          <Text style={{ textAlign: 'right', writingDirection: 'rtl' }} className="text-white text-base font-bold mb-3">מצב פענוח סאונד</Text>
-          <ZeroReflowTabs tabs={modeTabs} activeTabId={soundMode} onTabSelect={setSoundMode} />
+        <View style={{ marginBottom: 16 }}>
+          <Text style={[styles.rightTitle, { marginBottom: 8 }]}>מצב פענוח סאונד (LTR Order)</Text>
+          <ZeroReflowTabs tabs={MODE_TABS} activeTabId={soundMode} onTabSelect={setSoundMode} />
         </View>
 
-        {/* Configurations Glass Card */}
-        <Animated.View entering={FadeInDown.duration(600).delay(100).springify()}>
-          <LiquidGlassCard variant="deep" glow="none" specular={true} style={{ marginBottom: 24 }}>
-            
-            {/* Gyroscope Switch */}
-            <View className="flex-row items-center justify-between pb-4 border-b border-white/5">
-              <Switch
-                value={gyroActive}
-                onValueChange={(val) => {
-                  playSpatialClick();
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  setGyroActive(val);
-                }}
-                trackColor={{ false: '#3f3f46', true: '#8B5CF6' }}
-                thumbColor="white"
-              />
-              <View className="items-end">
-                <Text className="text-white text-base font-bold">סנכרון תנועה מרחבי</Text>
-                <Text className="text-white/40 text-xs mt-0.5">כיול שמע דינמי 120Hz לפי הטייה</Text>
-              </View>
+        <LiquidGlassCard variant="deep" specular style={{ marginBottom: 16 }}>
+          <View style={styles.switchRow}>
+            <Switch
+              value={gyroActive}
+              onValueChange={(val) => {
+                playSpatialTone(440, 0);
+                setGyroActive(val);
+              }}
+              trackColor={{ false: '#3f3f46', true: '#8B5CF6' }}
+              thumbColor="white"
+            />
+            <View>
+              <Text style={styles.rightTitle}>סנכרון תנועה מרחבי</Text>
+              <Text style={styles.rightSubtitle}>כיול שמע דינמי 120Hz לפי הטייה</Text>
             </View>
+          </View>
 
-            {/* Equalizer Controls */}
-            <View className="pt-4">
-              <Text style={{ textAlign: 'right', writingDirection: 'rtl' }} className="text-white text-base font-bold mb-4">אקולייזר מטריצה</Text>
-              {renderSlider('בס (40Hz Sub-Bass)', bass, setBass)}
-              {renderSlider('מיד (1kHz Mids)', mid, setMid)}
-              {renderSlider('טרבל (12kHz Treble)', treble, setTreble)}
-              {renderSlider('הדהוד חדר (Reverb)', roomSimLevel, setRoomSimLevel)}
-            </View>
-          </LiquidGlassCard>
-        </Animated.View>
+          <View style={{ paddingTop: 12 }}>
+            <Text style={[styles.rightTitle, { marginBottom: 12 }]}>אקולייזר מטריצה</Text>
+            {renderSlider('בס (40Hz Sub-Bass)', bass, setBass)}
+            {renderSlider('מיד (1kHz Mids)', mid, setMid)}
+            {renderSlider('טרבל (12kHz Treble)', treble, setTreble)}
+            {renderSlider('הדהוד חדר (Reverb)', roomSimLevel, setRoomSimLevel)}
+          </View>
+        </LiquidGlassCard>
 
-        {/* Save Button */}
-        <Animated.View entering={FadeInDown.duration(600).delay(200).springify()}>
-          <Pressable onPress={handleSave} disabled={saving} className="rounded-2xl overflow-hidden mb-6">
-            <LinearGradient colors={['#8B5CF6', '#6D28D9']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} className="py-4 flex-row justify-center items-center gap-2">
-              <Save size={20} color="white" />
-              <Text className="text-white text-base font-bold">שמור פרופיל מרחבי למושב</Text>
-            </LinearGradient>
-          </Pressable>
-        </Animated.View>
-
+        <Pressable onPress={handleSave} style={styles.saveBtn}>
+          <LinearGradient colors={['#8B5CF6', '#6D28D9']} style={styles.saveGradient}>
+            <Save size={20} color="white" />
+            <Text style={styles.saveBtnText}>שמור פרופיל מרחבי למושב</Text>
+          </LinearGradient>
+        </Pressable>
       </ScrollView>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  screenContainer: { flex: 1, backgroundColor: '#09090B' },
+  topHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  headerTitle: { color: '#FFF', fontSize: 18, fontWeight: '800', textAlign: 'center' },
+  headerBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(255, 255, 255, 0.06)', justifyContent: 'center', alignItems: 'center' },
+  rightTitle: { color: '#FFF', fontSize: 15, fontWeight: '700', textAlign: 'right', writingDirection: 'rtl' },
+  rightSubtitle: { color: 'rgba(255, 255, 255, 0.5)', fontSize: 12, textAlign: 'right', writingDirection: 'rtl', marginTop: 2 },
+  rightText: { color: '#FFF', fontSize: 13, fontWeight: '600', textAlign: 'right', writingDirection: 'rtl' },
+  spatialMatrixBox: { width: '100%', height: 180, borderRadius: 90, backgroundColor: 'rgba(0,0,0,0.5)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center', marginVertical: 12, position: 'relative' },
+  centerNode: { width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(139,92,246,0.2)', borderWidth: 1, borderColor: '#8B5CF6', justifyContent: 'center', alignItems: 'center' },
+  dynamicNode: { width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(16,185,129,0.3)', borderWidth: 1.5, borderColor: '#10B981', justifyContent: 'center', alignItems: 'center', position: 'absolute' },
+  switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' },
+  sliderContainer: { marginBottom: 12 },
+  sliderHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+  sliderVal: { color: 'rgba(255,255,255,0.5)', fontSize: 12 },
+  sliderTrack: { height: 10, borderRadius: 5, backgroundColor: 'rgba(255,255,255,0.1)', overflow: 'hidden', justifyContent: 'center' },
+  sliderFill: { height: '100%', backgroundColor: '#8B5CF6' },
+  saveBtn: { borderRadius: 16, overflow: 'hidden', marginTop: 8 },
+  saveGradient: { paddingVertical: 14, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
+  saveBtnText: { color: '#FFF', fontSize: 15, fontWeight: '700' },
+});

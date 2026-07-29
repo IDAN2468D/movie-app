@@ -1,8 +1,9 @@
 import { useEffect, useRef, useCallback } from 'react';
+import * as Haptics from 'expo-haptics';
 
 /**
- * Web Audio API Acoustic Spatializer Engine
- * Zero external audio assets. Programmatic synthesis with 120Hz reactivity.
+ * Acoustic Engine Hook
+ * Provides Web Audio API spatial synthesis on web, and Haptics/Audio feedback on mobile platforms.
  */
 export function useAcousticEngine() {
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -29,10 +30,12 @@ export function useAcousticEngine() {
   }, []);
 
   /**
-   * 1. Sub-bass Drop (40Hz): Deep sine wave trigger for locks / confirmations
+   * 1. Sub-bass Drop (40Hz): Deep impact feedback and bass synthesizer
    */
   const playSubBass = useCallback(() => {
     try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+
       const ctx = getAudioContext();
       if (!ctx) return;
 
@@ -63,17 +66,18 @@ export function useAcousticEngine() {
   }, [getAudioContext]);
 
   /**
-   * 2. Spatial Matrix Click: Dynamic click with 800Hz->100Hz sweep and X-axis panning
+   * 2. Spatial Matrix Click: Dynamic click feedback with haptics
    */
   const playSpatialClick = useCallback((event?: any) => {
     try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
       const ctx = getAudioContext();
       if (!ctx) return;
 
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
 
-      // Frequency drop: 800Hz to 100Hz over 0.08 seconds
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(800, ctx.currentTime);
       osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.08);
@@ -81,7 +85,6 @@ export function useAcousticEngine() {
       gain.gain.setValueAtTime(0.4, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
 
-      // Stereophonic Panning (-1.0 left to +1.0 right)
       let panValue = 0;
       if (typeof window !== 'undefined' && window.innerWidth > 0 && event) {
         const clientX = event.clientX ?? event.nativeEvent?.pageX ?? (window.innerWidth / 2);
@@ -103,7 +106,6 @@ export function useAcousticEngine() {
         lastNode.connect(ctx.destination);
       }
 
-      osc.connect(gain);
       osc.start();
       osc.stop(ctx.currentTime + 0.09);
     } catch (e) {
@@ -111,9 +113,6 @@ export function useAcousticEngine() {
     }
   }, [getAudioContext]);
 
-  /**
-   * Hard Cleanup Rule: Close AudioContext & cancel speechSynthesis on unmount
-   */
   const cleanupAudio = useCallback(() => {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       try {
