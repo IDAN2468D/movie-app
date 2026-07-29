@@ -10,6 +10,11 @@ const mockSound = {
   setOnPlaybackStatusUpdate: jest.fn(),
 };
 
+jest.mock('expo-speech', () => ({
+  speak: jest.fn(),
+  stop: jest.fn(),
+}));
+
 jest.mock('../../utils/safeExpoAv', () => {
   return {
     isAudioAvailable: true,

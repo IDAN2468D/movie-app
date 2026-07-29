@@ -1,22 +1,30 @@
 import { useEffect, useRef } from 'react';
+import * as Haptics from 'expo-haptics';
+import * as Speech from 'expo-speech';
 import { Audio } from '../utils/safeExpoAv';
+import { playCenterSubBass } from '../utils/SoundEffects';
 
 /**
- * Custom hook to load, play, and safely unload the Splash Screen audio (Lion Roar Effect).
- * Uses SafeExpoAv to prevent crashes in non-supported environments.
+ * Custom hook to load, play, and safely unload the Splash Screen audio & Gemini AI Speech.
+ * Uses SafeExpoAv & Expo Speech to announce 'ברוכים הבאים לסינבוק. חוויה קולנועית מחדש.' on launch.
  */
 export const useSplashScreenAudio = () => {
   const soundRef = useRef<any>(null);
+  const voiceRef = useRef<any>(null);
 
   useEffect(() => {
     let isCancelled = false;
     let didStartPlaying = false;
+    let hapticTimer1: any = null;
+    let hapticTimer2: any = null;
+    let voiceTimer: any = null;
 
     const playRoar = async () => {
-      console.log('[useSplashScreenAudio] Initializing splash screen audio hook...');
+      console.log('[useSplashScreenAudio] Initializing splash screen audio & voice hook...');
       try {
         const assetSource = require('../assets/audio/cinematic_whoosh.mp3');
-        console.log('[useSplashScreenAudio] Audio asset resolved to:', assetSource);
+        const voiceSource = require('../assets/audio/cinematic_voice_hebrew.mp3');
+        console.log('[useSplashScreenAudio] Audio assets resolved.');
 
         // Set audio mode so it plays on iOS even in silent mode
         if (typeof Audio.setAudioModeAsync === 'function') {
@@ -48,7 +56,28 @@ export const useSplashScreenAudio = () => {
 
         soundRef.current = sound;
 
-        // Auto-unload the sound once playback finishes to prevent memory leaks
+        // Try loading voice MP3 asset
+        try {
+          const { sound: voiceSound } = await Audio.Sound.createAsync(
+            voiceSource,
+            { volume: 0.95, shouldPlay: false }
+          );
+          if (!isCancelled) {
+            voiceRef.current = voiceSound;
+            voiceSound.setOnPlaybackStatusUpdate((status: any) => {
+              if (status.didJustFinish) {
+                voiceSound.unloadAsync().catch(() => {});
+                voiceRef.current = null;
+              }
+            });
+          } else {
+            voiceSound.unloadAsync().catch(() => {});
+          }
+        } catch (voiceErr) {
+          console.warn('[useSplashScreenAudio] Voice asset load skipped/failed:', voiceErr);
+        }
+
+        // Auto-unload primary sound once playback finishes
         sound.setOnPlaybackStatusUpdate((playbackStatus: any) => {
           if (playbackStatus.didJustFinish) {
             console.log('[useSplashScreenAudio] Audio playback completed. Auto-unloading...');
@@ -59,12 +88,17 @@ export const useSplashScreenAudio = () => {
           }
         });
 
-        // Play the sound after a slight delay to sync with logo animations
-        setTimeout(async () => {
+        // Play primary cinematic sound & haptics after 250ms
+        hapticTimer1 = setTimeout(async () => {
           if (!isCancelled && soundRef.current) {
             try {
-              console.log('[useSplashScreenAudio] Triggering playAsync...');
+              console.log('[useSplashScreenAudio] Triggering playAsync & acoustic haptics...');
               didStartPlaying = true;
+              
+              // Safe execution of haptics & center sub-bass tone
+              try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); } catch {}
+              try { playCenterSubBass(); } catch {}
+
               await soundRef.current.playAsync();
             } catch (playErr) {
               console.warn('[useSplashScreenAudio] Playback failed:', playErr);
@@ -73,6 +107,34 @@ export const useSplashScreenAudio = () => {
             console.log('[useSplashScreenAudio] Skip playback. isCancelled:', isCancelled, 'soundLoaded:', !!soundRef.current);
           }
         }, 250);
+
+        // Play Gemini AI Voice Speech in Hebrew at 450ms
+        voiceTimer = setTimeout(async () => {
+          if (!isCancelled) {
+            try {
+              console.log('[useSplashScreenAudio] Triggering Speech.speak for Gemini voice intro...');
+              Speech.speak('ברוכים הבאים לסינבוק. חוויה קולנועית מחדש.', {
+                language: 'he-IL',
+                rate: 0.85,
+                pitch: 0.9,
+              });
+
+              if (voiceRef.current) {
+                await voiceRef.current.playAsync();
+              }
+            } catch (vPlayErr) {
+              console.warn('[useSplashScreenAudio] Voice playback failed:', vPlayErr);
+            }
+          }
+        }, 450);
+
+        // Secondary acoustic pulse when light sweep passes
+        hapticTimer2 = setTimeout(() => {
+          if (!isCancelled) {
+            try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+          }
+        }, 750);
+
       } catch (err) {
         console.warn('[useSplashScreenAudio] Failed to load/play audio:', err);
       }
@@ -82,9 +144,11 @@ export const useSplashScreenAudio = () => {
 
     return () => {
       isCancelled = true;
+      if (hapticTimer1) clearTimeout(hapticTimer1);
+      if (hapticTimer2) clearTimeout(hapticTimer2);
+      if (voiceTimer) clearTimeout(voiceTimer);
+
       const unloadSound = async () => {
-        // If unmounted before audio started playing, unload immediately to prevent late playback
-        // If it already started, the setOnPlaybackStatusUpdate callback will auto-unload it when it finishes
         if (soundRef.current && !didStartPlaying) {
           console.log('[useSplashScreenAudio] Cleanup: Unloading sound before playback started...');
           try {
@@ -93,6 +157,10 @@ export const useSplashScreenAudio = () => {
             console.warn('[useSplashScreenAudio] Cleanup unload failed:', unloadErr);
           }
           soundRef.current = null;
+        }
+        if (voiceRef.current) {
+          try { await voiceRef.current.unloadAsync(); } catch {}
+          voiceRef.current = null;
         }
       };
       unloadSound();

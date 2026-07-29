@@ -120,6 +120,10 @@ export default function SplashScreen() {
   // Light sweep
   const sweepTranslateX = useSharedValue(-200);
 
+  // Acoustic shockwave ring
+  const soundWaveScale = useSharedValue(0.8);
+  const soundWaveOpacity = useSharedValue(0);
+
   useEffect(() => {
     console.log('Splash mounted. Auth State:', { isLoading, isAuthenticated, hasSeenOnboarding });
     
@@ -152,6 +156,15 @@ export default function SplashScreen() {
       )
     );
 
+    // Acoustic shockwave pulse at 250ms (when audio starts)
+    const waveTimer = setTimeout(() => {
+      soundWaveOpacity.value = withSequence(
+        withTiming(0.6, { duration: 200 }),
+        withTiming(0, { duration: 800 })
+      );
+      soundWaveScale.value = withTiming(1.8, { duration: 1000, easing: Easing.out(Easing.quad) });
+    }, 250);
+
     const finishSplash = () => {
       setTimeout(() => {
         console.log('Splash animation finished');
@@ -180,7 +193,10 @@ export default function SplashScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     }, 250);
 
-    return () => clearTimeout(hapticTimer);
+    return () => {
+      clearTimeout(hapticTimer);
+      clearTimeout(waveTimer);
+    };
   }, []);
 
   useEffect(() => {
@@ -232,6 +248,11 @@ export default function SplashScreen() {
     transform: [{ translateX: sweepTranslateX.value }],
   }));
 
+  const animatedSoundWaveStyle = useAnimatedStyle(() => ({
+    opacity: soundWaveOpacity.value,
+    transform: [{ scale: soundWaveScale.value }],
+  }));
+
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -276,6 +297,23 @@ export default function SplashScreen() {
 
       {/* ─── LOGO CONTAINER ─── */}
       <Animated.View testID="splash-logo-container" style={[animatedLogoStyle, styles.logoContainer]}>
+        {/* Acoustic Shockwave Ring */}
+        <Animated.View
+          style={[
+            animatedSoundWaveStyle,
+            {
+              position: 'absolute',
+              width: 140,
+              height: 140,
+              borderRadius: 70,
+              borderWidth: 2,
+              borderColor: Colors.primary,
+              top: -6,
+              alignSelf: 'center',
+            }
+          ]}
+        />
+
         {/* Glass Card */}
         <View style={styles.glassCard}>
           <Ionicons name="film-outline" size={60} color={Colors.primary} />
