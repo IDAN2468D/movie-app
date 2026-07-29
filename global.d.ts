@@ -1,6 +1,10 @@
 import 'react-native';
 
 declare module '*.css';
+declare module '*/global.css';
+declare module '../global.css';
+declare module './global.css';
+
 declare module '*.css' {
   const content: any;
   export default content;
