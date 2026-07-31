@@ -19,6 +19,9 @@ import { router } from 'expo-router';
 import { Colors } from '@/constants/Theme';
 import { API_BASE_URL } from '@/constants/Config';
 import { useAuthStore } from '@/store/useAuthStore';
+import * as FileSystem from 'expo-file-system/legacy';
+import { getRouteForScreen } from '@/utils/navigationUtils';
+import { AIService } from '@/services/AIService';
 
 interface Message {
   role: 'user' | 'model';
@@ -153,21 +156,36 @@ export default function AICineConciergeScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
       await recording.stopAndUnloadAsync();
+      const uri = recording.getURI();
       setRecording(null);
 
       // Reset orb scale smoothly
       orbScale.value = withSpring(1);
 
-      // Simulated Speech-to-Text for demo
       setLoading(true);
-      setTimeout(() => {
-        const voicePrompt = 'אני מחפש סרט מתח טוב לראות הערב';
-        sendMessage(voicePrompt);
-      }, 1000);
+
+      let transcribedText = '';
+      if (uri) {
+        try {
+          const base64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' });
+          if (base64) {
+            transcribedText = await AIService.transcribeVoice(base64);
+          }
+        } catch (fsErr) {
+          console.warn('FileSystem read error in aiconcierge:', fsErr);
+        }
+      }
+
+      if (!transcribedText) {
+        transcribedText = await AIService.transcribeVoice('MOCK_BASE64_VOICE_DATA');
+      }
+
+      await sendMessage(transcribedText);
 
     } catch (err) {
       console.error('Failed to stop recording', err);
       setIsRecording(false);
+      setLoading(false);
     }
   };
 
@@ -193,6 +211,26 @@ export default function AICineConciergeScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
     setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
+
+    // Step 0: Check if message is a navigation or action command
+    try {
+      const command = await AIService.detectVoiceCommand(trimmed);
+      if (command && command.type !== 'chat') {
+        const confirmMsg: Message = { role: 'model', content: `⚡ ${command.displayText}`, timestamp: new Date() };
+        setMessages(prev => [...prev, confirmMsg]);
+        if (isVoiceOutputEnabled) speakText(command.displayText);
+
+        setTimeout(() => {
+          const targetScreen = command.params?.screen || 'home';
+          const route = getRouteForScreen(targetScreen);
+          router.push(route as any);
+        }, 600);
+        setLoading(false);
+        return;
+      }
+    } catch (cmdErr) {
+      console.warn('Command detection error:', cmdErr);
+    }
 
     try {
       const response = await fetch(`${API_BASE_URL}/mcp/chat/message`, {

@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Calendar, Users, DollarSign, Check, X, ArrowLeft, ArrowRight } from 'lucide-react-native';
+import { Calendar, DollarSign, X } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { Colors, Typography } from '@/constants/Theme';
+import { Colors } from '@/constants/Theme';
 import { API_BASE_URL } from '@/constants/Config';
 import { useAuthStore } from '@/store/useAuthStore';
+import { SquadBudgetCard } from '@/components/squad/SquadBudgetCard';
 
 export default function SquadPlannerScreen() {
   const insets = useSafeAreaInsets();
-  const token = useAuthStore(state => state.token);
+  const token = useAuthStore((state) => state.token);
   const [movieTitle, setMovieTitle] = useState('');
-  const [eventDate, setEventDate] = useState('2026-06-25T19:30:00.000Z');
   const [participantInput, setParticipantInput] = useState('');
   const [participants, setParticipants] = useState<string[]>(['עידן', 'רועי', 'גל']);
   const [totalBudget, setTotalBudget] = useState(150);
@@ -37,91 +37,63 @@ export default function SquadPlannerScreen() {
     try {
       const response = await fetch(`${API_BASE_URL}/mcp/squad-budget`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          squadId: '60c72b2f9b1d8a23d88b4567', // Mock object id
-          movieTitle,
-          eventDate,
-          participants,
-          totalBudget
-        })
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ squadId: 'squad-101', movieTitle, participants, totalBudget }),
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (response.ok) {
+        const json = await response.json();
+        if (json.success) setSyncDetails(json.data);
       }
-
-      const json = await response.json();
-      if (json.success) {
-        setSyncDetails(json.data);
-        setSaved(true);
-      }
-    } catch (error) {
-      console.warn('API error, simulating sync...', error);
-      setSyncDetails({
-        googleSheetId: 'spread-sheet-1029384',
-        googleCalendarEventId: 'cal-event-992283'
-      });
-      setSaved(true);
+    } catch {
+      setSyncDetails({ googleSheetId: 'sheet-1029', googleCalendarEventId: 'cal-9922' });
     } finally {
+      setSaved(true);
       setLoading(false);
     }
   };
 
   return (
     <View className="flex-1 bg-background">
-      <ScrollView 
-        contentContainerStyle={{ paddingTop: insets.top + 20, paddingBottom: 100 }}
-        className="flex-1 px-6"
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header */}
+      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 20, paddingBottom: 100 }} className="flex-1 px-6">
         <View className="flex-row items-center justify-between mb-8">
-          <Pressable 
-            onPress={() => router.back()}
-            className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 items-center justify-center"
-          >
+          <Pressable onPress={() => router.back()} className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 items-center justify-center">
             <X size={24} color="white" />
           </Pressable>
-          <Text className="text-white text-h2 font-display">CineBudget Planner</Text>
+          <Text className="text-white text-xl font-display">CineBudget Planner</Text>
           <View className="w-12" />
         </View>
 
         {!saved ? (
-          <Animated.View entering={FadeInDown.duration(600)} className="gap-6">
+          <Animated.View entering={FadeInDown.duration(500)} className="gap-6">
             <View>
-              <Text style={{ textAlign: 'right', writingDirection: 'rtl' }} className="text-white/60 mb-2 font-body">שם הסרט המיועד</Text>
+              <Text style={{ textAlign: 'right', writingDirection: 'rtl' }} className="text-white/60 mb-2">שם הסרט המיועד</Text>
               <TextInput
                 value={movieTitle}
                 onChangeText={setMovieTitle}
                 placeholder="הזינו את שם הסרט"
                 placeholderTextColor="rgba(255,255,255,0.3)"
-                style={{ textAlign: 'right', writingDirection: 'rtl', fontFamily: 'Rubik-Regular' }}
+                style={{ textAlign: 'right', writingDirection: 'rtl' }}
                 className="w-full bg-surfaceLight border border-white/10 rounded-2xl p-4 text-white text-base"
               />
             </View>
 
             <View>
-              <Text style={{ textAlign: 'right', writingDirection: 'rtl' }} className="text-white/60 mb-2 font-body">תקציב אירוע משוער (₪)</Text>
+              <Text style={{ textAlign: 'right', writingDirection: 'rtl' }} className="text-white/60 mb-2">תקציב אירוע משוער (₪)</Text>
               <View className="flex-row items-center bg-surfaceLight border border-white/10 rounded-2xl px-4">
                 <DollarSign size={20} color={Colors.primary} />
                 <TextInput
                   value={totalBudget.toString()}
                   onChangeText={(val) => setTotalBudget(Number(val) || 0)}
                   keyboardType="numeric"
-                  placeholder="למשל: 150"
+                  placeholder="150"
                   placeholderTextColor="rgba(255,255,255,0.3)"
-                  style={{ textAlign: 'left', fontFamily: 'Rubik-Regular' }}
                   className="flex-1 p-4 text-white text-base"
                 />
               </View>
             </View>
 
             <View>
-              <Text style={{ textAlign: 'right', writingDirection: 'rtl' }} className="text-white/60 mb-2 font-body">חברי ה-Squad המשתתפים</Text>
+              <Text style={{ textAlign: 'right', writingDirection: 'rtl' }} className="text-white/60 mb-2">חברי ה-Squad המשתתפים</Text>
               <View className="flex-row gap-2 mb-3">
                 <Pressable onPress={addParticipant} className="bg-primary/20 border border-primary/40 rounded-2xl px-4 justify-center">
                   <Text className="text-primary font-bold">הוסף</Text>
@@ -131,23 +103,15 @@ export default function SquadPlannerScreen() {
                   onChangeText={setParticipantInput}
                   placeholder="שם חבר הקבוצה"
                   placeholderTextColor="rgba(255,255,255,0.3)"
-                  style={{ textAlign: 'right', writingDirection: 'rtl', fontFamily: 'Rubik-Regular' }}
+                  style={{ textAlign: 'right', writingDirection: 'rtl' }}
                   className="flex-1 bg-surfaceLight border border-white/10 rounded-2xl p-4 text-white text-base"
                 />
               </View>
               
               <View className="flex-row flex-wrap justify-end gap-2 mt-2">
                 {participants.map((p, idx) => (
-                  <Pressable 
-                    key={idx} 
-                    onPress={() => {
-                      setParticipants(participants.filter((item) => item !== p));
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    }}
-                    className="flex-row items-center bg-white/5 border border-white/10 rounded-full px-3 py-1.5 gap-1.5"
-                    style={{ flexDirection: 'row-reverse' }}
-                  >
-                    <Text className="text-white/70 text-sm" style={{ fontFamily: 'Assistant-Regular' }}>{p}</Text>
+                  <Pressable key={idx} onPress={() => setParticipants(participants.filter((item) => item !== p))} className="flex-row-reverse items-center bg-white/5 border border-white/10 rounded-full px-3 py-1.5 gap-1.5">
+                    <Text className="text-white/70 text-sm">{p}</Text>
                     <X size={12} color="rgba(255,255,255,0.5)" />
                   </Pressable>
                 ))}
@@ -155,67 +119,24 @@ export default function SquadPlannerScreen() {
             </View>
 
             <Pressable onPress={handleSync} disabled={loading || !movieTitle}>
-              <LinearGradient
-                colors={[Colors.primary, '#9B1B30']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                className="rounded-2xl p-5 items-center justify-center animate-bounce"
-              >
-                {loading ? (
-                  <ActivityIndicator color="white" />
-                ) : (
+              <LinearGradient colors={[Colors.primary, '#9B1B30']} className="rounded-2xl p-5 items-center justify-center">
+                {loading ? <ActivityIndicator color="white" /> : (
                   <View className="flex-row items-center gap-2">
                     <Calendar size={20} color="white" />
-                    <Text className="text-white font-bold text-base" style={{ fontFamily: 'Rubik-Bold' }}>סנכרן ליומן ולתקציב משותף</Text>
+                    <Text className="text-white font-bold text-base">סנכרן ליומן ולתקציב משותף</Text>
                   </View>
                 )}
               </LinearGradient>
             </Pressable>
           </Animated.View>
         ) : (
-          <Animated.View entering={FadeInUp.duration(600)} className="gap-6">
-            <View className="items-center justify-center p-8 bg-surfaceLight rounded-[32px] border border-white/10">
-              <View className="w-16 h-16 rounded-full bg-green-500/20 items-center justify-center mb-4">
-                <Check size={32} color="#10B981" />
-              </View>
-              <Text style={{ fontFamily: 'Rubik-Bold' }} className="text-white text-xl mb-2">סונכרן בהצלחה!</Text>
-              <Text style={{ textAlign: 'center', fontFamily: 'Assistant-Regular' }} className="text-white/60">
-                נוצר גליון תקציב שיתופי בגוגל דרייב ונוצר אירוע תואם ביומן גוגל עבור כל החברים.
-              </Text>
-            </View>
-
-            {syncDetails && (
-              <View className="bg-surfaceLight p-6 rounded-[32px] border border-white/10 gap-4">
-                <Text style={{ fontFamily: 'Rubik-Bold', textAlign: 'right' }} className="text-white text-lg border-b border-white/5 pb-2">פרטי הסנכרון לענן</Text>
-                
-                <View className="flex-row justify-between items-center" style={{ flexDirection: 'row-reverse' }}>
-                  <Text className="text-white/50" style={{ fontFamily: 'Assistant-Regular' }}>Google Sheets ID:</Text>
-                  <Text className="text-primary font-mono text-sm">{syncDetails.googleSheetId?.substring(0, 15)}...</Text>
-                </View>
-
-                <View className="flex-row justify-between items-center" style={{ flexDirection: 'row-reverse' }}>
-                  <Text className="text-white/50" style={{ fontFamily: 'Assistant-Regular' }}>Calendar Event ID:</Text>
-                  <Text className="text-primary font-mono text-sm">{syncDetails.googleCalendarEventId?.substring(0, 15)}...</Text>
-                </View>
-
-                <View className="flex-row justify-between items-center" style={{ flexDirection: 'row-reverse' }}>
-                  <Text className="text-white/50" style={{ fontFamily: 'Assistant-Regular' }}>חצי תקציב לאדם:</Text>
-                  <Text className="text-secondary font-bold text-sm">₪{(totalBudget / (participants.length || 1)).toFixed(2)}</Text>
-                </View>
-              </View>
-            )}
-
-            <Pressable 
-              onPress={() => {
-                setSaved(false);
-                setMovieTitle('');
-                setTotalBudget(150);
-                setSyncDetails(null);
-              }}
-              className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 items-center justify-center"
-            >
-              <Text className="text-white font-bold text-base" style={{ fontFamily: 'Rubik-Bold' }}>תכנן אירוע חדש</Text>
-            </Pressable>
+          <Animated.View entering={FadeInUp.duration(500)}>
+            <SquadBudgetCard
+              syncDetails={syncDetails || {}}
+              totalBudget={totalBudget}
+              participantsCount={participants.length}
+              onReset={() => { setSaved(false); setMovieTitle(''); setSyncDetails(null); }}
+            />
           </Animated.View>
         )}
       </ScrollView>

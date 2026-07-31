@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Trophy, Moon, Sparkles, ChevronLeft, Popcorn, Clock, Library } from 'lucide-react-native';
+import { Trophy, Moon, Sparkles, ChevronLeft, Popcorn, Clock, Library, Camera } from 'lucide-react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Animated, { 
@@ -127,6 +127,11 @@ export default function CineSuiteDashboard() {
   const handleSpherePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     router.push('/movie/sphere' as any);
+  };
+
+  const handleCineVisionFilterPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.push('/cinevision-filter' as any);
   };
 
   const handleCineMatchPress = () => {
@@ -305,6 +310,37 @@ export default function CineSuiteDashboard() {
                 style={{ writingDirection: 'rtl' }}
               >
                 חוויית גילוי סרטים אינטראקטיבית במרחב תלת-ממדי
+              </Text>
+            </View>
+          </View>
+          <View className="w-8 h-8 rounded-full bg-white/10 items-center justify-center">
+            <ChevronLeft size={16} color="#FFF" />
+          </View>
+        </BlurView>
+      </Pressable>
+
+      {/* CineVision Studio Premium Launch Banner Card */}
+      <Pressable 
+        onPress={handleCineVisionFilterPress}
+        className="rounded-[24px] overflow-hidden border border-primary/30 shadow-lg shadow-primary/10"
+      >
+        <BlurView intensity={35} tint="dark" className="p-4 bg-primary/10 flex-row justify-between items-center">
+          <View className="flex-row items-center gap-3">
+            <View className="w-11 h-11 rounded-2xl bg-primary/20 border border-primary/40 items-center justify-center">
+              <Camera size={22} color={Colors.primary} />
+            </View>
+            <View className="items-start">
+              <Text 
+                className="text-white text-base font-bold font-assistant text-left"
+                style={{ writingDirection: 'rtl' }}
+              >
+                סטודיו פילטרים CineVision 📸
+              </Text>
+              <Text 
+                className="text-white/60 text-xs font-assistant text-left mt-0.5"
+                style={{ writingDirection: 'rtl' }}
+              >
+                צילום ויצירת פילטרים קולנועיים אינטראקטיביים
               </Text>
             </View>
           </View>

@@ -5,7 +5,7 @@
  */
 import "../global.css";
 import { useEffect } from 'react';
-import { I18nManager, StatusBar, DevSettings, LogBox } from 'react-native';
+import { I18nManager, StatusBar, DevSettings, LogBox, View } from 'react-native';
 
 // Silence specific development warnings
 LogBox.ignoreLogs([
@@ -88,36 +88,36 @@ function NavigationGuard() {
     const currentSegment = segments[0];
 
     // 1. Initial State: Always allow root index (Splash) to run its animation
-    if (!currentSegment || currentSegment === '(tabs)' && segments.length === 1) {
+    if (!currentSegment) {
       return;
     }
 
-    // 2. Onboarding Check: If not seen, force user to onboarding (unless they are at index/onboarding)
+    // 2. Authenticated: Don't allow login or onboarding screens
+    if (isAuthenticated) {
+      if (currentSegment === 'login' || currentSegment === 'auth' || currentSegment === 'onboarding') {
+        console.log('Redirecting to Tabs (Already Authenticated)');
+        setTimeout(() => router.replace('/(tabs)'), 0);
+      }
+      return;
+    }
+
+    // 3. Onboarding Check for Unauthenticated users: If not seen, force to onboarding
     if (!hasSeenOnboarding) {
-      if (currentSegment !== 'onboarding') {
+      if (currentSegment !== 'onboarding' && currentSegment !== 'login') {
         console.log('Redirecting to Onboarding (First time user)');
         setTimeout(() => router.replace('/onboarding'), 0);
       }
       return;
     }
 
-    // 3. Authentication Check: If seen onboarding but not logged in
-    if (!isAuthenticated) {
-      // Allow login, auth, and onboarding
-      const isPublicRoute = currentSegment === 'login' || currentSegment === 'auth' || currentSegment === 'onboarding';
+    // 4. Authentication Check for Unauthenticated users: If seen onboarding but not logged in
+    const isPublicRoute = currentSegment === 'login' || currentSegment === 'auth' || currentSegment === 'onboarding';
 
-      if (!isPublicRoute) {
-        console.log('Redirecting to Login (Unauthenticated)');
-        setTimeout(() => router.replace('/login'), 0);
-      }
-    } else {
-      // 4. Authenticated: Don't allow login or onboarding screens
-      if (currentSegment === 'login' || currentSegment === 'auth' || currentSegment === 'onboarding') {
-        console.log('Redirecting to Tabs (Already Authenticated)');
-        setTimeout(() => router.replace('/(tabs)'), 0);
-      }
+    if (!isPublicRoute) {
+      console.log('Redirecting to Login (Unauthenticated)');
+      setTimeout(() => router.replace('/login'), 0);
     }
-  }, [isAuthenticated, isLoading, segments, hasSeenOnboarding]);
+  }, [isAuthenticated, isLoading, segments, hasSeenOnboarding, navigationState?.key]);
 
   return null;
 }
@@ -154,23 +154,25 @@ export default function RootLayout() {
     'Assistant-Bold': Assistant_700Bold,
   });
 
-  // Hide splash screen as soon as fonts are loaded
+  // Hide splash screen as soon as fonts are loaded or after 800ms safety timeout
   useEffect(() => {
-    if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded, fontError]);
+    const hideTimer = setTimeout(() => {
+      SplashScreen.hideAsync().catch(() => {});
+    }, 800);
 
-  if (!fontsLoaded && !fontError) {
-    return null;
-  }
+    if (fontsLoaded || fontError) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+
+    return () => clearTimeout(hideTimer);
+  }, [fontsLoaded, fontError]);
 
   return (
     <PersistQueryClientProvider
       client={queryClient}
       persistOptions={{ persister, maxAge: 1000 * 60 * 60 * 24 }}
     >
-      <GestureHandlerRootView style={{ flex: 1 }}>
+      <GestureHandlerRootView style={{ flex: 1, backgroundColor: Colors.background }}>
         <ThemeProvider value={CineDarkTheme}>
           <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
           <RootLayoutNav />
@@ -182,7 +184,7 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   return (
-    <>
+    <View style={{ flex: 1, backgroundColor: Colors.background }}>
       <NavigationGuard />
       <OfflineBanner />
       <Stack
@@ -194,211 +196,314 @@ function RootLayoutNav() {
           animation: 'slide_from_bottom',
         }}
       >
+        <Stack.Screen name="index" />
         <Stack.Screen name="login" />
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen
-          name="movie/scanner"
-          options={{
-            animation: 'slide_from_bottom',
-            presentation: 'fullScreenModal',
-          }}
-        />
-        <Stack.Screen
-          name="movie/[id]"
-          options={{
-            animation: 'slide_from_left',
-            presentation: 'card',
-            statusBarTranslucent: true,
-          }}
-        />
-        <Stack.Screen
-          name="movie/seats"
-          options={{
-            animation: 'slide_from_bottom',
-            presentation: 'modal',
-          }}
-        />
-        <Stack.Screen
-          name="movie/lounge"
-          options={{
-            animation: 'slide_from_bottom',
-            presentation: 'modal',
-          }}
-        />
-        <Stack.Screen
-          name="cinematch"
-          options={{
-            animation: 'slide_from_bottom',
-            presentation: 'card',
-          }}
-        />
-        {/* ── Premium AI Screens ── */}
-        <Stack.Screen
-          name="movie/cinevision"
-          options={{
-            animation: 'slide_from_bottom',
-            presentation: 'modal',
-          }}
-        />
-        <Stack.Screen
-          name="search/cinelens"
-          options={{
-            animation: 'slide_from_bottom',
-            presentation: 'fullScreenModal',
-          }}
-        />
-        <Stack.Screen
-          name="profile/cineart"
-          options={{
-            animation: 'slide_from_bottom',
-            presentation: 'modal',
-          }}
-        />
-        <Stack.Screen
-          name="aiconcierge"
-          options={{
-            animation: 'slide_from_bottom',
-            presentation: 'modal',
-          }}
-        />
-        <Stack.Screen
-          name="arwayfinder"
-          options={{
-            animation: 'slide_from_bottom',
-            presentation: 'modal',
-          }}
-        />
-        <Stack.Screen
-          name="auramatch"
-          options={{
-            animation: 'slide_from_bottom',
-            presentation: 'modal',
-          }}
-        />
-        <Stack.Screen
-          name="hapticpreview"
-          options={{
-            animation: 'slide_from_bottom',
-            presentation: 'modal',
-          }}
-        />
-        <Stack.Screen
-          name="cinearc"
-          options={{
-            animation: 'slide_from_bottom',
-            presentation: 'modal',
-          }}
-        />
-        <Stack.Screen
-          name="cinejournal"
-          options={{
-            animation: 'slide_from_bottom',
-            presentation: 'modal',
-          }}
-        />
-        <Stack.Screen
-          name="squadplanner"
-          options={{
-            animation: 'slide_from_bottom',
-            presentation: 'modal',
-          }}
-        />
-        <Stack.Screen
-          name="productionlab"
-          options={{
-            animation: 'slide_from_bottom',
-            presentation: 'modal',
-          }}
-        />
-        <Stack.Screen
-          name="cinesound"
-          options={{
-            animation: 'slide_from_bottom',
-            presentation: 'modal',
-          }}
-        />
-        <Stack.Screen
-          name="cinesquad"
-          options={{
-            animation: 'slide_from_bottom',
-            presentation: 'modal',
-          }}
-        />
-        <Stack.Screen
-          name="cinedirector"
-          options={{
-            animation: 'slide_from_bottom',
-            presentation: 'modal',
-          }}
-        />
-        <Stack.Screen
-          name="seatauction"
-          options={{
-            animation: 'slide_from_bottom',
-            presentation: 'modal',
-          }}
-        />
-        <Stack.Screen
-          name="cinequiz"
-          options={{
-            animation: 'slide_from_bottom',
-            presentation: 'modal',
-          }}
-        />
-        <Stack.Screen
-          name="cinecollect"
-          options={{
-            animation: 'slide_from_bottom',
-            presentation: 'modal',
-          }}
-        />
-        <Stack.Screen
-          name="cineshare"
-          options={{
-            animation: 'slide_from_bottom',
-            presentation: 'modal',
-          }}
-        />
-        <Stack.Screen
-          name="cinepredict"
-          options={{
-            animation: 'slide_from_bottom',
-            presentation: 'modal',
-          }}
-        />
-        <Stack.Screen
-          name="cinesquad-carpool"
-          options={{
-            animation: 'slide_from_bottom',
-            presentation: 'modal',
-          }}
-        />
-        <Stack.Screen
-          name="cinevision-filter"
-          options={{
-            animation: 'slide_from_bottom',
-            presentation: 'modal',
-          }}
-        />
-        <Stack.Screen
-          name="cinevibe-heatmap"
-          options={{
-            animation: 'slide_from_bottom',
-            presentation: 'modal',
-          }}
-        />
-        <Stack.Screen
-          name="cinepass-wallet"
-          options={{
-            animation: 'slide_from_bottom',
-            presentation: 'modal',
-          }}
-        />
+      <Stack.Screen
+        name="movie/scanner"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'fullScreenModal',
+        }}
+      />
+      <Stack.Screen
+        name="movie/[id]"
+        options={{
+          animation: 'slide_from_left',
+          presentation: 'card',
+          statusBarTranslucent: true,
+        }}
+      />
+      <Stack.Screen
+        name="movie/seats"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="movie/lounge"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="movie/snacks"
+        options={{
+          animation: 'slide_from_right',
+          presentation: 'card',
+        }}
+      />
+      <Stack.Screen
+        name="movie/snack-lab"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="movie/checkout"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="movie/ar-loom"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="movie/debate"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="movie/director"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="movie/oracle"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="movie/profile"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="movie/sphere"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="movie/spoiler-lounge"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="movie/synapse"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="movie/wayfinding"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="movie/actor/[id]"
+        options={{
+          animation: 'slide_from_right',
+          presentation: 'card',
+        }}
+      />
+      <Stack.Screen
+        name="cinematch"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'card',
+        }}
+      />
+      {/* ── Premium AI Screens ── */}
+      <Stack.Screen
+        name="movie/cinevision"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="search/cinelens"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'fullScreenModal',
+        }}
+      />
+      <Stack.Screen
+        name="profile/cineart"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="aiconcierge"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="arwayfinder"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="auramatch"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="hapticpreview"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="cinearc"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="cinejournal"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="squadplanner"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="productionlab"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="cinesound"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="cinesquad"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="cinedirector"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="seatauction"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="cinequiz"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="cinecollect"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="cineshare"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="cinepredict"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="cinesquad-carpool"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="cinevision-filter"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="cinevibe-heatmap"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="cinepass-wallet"
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen name="onboarding" />
+      <Stack.Screen name="analytics" />
+      <Stack.Screen name="friends" />
+      <Stack.Screen name="loyalty" />
+      <Stack.Screen name="map" />
+      <Stack.Screen name="auth/register" />
+      <Stack.Screen name="auth/forgot-password" />
+      <Stack.Screen name="settings/favorites" />
+      <Stack.Screen name="settings/history" />
+      <Stack.Screen name="settings/legacy" />
+      <Stack.Screen name="settings/notifications" />
+      <Stack.Screen name="settings/payment" />
+      <Stack.Screen name="settings/security" />
+      <Stack.Screen name="settings/vault" />
       </Stack>
-
       <InTheaterOverlay />
-    </>
+    </View>
   );
 }
-
-

@@ -20,6 +20,7 @@ import HeroSlider from '@/components/HeroSlider';
 import MovieCard from '@/components/MovieCard';
 import SectionHeader from '@/components/SectionHeader';
 import AIConciergeModal from '@/components/AIConciergeModal';
+import { getRouteForScreen } from '@/utils/navigationUtils';
 import { AIButton } from '@/components/AIButton';
 import ScannerButton from '@/components/ScannerButton';
 import { useHome } from '@/hooks/useHome';
@@ -438,14 +439,7 @@ export default function HomeScreen() {
         visible={aiModalVisible} 
         onClose={() => toggleAiModal(false)}
         onNavigate={(screen) => {
-          const screenMap: Record<string, string> = {
-            home: '/(tabs)',
-            search: '/(tabs)/search',
-            tickets: '/(tabs)/tickets',
-            watchlist: '/(tabs)/watchlist',
-            profile: '/(tabs)/profile',
-          };
-          const route = screenMap[screen] || '/(tabs)';
+          const route = getRouteForScreen(screen);
           router.push(route as any);
         }}
       />

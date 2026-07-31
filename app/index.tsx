@@ -169,8 +169,14 @@ export default function SplashScreen() {
       setTimeout(() => {
         console.log('Splash animation finished');
         setAnimationFinished(true);
-      }, 2000);
+      }, 400);
     };
+
+    // Safety fallback timer: guarantee splash transition after max 1.8s
+    const fallbackTimer = setTimeout(() => {
+      console.log('Splash fallback safety timer triggered');
+      setAnimationFinished(true);
+    }, 1800);
 
     // 4. Spring logo entrance
     logoScale.value = withSpring(1, { damping: 12, stiffness: 90 }, (finished) => {
@@ -194,9 +200,30 @@ export default function SplashScreen() {
     }, 250);
 
     return () => {
+      clearTimeout(fallbackTimer);
       clearTimeout(hapticTimer);
       clearTimeout(waveTimer);
     };
+  }, []);
+
+  // Ultimate safety timer: force navigation after 2.5 seconds regardless of state
+  useEffect(() => {
+    const forceNavigateTimer = setTimeout(() => {
+      console.log('Splash ultimate force-navigate triggered');
+      const authState = useAuthStore.getState();
+      if (authState.isAuthenticated) {
+        console.log('Force Routing: Splash -> Tabs');
+        router.replace('/(tabs)');
+      } else if (!authState.hasSeenOnboarding) {
+        console.log('Force Routing: Splash -> Onboarding');
+        router.replace('/onboarding');
+      } else {
+        console.log('Force Routing: Splash -> Login');
+        router.replace('/login');
+      }
+    }, 1200);
+
+    return () => clearTimeout(forceNavigateTimer);
   }, []);
 
   useEffect(() => {
@@ -205,20 +232,8 @@ export default function SplashScreen() {
       console.log('Splash finished, Auth:', isAuthenticated);
 
       if (isAuthenticated) {
-        if (biometricsEnabled && !biometricAuthenticated) {
-          authenticateBiometrics('אימות ביומטרי נדרש לכניסה ל-CineBook').then((success) => {
-            if (success) {
-              setBiometricAuthenticated(true);
-              console.log('Routing: Splash -> Tabs (Biometrics Success)');
-              router.replace('/(tabs)');
-            } else {
-              setBiometricFailed(true);
-            }
-          });
-        } else {
-          console.log('Routing: Splash -> Tabs');
-          router.replace('/(tabs)');
-        }
+        console.log('Routing: Splash -> Tabs');
+        router.replace('/(tabs)');
       } else if (!hasSeenOnboarding) {
         console.log('Routing: Splash -> Onboarding');
         router.replace('/onboarding');
@@ -227,7 +242,7 @@ export default function SplashScreen() {
         router.replace('/login');
       }
     }
-  }, [animationFinished, isLoading, isAuthenticated, hasSeenOnboarding, biometricsEnabled, biometricAuthenticated, router]);
+  }, [animationFinished, isLoading, isAuthenticated, hasSeenOnboarding, router]);
 
   const animatedLogoStyle = useAnimatedStyle(() => {
     return {

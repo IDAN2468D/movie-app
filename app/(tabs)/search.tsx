@@ -40,6 +40,7 @@ import {
   Mic
 } from 'lucide-react-native';
 import { useVoiceRecording } from '@/hooks/useVoiceRecording';
+import { getRouteForScreen } from '@/utils/navigationUtils';
 import { AIService } from '@/services/AIService';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -109,7 +110,7 @@ export default function SearchScreen() {
             await new Promise(resolve => setTimeout(resolve, 1500));
             
             if (command.type === 'navigate' && command.params?.screen) {
-              const route = command.params.screen === 'home' ? '/' : `/(tabs)/${command.params.screen}`;
+              const route = getRouteForScreen(command.params.screen);
               router.push(route as any);
             } else if (command.type === 'search' && command.params?.query) {
                // Execute search

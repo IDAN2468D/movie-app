@@ -1,11 +1,14 @@
 import React, { useEffect, useCallback } from 'react';
 import { View, Text, Modal, Pressable, TextInput, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { FadeInRight, FadeInLeft, FadeInDown, FadeInUp, withRepeat, withSequence, withTiming, withDelay, useAnimatedStyle, useSharedValue, interpolate } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInRight, FadeInLeft, FadeInDown, FadeInUp, withRepeat, withSequence, withTiming, withDelay, useAnimatedStyle, useSharedValue, interpolate } from 'react-native-reanimated';
 import { Send, X, User, Sparkles, Zap, Volume2, VolumeX, Mic, BookmarkCheck, Command } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter, router } from 'expo-router';
 import { Colors } from '@/constants/Theme';
 import { useAIConcierge } from '@/hooks/useAIConcierge';
+
+import { getRouteForScreen } from '@/utils/navigationUtils';
 
 interface AIConciergeModalProps {
   visible: boolean;
@@ -49,7 +52,7 @@ const TypingDot = ({ index }: { index: number }) => {
 
 const TypingIndicator = () => (
   <Animated.View 
-    entering={FadeInLeft}
+    entering={FadeIn.duration(300)}
     className="mb-6 flex-row items-end justify-end gap-2"
   >
     <View className="bg-white/5 px-4 py-3 rounded-2xl rounded-bl-none border border-white/10 flex-row items-center">
@@ -109,7 +112,7 @@ const WaveBar = ({ index }: { index: number }) => {
 
 const CommandBanner = () => (
   <Animated.View
-    entering={FadeInUp.springify().damping(15)}
+    entering={FadeInUp.duration(300)}
     className="mx-4 mb-3 p-3 rounded-2xl border flex-row items-center justify-center gap-2"
     style={{
       backgroundColor: 'rgba(255, 20, 100, 0.08)',
@@ -128,18 +131,23 @@ const CommandBanner = () => (
 export default function AIConciergeModal({ visible, onClose, onNavigate: parentNavigate }: AIConciergeModalProps) {
   const insets = useSafeAreaInsets();
 
-  // Navigation handler — closes the modal, then delegates to the parent's router
+  // Navigation handler — closes the modal, then delegates to the parent's router or direct router.push
   const handleNavigate = useCallback((screen: string) => {
     onClose();
-    if (parentNavigate) {
-      setTimeout(() => parentNavigate(screen), 400);
-    }
+    setTimeout(() => {
+      if (parentNavigate) {
+        parentNavigate(screen);
+      } else {
+        const route = getRouteForScreen(screen);
+        router.push(route as any);
+      }
+    }, 300);
   }, [onClose, parentNavigate]);
 
   const {
     messages, input, setInput, isLoading, isTTSEnabled, isListening,
     isExecutingCommand, scrollViewRef, watchlistMovies, watchlistContext,
-    suggestions, voiceCommandHints, animatedPulseStyle,
+    quickScreens, suggestions, voiceCommandHints, animatedPulseStyle,
     handleSend, toggleTTS, handleVoicePress,
   } = useAIConcierge({ visible, onNavigate: handleNavigate });
 
@@ -226,15 +234,18 @@ export default function AIConciergeModal({ visible, onClose, onNavigate: parentN
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ paddingBottom: 30 }}
             >
-              {messages.map((msg) => {
+              {messages.map((msg, index) => {
+                if (!msg) return null;
                 const isUser = msg.role === 'user';
-                const isCommandMsg = msg.content.startsWith('⚡');
+                const contentText = typeof msg.content === 'string' ? msg.content : String(msg.content || '');
+                const isCommandMsg = contentText.startsWith('⚡');
+                const uniqueKey = msg.id ? `msg-${msg.id}-${index}` : `msg-${index}`;
                 
                 if (isUser) {
                   return (
                     <Animated.View 
-                      key={msg.id}
-                      entering={FadeInRight.springify()}
+                      key={uniqueKey}
+                      entering={FadeIn.duration(300)}
                       className="mb-5 flex-row items-end gap-2 justify-start"
                     >
                       <View className="w-8 h-8 rounded-full bg-primary items-center justify-center border border-white/20">
@@ -265,7 +276,7 @@ export default function AIConciergeModal({ visible, onClose, onNavigate: parentN
                             writingDirection: 'rtl',
                           }}
                         >
-                          {msg.content}
+                          {contentText}
                         </Text>
                       </View>
                     </Animated.View>
@@ -273,8 +284,8 @@ export default function AIConciergeModal({ visible, onClose, onNavigate: parentN
                 } else {
                   return (
                     <Animated.View 
-                      key={msg.id}
-                      entering={FadeInLeft.springify()}
+                      key={uniqueKey}
+                      entering={FadeIn.duration(300)}
                       className="mb-5 flex-row items-end gap-2 justify-end"
                     >
                       <View 
@@ -296,13 +307,13 @@ export default function AIConciergeModal({ visible, onClose, onNavigate: parentN
                         }}
                       >
                         <Text 
-                          className="text-[15px] font-body leading-relaxed text-white/90 text-left"
+                          className="text-[15px] font-body leading-relaxed text-white/90 text-right"
                           style={{
-                            textAlign: 'left',
-                            writingDirection: 'ltr',
+                            textAlign: 'right',
+                            writingDirection: 'rtl',
                           }}
                         >
-                          {msg.content}
+                          {contentText}
                         </Text>
                       </View>
                       <View className="w-8 h-8 rounded-full bg-white/5 border border-white/10 items-center justify-center">
@@ -354,23 +365,42 @@ export default function AIConciergeModal({ visible, onClose, onNavigate: parentN
                 </Animated.View>
               )}
 
-              {/* Quick Suggestions (shown when not listening) */}
+              {/* Quick Screen Navigation & Suggestions (shown when not listening) */}
               {!isLoading && !isListening && (
-                <ScrollView 
-                  horizontal 
-                  showsHorizontalScrollIndicator={false} 
-                  className="mb-4"
-                >
-                  {suggestions.map((suggestion, i) => (
-                    <Pressable
-                      key={i}
-                      onPress={() => handleSend(suggestion.text)}
-                      className="bg-white/5 border border-white/10 px-4 py-2.5 rounded-full me-2.5 flex-row items-center"
-                    >
-                      <Text className="text-[13px] text-white/80 font-body">{suggestion.text}</Text>
-                    </Pressable>
-                  ))}
-                </ScrollView>
+                <View className="mb-3">
+                  {/* Quick Screen Shortcuts */}
+                  <ScrollView 
+                    horizontal 
+                    showsHorizontalScrollIndicator={false} 
+                    className="mb-2"
+                  >
+                    {quickScreens.map((screenItem, i) => (
+                      <Pressable
+                        key={`qs-${i}`}
+                        onPress={() => handleSend(screenItem.text)}
+                        className="bg-primary/10 border border-primary/25 px-3.5 py-2 rounded-full me-2 flex-row items-center active:opacity-80"
+                      >
+                        <Text className="text-[12px] text-white font-medium font-body ms-1">{screenItem.name}</Text>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+
+                  {/* Quick Query Suggestions */}
+                  <ScrollView 
+                    horizontal 
+                    showsHorizontalScrollIndicator={false} 
+                  >
+                    {suggestions.map((suggestion, i) => (
+                      <Pressable
+                        key={`sug-${i}`}
+                        onPress={() => handleSend(suggestion.text)}
+                        className="bg-white/5 border border-white/10 px-3 py-1.5 rounded-full me-2 flex-row items-center"
+                      >
+                        <Text className="text-[12px] text-white/70 font-body">{suggestion.text}</Text>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                </View>
               )}
 
               {/* Input Area */}

@@ -17,7 +17,7 @@ import { Colors } from '@/constants/Theme';
 import { useSnackLabStore } from '@/store/useSnackLabStore';
 import { useSnacksStore } from '@/store/useSnacksStore';
 import { useBookingStore } from '@/store/useBookingStore';
-import { router } from 'expo-router';
+import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -64,6 +64,7 @@ const CandyParticle = ({ x, targetY, color }: { x: number; targetY: number; colo
 };
 
 export default function SnackLabScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const selectedMoviePoster = useBookingStore(state => state.selectedMoviePoster);
   const { currentCombo, updateButterLevel, updateFlavorRatios, addTopping, removeTopping, resetLab } = useSnackLabStore();
@@ -166,6 +167,14 @@ export default function SnackLabScreen() {
     else updateFlavorRatios(50, 50);
   };
 
+  const handleGoBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.push('/(tabs)' as any);
+    }
+  };
+
   const handleAddComboToCart = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     
@@ -202,7 +211,7 @@ export default function SnackLabScreen() {
     // Trigger standard cart addition
     addItem(customId);
 
-    router.back();
+    handleGoBack();
   };
 
   return (
@@ -223,16 +232,16 @@ export default function SnackLabScreen() {
         />
       </View>
 
-      {/* Header */}
+      {/* Header (LTR) */}
       <View 
         className="flex-row items-center px-6 pb-4 pt-2 gap-4 z-20"
         style={{ marginTop: insets.top }}
       >
         <Pressable 
-          onPress={() => router.back()} 
-          className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 justify-center items-center active:scale-95"
+          onPress={handleGoBack} 
+          className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 justify-center items-center active:scale-95 shadow-sm"
         >
-          {I18nManager.isRTL ? <ChevronRight size={24} color="white" /> : <ChevronLeft size={24} color="white" />}
+          <ChevronLeft size={24} color="white" />
         </Pressable>
         
         <View className="flex-1 items-start">
@@ -241,9 +250,9 @@ export default function SnackLabScreen() {
         </View>
       </View>
 
-      <ScrollView className="flex-1 px-6 mt-4" showsVerticalScrollIndicator={false}>
+      <ScrollView className="flex-1 px-6 mt-2" showsVerticalScrollIndicator={false}>
         {/* Lab Physics Beaker Container */}
-        <View className="items-center justify-center my-6 h-[240px] relative">
+        <View className="items-center justify-center my-4 h-[240px] relative">
           
           {/* Main Glass Beaker wiggling scale */}
           <Animated.View style={[{ width: 180, height: 210, position: 'relative' }, animatedBeakerStyle]}>
@@ -282,54 +291,63 @@ export default function SnackLabScreen() {
           </View>
         </View>
 
-        {/* Customizers sliders cards */}
-        <View className="bg-surfaceLight/80 border border-white/10 rounded-[32px] p-6 mb-6">
-          <Text className="text-h3 text-white text-right mb-4 font-display">1. בחר בסיס טעם</Text>
-          <View className="flex-row gap-3 mb-6" style={{ flexDirection: 'row-reverse' }}>
+        {/* Customizer Card (LTR) */}
+        <View className="bg-surfaceLight/80 border border-white/10 rounded-[32px] p-6 mb-6 shadow-2xl">
+          {/* 1. Flavor Base */}
+          <Text className="text-h3 text-white text-left mb-4 font-display">1. בחר בסיס טעם</Text>
+          <View className="flex-row gap-3 mb-6">
             <Pressable 
               onPress={() => handleSelectFlavor('salted')}
-              className={`flex-1 py-3 rounded-2xl border justify-center items-center ${flavorMode === 'salted' ? 'bg-primary/20 border-primary' : 'bg-white/5 border-white/10'}`}
+              className={`flex-1 py-3.5 rounded-2xl border justify-center items-center ${flavorMode === 'salted' ? 'bg-primary/20 border-primary shadow-sm shadow-primary/30' : 'bg-white/5 border-white/10'}`}
             >
-              <Text className="text-white font-bold text-sm">🍿 מלוח</Text>
+              <Text className="text-white font-bold text-sm font-body">🍿 מלוח</Text>
             </Pressable>
             <Pressable 
               onPress={() => handleSelectFlavor('sweet')}
-              className={`flex-1 py-3 rounded-2xl border justify-center items-center ${flavorMode === 'sweet' ? 'bg-primary/20 border-primary' : 'bg-white/5 border-white/10'}`}
+              className={`flex-1 py-3.5 rounded-2xl border justify-center items-center ${flavorMode === 'sweet' ? 'bg-primary/20 border-primary shadow-sm shadow-primary/30' : 'bg-white/5 border-white/10'}`}
             >
-              <Text className="text-white font-bold text-sm">🍭 מתוק</Text>
+              <Text className="text-white font-bold text-sm font-body">🍭 מתוק</Text>
             </Pressable>
             <Pressable 
               onPress={() => handleSelectFlavor('mixed')}
-              className={`flex-1 py-3 rounded-2xl border justify-center items-center ${flavorMode === 'mixed' ? 'bg-primary/20 border-primary' : 'bg-white/5 border-white/10'}`}
+              className={`flex-1 py-3.5 rounded-2xl border justify-center items-center ${flavorMode === 'mixed' ? 'bg-primary/20 border-primary shadow-sm shadow-primary/30' : 'bg-white/5 border-white/10'}`}
             >
-              <Text className="text-white font-bold text-sm">✨ משולב</Text>
+              <Text className="text-white font-bold text-sm font-body">✨ משולב</Text>
             </Pressable>
           </View>
 
-          <Text className="text-h3 text-white text-right mb-2 font-display">2. סמיכות חמאה מלוחה ({currentCombo.butterLevel}%)</Text>
-          
-          {/* Butter Level control row */}
-          <View className="flex-row items-center gap-3 mb-6" style={{ flexDirection: 'row-reverse' }}>
-            <Text className="text-xs text-white/50">יבש</Text>
-            <Slider 
-              value={currentCombo.butterLevel} 
-              onValueChange={updateButterLevel} 
-            />
-            <Text className="text-xs text-white/50">ספוג חמאה</Text>
+          {/* 2. Butter Level */}
+          <View className="flex-row items-center justify-between mb-3">
+            <Text className="text-h3 text-white text-left font-display">2. סמיכות חמאה מלוחה</Text>
+            <View className="bg-primary/20 border border-primary/40 px-3 py-1 rounded-full">
+              <Text className="text-xs text-primary font-bold font-body">{currentCombo.butterLevel}%</Text>
+            </View>
           </View>
+          
+          <LTRButterSlider 
+            value={currentCombo.butterLevel} 
+            onValueChange={updateButterLevel} 
+          />
 
-          <Text className="text-h3 text-white text-right mb-4 font-display">3. הוסף תוספות מתוקות (₪4 ליחידה)</Text>
-          <View className="flex-row flex-wrap gap-2.5 justify-end mb-4">
+          {/* 3. Toppings */}
+          <View className="flex-row items-center justify-between mt-6 mb-4">
+            <Text className="text-h3 text-white text-left font-display">3. תוספות מתוקות</Text>
+            <View className="bg-white/10 border border-white/15 px-3 py-1 rounded-full">
+              <Text className="text-xs text-white/60 font-medium font-body">+₪4 ליחידה</Text>
+            </View>
+          </View>
+          
+          <View className="flex-row flex-wrap gap-2.5 justify-start mb-2">
             {Object.keys(TOPPING_COLORS).map((topping) => {
               const isActive = currentCombo.toppings.includes(topping);
               return (
                 <Pressable
                   key={topping}
                   onPress={() => isActive ? handleRemoveTopping(topping) : handleDropTopping(topping)}
-                  className={`px-4 py-2 rounded-full border flex-row items-center gap-1.5 ${isActive ? 'bg-white/15 border-white/30' : 'bg-white/5 border-white/10'}`}
+                  className={`px-4 py-2.5 rounded-full border flex-row items-center gap-2 ${isActive ? 'bg-primary/20 border-primary/50' : 'bg-white/5 border-white/10'}`}
                 >
-                  <View className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: TOPPING_COLORS[topping] }} />
-                  <Text className={`text-xs ${isActive ? 'text-white font-bold' : 'text-white/60'}`}>{topping}</Text>
+                  <View className="w-3 h-3 rounded-full" style={{ backgroundColor: TOPPING_COLORS[topping] }} />
+                  <Text className={`text-xs font-body ${isActive ? 'text-white font-bold' : 'text-white/60'}`}>{topping}</Text>
                 </Pressable>
               );
             })}
@@ -338,26 +356,28 @@ export default function SnackLabScreen() {
 
       </ScrollView>
 
-      {/* Footer checkout total modifiers */}
+      {/* Footer checkout total modifiers (LTR) */}
       <BlurView 
         intensity={90} 
         tint="dark" 
         className="px-6 py-6 border-t border-white/10 rounded-t-[40px]"
         style={{ paddingBottom: Math.max(insets.bottom + 16, 32) }}
       >
-        <View className="flex-row items-center justify-between" style={{ flexDirection: 'row-reverse' }}>
+        <View className="flex-row items-center justify-between">
           
-          <View className="items-end">
-            <Text className="text-[10px] text-white/40 font-bold uppercase tracking-widest mb-0.5">מחיר פופקורן Lab</Text>
-            <Text>
+          {/* Price on the Left */}
+          <View className="items-start">
+            <Text className="text-[10px] text-white/40 font-bold uppercase tracking-widest mb-0.5 text-left font-body">מחיר פופקורן Lab</Text>
+            <Text className="text-left">
               <Text className="text-h1 text-white font-display">₪{(35 + currentCombo.priceModifier).toFixed(0)}</Text>
               <Text className="text-caption text-primary font-bold">.00</Text>
             </Text>
           </View>
 
+          {/* CTA Button on the Right */}
           <Pressable 
             onPress={handleAddComboToCart}
-            className="overflow-hidden rounded-3xl"
+            className="overflow-hidden rounded-3xl active:scale-95 shadow-lg shadow-primary/30"
           >
             <LinearGradient
               colors={[Colors.primary, '#D40054']}
@@ -375,37 +395,53 @@ export default function SnackLabScreen() {
   );
 }
 
-// Simple custom inline slider component to avoid package conflicts
-function Slider({ 
+// Custom LTR Slider component with Left (0%) to Right (100%) mapping
+function LTRButterSlider({ 
   value, 
   onValueChange 
 }: { 
   value: number; 
   onValueChange: (v: number) => void 
 }) {
-  const barWidth = SCREEN_WIDTH - 150;
+  const [containerWidth, setContainerWidth] = useState(SCREEN_WIDTH - 96);
   
+  const handleTouch = (touchX: number) => {
+    if (containerWidth <= 0) return;
+    const percentage = Math.max(0, Math.min(100, Math.round((touchX / containerWidth) * 100)));
+    onValueChange(percentage);
+  };
+
   return (
-    <View 
-      className="h-10 justify-center relative"
-      style={{ width: barWidth }}
-    >
-      <View className="w-full h-1 bg-white/10 rounded-full" />
-      <View 
-        className="h-1 bg-primary rounded-full absolute" 
-        style={{ width: `${value}%`, left: 0 }} 
-      />
+    <View className="my-2">
+      {/* LTR Labels: Dry (0%) on Left, Butter-soaked (100%) on Right */}
+      <View className="flex-row items-center justify-between mb-2">
+        <Text className="text-xs text-white/50 font-medium font-body">יבש (0%)</Text>
+        <Text className="text-xs text-white/50 font-medium font-body">ספוג חמאה (100%)</Text>
+      </View>
       
-      {/* Slider Knobs with absolute gestures mapping */}
       <View 
-        className="absolute w-5 h-5 bg-white rounded-full border border-primary justify-center items-center shadow-md"
-        style={{ left: `${value}%`, marginLeft: -10 }}
-        onTouchMove={(e) => {
-          const touchX = e.nativeEvent.locationX;
-          const percentage = Math.max(0, Math.min(100, Math.round((touchX / barWidth) * 100)));
-          onValueChange(percentage);
-        }}
-      />
+        className="h-10 justify-center relative w-full"
+        onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
+        onTouchStart={(e) => handleTouch(e.nativeEvent.locationX)}
+        onTouchMove={(e) => handleTouch(e.nativeEvent.locationX)}
+      >
+        {/* Track Background */}
+        <View className="w-full h-2.5 bg-white/10 rounded-full border border-white/10" />
+        
+        {/* Active Filled Track (Starts from Left) */}
+        <View 
+          className="h-2.5 bg-primary rounded-full absolute" 
+          style={{ width: `${value}%`, left: 0 }} 
+        />
+        
+        {/* Slider Knob (Mapped from Left) */}
+        <View 
+          className="absolute w-6 h-6 bg-white rounded-full border-2 border-primary justify-center items-center shadow-lg shadow-primary/40"
+          style={{ left: `${value}%`, marginLeft: -12 }}
+        >
+          <View className="w-2 h-2 rounded-full bg-primary" />
+        </View>
+      </View>
     </View>
   );
 }

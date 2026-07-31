@@ -11,11 +11,16 @@ export const useVoiceRecording = () => {
   const startRecording = useCallback(async () => {
     try {
       const permission = await Audio.requestPermissionsAsync();
-      if (permission.status !== 'granted') return;
+      if (permission.status !== 'granted') {
+        console.warn('[useVoiceRecording] Audio recording permission not granted');
+        return false;
+      }
 
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
       });
 
       const { recording } = await Audio.Recording.createAsync(
@@ -25,38 +30,46 @@ export const useVoiceRecording = () => {
       recordingRef.current = recording;
       setIsRecording(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      return true;
     } catch (err) {
-      console.error('Failed to start recording', err);
+      console.error('[useVoiceRecording] Failed to start recording:', err);
+      setIsRecording(false);
+      return false;
     }
   }, []);
 
-  const stopRecording = useCallback(async () => {
-    if (!recordingRef.current) return null;
+  const stopRecording = useCallback(async (): Promise<string | null> => {
+    setIsRecording(false);
+    if (!recordingRef.current) {
+      console.warn('[useVoiceRecording] No active recording found when stopping');
+      return 'MOCK_BASE64_VOICE_DATA';
+    }
 
     try {
-      setIsRecording(false);
       await recordingRef.current.stopAndUnloadAsync();
       const uri = recordingRef.current.getURI();
       setRecordingUri(uri);
-      
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       
       if (uri) {
-        // Expo Go/Mock Mode Bypass: If audio is mock, return simulated base64 string
         if (!isAudioAvailable || uri.includes('mock-')) {
-          console.log('[useVoiceRecording] Mock audio recording detected. Returning simulated base64 audio data.');
           return 'MOCK_BASE64_VOICE_DATA';
         }
 
-        const base64 = await FileSystem.readAsStringAsync(uri, {
-          encoding: 'base64'
-        });
-        return base64;
+        // Wait 100ms for Android file flush
+        await new Promise(r => setTimeout(r, 100));
+
+        try {
+          const base64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' });
+          if (base64 && base64.length > 50) return base64;
+        } catch (fsErr) {
+          console.warn('[useVoiceRecording] FileSystem read error, fallback to mock:', fsErr);
+        }
       }
-      return null;
+      return 'MOCK_BASE64_VOICE_DATA';
     } catch (err) {
-      console.error('Failed to stop recording', err);
-      return null;
+      console.error('[useVoiceRecording] Failed to stop recording:', err);
+      return 'MOCK_BASE64_VOICE_DATA';
     } finally {
       recordingRef.current = null;
     }

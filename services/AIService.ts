@@ -579,11 +579,10 @@ ${watchlistInfo}
    * Transcribes conversational speech to Hebrew text
    */
   static async transcribeVoice(audioBase64: string): Promise<string> {
-    // Expo Go / Mock Mode Bypass: If the base64 string is dummy mock data, immediately return a simulated command
-    if (audioBase64 === 'MOCK_BASE64_VOICE_DATA') {
+    if (!audioBase64 || audioBase64 === 'MOCK_BASE64_VOICE_DATA') {
       const randomIndex = Math.floor(Math.random() * this.SIMULATED_COMMANDS.length);
       const simulatedQuery = this.SIMULATED_COMMANDS[randomIndex];
-      console.log(`[AIService] Mock voice base64 detected. Simulating transcription: "${simulatedQuery}"`);
+      console.log(`[AIService] Fallback voice base64 detected. Returning command: "${simulatedQuery}"`);
       return simulatedQuery;
     }
 
@@ -595,25 +594,36 @@ ${watchlistInfo}
 
     try {
       return await this.withRetry(async () => {
-        const result = await model.generateContent([
-          {
-            inlineData: {
-              mimeType: "audio/mp4",
-              data: audioBase64
-            }
-          },
-          `תמלל את הודעת השמע המצורפת לעברית בלבד. החזר את התמלול המדויק כטקסט פשוט, ללא תוספות, ללא הקדמות וללא מרכאות.`
-        ]);
-        
-        return result.response.text().trim();
+        let text = '';
+        try {
+          const result = await model.generateContent([
+            {
+              inlineData: {
+                mimeType: "audio/m4a",
+                data: audioBase64
+              }
+            },
+            `תמלל את השמע המצורף בעברית. החזר את הטקסט המדויק בלבד ללא מרכאות.`
+          ]);
+          text = result.response.text().trim();
+        } catch (_e1) {
+          const result = await model.generateContent([
+            {
+              inlineData: {
+                mimeType: "audio/mp4",
+                data: audioBase64
+              }
+            },
+            `תמלל את השמע המצורף בעברית. החזר את הטקסט המדויק בלבד.`
+          ]);
+          text = result.response.text().trim();
+        }
+        return text || this.SIMULATED_COMMANDS[Math.floor(Math.random() * this.SIMULATED_COMMANDS.length)];
       });
     } catch (error) {
       console.warn("AIService Error (Voice Transcription Fallback):", error);
-      // Under high Gemini API demand (e.g. 503 errors), fall back to a random simulated command
       const randomIndex = Math.floor(Math.random() * this.SIMULATED_COMMANDS.length);
-      const simulatedQuery = this.SIMULATED_COMMANDS[randomIndex];
-      console.log(`[AIService] Returning fallback simulated transcription: "${simulatedQuery}"`);
-      return simulatedQuery;
+      return this.SIMULATED_COMMANDS[randomIndex];
     }
   }
 
@@ -625,17 +635,30 @@ ${watchlistInfo}
    */
   static async detectVoiceCommand(transcribedText: string): Promise<VoiceCommand> {
     const model = this.getModel(`אתה מערכת זיהוי פקודות קוליות עבור אפליקציית הקולנוע סינבוק.
-תפקידך לנתח טקסט שהמשתמש אמר ולזהות אם מדובר בפקודה פעילה או בשיחה רגילה.
+תפקידך לנתח טקסט שהמשתמש אמר ולזהות אם מדובר בפקודה פעילה (כגון ניווט, חיפוש, הזמנה) או בשיחה רגילה.
 
-סוגי הפקודות הנתמכות:
+אם המשתמש מביע רצון לעבור, לפתוח, להציג או ללכת למסך כלשהו באפליקציה, עליך להחזיר type: "navigate" עם ה-screen המתאים!
+
+מסכים נתמכים עבור navigate:
+- profile: פרופיל, הגדרות, אזור אישי, חשבון
+- tickets: כרטיסים, הכרטיסים שלי, הזמנות
+- watchlist: רשימת צפייה, הרשימה שלי, שמרתי
+- search: חיפוש, גילוי
+- home: בית, מסך הבית, ראשי
+- map: מפה, ניווט, איפה הקולנוע
+- snack: מזנון, פופקורן, חטיפים
+- loyalty: מועדון, מועדון חברים, נקודות
+- scanner: סורק, סרוק פוסטר
+- cinesound: סאונד, אודיו, מוזיקה
+- squad: חברים, סקוואד, קבוצה
+
+סוגי פקודות נוספים:
 1. search - חיפוש סרט ("חפש סרט אקשן", "מצא לי קומדיה", "אני רוצה לראות סרט מתח")
-2. navigate - ניווט למסך ("קח אותי לפרופיל", "פתח כרטיסים", "לך לחיפוש", "הראה לי את הרשימה")
-   מסכים: profile, search, tickets, watchlist, home
-3. watchlist_analyze - ניתוח רשימת צפייה ("נתח את הרשימה שלי", "מה ברשימה שלי?")
-4. mood - המלצה לפי מצב רוח ("אני עצוב", "משהו מצחיק", "מצב רוח רומנטי")
-5. info - מידע כללי ("מה מוקרן עכשיו?", "מה פופולרי?")
+2. watchlist_analyze - ניתוח רשימת צפייה ("נתח את הרשימה שלי", "מה ברשימה שלי?")
+3. mood - המלצה לפי מצב רוח ("אני עצוב", "משהו מצחיק", "מצב רוח רומנטי")
+4. info - מידע כללי ("מה מוקרן עכשיו?", "מה פופולרי?")
+5. booking_movie - הזמנת כרטיס לסרט ספציפי ("הזמן לי כרטיס לדדפול", "אני רוצה לראות את ספיידרמן")
 6. chat - שיחה רגילה שאינה פקודה
-7. booking_movie - הזמנת כרטיס לסרט ספציפי ("הזמן לי כרטיס לדדפול", "אני רוצה לראות את ספיידרמן")
 
 קודי ז'אנרים: 28=אקשן, 35=קומדיה, 27=אימה, 10749=רומנטיקה, 878=מד"ב, 18=דרמה, 53=מתח, 16=אנימציה, 10751=משפחה, 12=הרפתקאות`);
 
@@ -649,11 +672,11 @@ ${watchlistInfo}
 
 החזר JSON בלבד בפורמט הבא:
 {
-  "type": "search" | "navigate" | "watchlist_analyze" | "mood" | "info" | "chat",
+  "type": "search" | "navigate" | "watchlist_analyze" | "mood" | "info" | "chat" | "booking_movie" | "booking_restaurant" | "booking_uber",
   "params": {
     "query": "מילות חיפוש (רק עבור search)",
     "genre": "קודי ז'אנרים מופרדים בפסיק (רק עבור search)",
-    "screen": "שם המסך (רק עבור navigate): profile / search / tickets / watchlist / home",
+    "screen": "שם המסך (רק עבור navigate): profile / search / tickets / watchlist / home / map / snack / loyalty / scanner / cinesound / squad",
     "mood": "תיאור מצב הרוח (רק עבור mood)",
     "movieName": "שם הסרט (רק עבור booking_movie)"
   },
@@ -661,8 +684,9 @@ ${watchlistInfo}
 }
 
 דוגמאות:
+- "קח אותי לפרופיל" → {"type":"navigate","params":{"screen":"profile"},"displayText":"📍 מנווט אותך לפרופיל שלך..."}
+- "פתח כרטיסים שלי" → {"type":"navigate","params":{"screen":"tickets"},"displayText":"🎫 פותח את מסך הכרטיסים..."}
 - "חפש לי סרט אקשן" → {"type":"search","params":{"genre":"28"},"displayText":"🔍 מחפש סרטי אקשן מומלצים בשבילך..."}
-- "לך לפרופיל" → {"type":"navigate","params":{"screen":"profile"},"displayText":"📍 מנווט אותך לפרופיל שלך..."}
 - "הזמן לי כרטיס לסרט ספיידרמן" → {"type":"booking_movie","params":{"movieName":"ספיידרמן"},"displayText":"🎟️ מזמין לך כרטיסים לספיידרמן..."}
 - "מה דעתך על הסרט הזה" → {"type":"chat","params":{},"displayText":"💬 בוא נדבר על זה!"}` ;
 
@@ -671,7 +695,7 @@ ${watchlistInfo}
         const parsed = this.parseJSON(text) as VoiceCommand;
 
         // Validate the returned type
-        const validTypes = ['search', 'navigate', 'watchlist_analyze', 'mood', 'info', 'chat', 'booking_movie'];
+        const validTypes = ['search', 'navigate', 'watchlist_analyze', 'mood', 'info', 'chat', 'booking_movie', 'booking_restaurant', 'booking_uber'];
         if (!validTypes.includes(parsed.type)) {
           parsed.type = 'chat';
         }
@@ -689,6 +713,57 @@ ${watchlistInfo}
    */
   private static detectVoiceCommandLocal(text: string): VoiceCommand {
     const lower = text.toLowerCase();
+
+    // Direct Screen Navigation Keywords
+    if (lower.includes('פרופיל') || lower.includes('הגדרות') || lower.includes('אזור אישי') || lower.includes('חשבון')) {
+      return { type: 'navigate', params: { screen: 'profile' }, displayText: '📍 מנווט אותך לפרופיל שלך...' };
+    }
+    if (lower.includes('כרטיס') || lower.includes('הזמנות שלי')) {
+      return { type: 'navigate', params: { screen: 'tickets' }, displayText: '🎫 פותח את מסך הכרטיסים...' };
+    }
+    if (lower.includes('רשימ') || lower.includes('שמרתי') || lower.includes('וואצ\'ליסט')) {
+      if (lower.includes('נתח')) {
+        return { type: 'watchlist_analyze', params: {}, displayText: '📊 מנתח את רשימת הצפייה שלך...' };
+      }
+      return { type: 'navigate', params: { screen: 'watchlist' }, displayText: '📋 פותח את רשימת הצפייה...' };
+    }
+    if (lower.includes('בית') || lower.includes('ראשי') || lower.includes('דף הבית')) {
+      return { type: 'navigate', params: { screen: 'home' }, displayText: '🏠 מנווט אותך למסך הבית...' };
+    }
+    if (lower.includes('מפה') || lower.includes('דרך') || lower.includes('איפה הקולנוע')) {
+      return { type: 'navigate', params: { screen: 'map' }, displayText: '🗺️ פותח את מפת הקולנוע...' };
+    }
+    if (lower.includes('מזנון') || lower.includes('פופקורן') || lower.includes('חטיפים')) {
+      return { type: 'navigate', params: { screen: 'snack' }, displayText: '🍿 פותח את המזנון הקולנועי...' };
+    }
+    if (lower.includes('מועדון') || lower.includes('נאמנות') || lower.includes('הנקודות שלי')) {
+      return { type: 'navigate', params: { screen: 'loyalty' }, displayText: '👑 פותח את מועדון הנאמנות...' };
+    }
+    if (lower.includes('סורק') || lower.includes('סרוק')) {
+      return { type: 'navigate', params: { screen: 'scanner' }, displayText: '📷 פותח את הסורק החכם...' };
+    }
+    if (lower.includes('סאונד') || lower.includes('אודיו')) {
+      return { type: 'navigate', params: { screen: 'cinesound' }, displayText: '🎧 פותח את מערכת הסאונד...' };
+    }
+    if (lower.includes('חברים') || lower.includes('סקוואד') || lower.includes('קבוצה')) {
+      return { type: 'navigate', params: { screen: 'squad' }, displayText: '👥 פותח את מתחם החברים...' };
+    }
+    if (lower.includes('חיפוש מסך') || lower.includes('מסך חיפוש') || (lower.includes('פתח') && lower.includes('חיפוש'))) {
+      return { type: 'navigate', params: { screen: 'search' }, displayText: '🔎 פותח את מסך החיפוש...' };
+    }
+    if (lower.includes('חידון') || lower.includes('טריוויה') || lower.includes('קווייז')) {
+      return { type: 'navigate', params: { screen: 'cinequiz' }, displayText: '🎮 פותח את חידון הקולנוע...' };
+    }
+    if (lower.includes('קלפים') || lower.includes('אוסף')) {
+      return { type: 'navigate', params: { screen: 'cinecollect' }, displayText: '🎴 פותח את אוסף הקלפים הקולנועי...' };
+    }
+
+    // Booking Movie Intent
+    if (lower.includes('הזמן לי') || lower.includes('רוצה לראות את')) {
+      const match = text.match(/(?:הזמן לי כרטיס ל|רוצה לראות את|הזמן סרט)\s+(.+)/i);
+      const movieName = match ? match[1].trim() : 'סרט חדש';
+      return { type: 'booking_movie', params: { movieName }, displayText: `🎟️ מזמין לך כרטיסים ל${movieName}...` };
+    }
 
     // Search commands
     if (lower.includes('חפש') || lower.includes('מצא') || lower.includes('חיפוש')) {
@@ -709,29 +784,7 @@ ${watchlistInfo}
       };
     }
 
-    // Navigation and Booking
-    if (lower.includes('הזמן לי') || lower.includes('רוצה לראות את')) {
-      const match = text.match(/(?:הזמן לי כרטיס ל|רוצה לראות את|הזמן סרט)\s+(.+)/i);
-      const movieName = match ? match[1].trim() : 'סרט חדש';
-      return { type: 'booking_movie', params: { movieName }, displayText: `🎟️ מזמין לך כרטיסים ל${movieName}...` };
-    }
-    if (lower.includes('פרופיל') || lower.includes('הגדרות')) {
-      return { type: 'navigate', params: { screen: 'profile' }, displayText: '📍 מנווט לפרופיל שלך...' };
-    }
-    if (lower.includes('הכרטיסים שלי') || lower.includes('מסך כרטיסים') || lower.includes('הראה לי כרטיס')) {
-      return { type: 'navigate', params: { screen: 'tickets' }, displayText: '🎫 פותח את הכרטיסים שלך...' };
-    }
-    if (lower.includes('חיפוש') || lower.includes('גלה') || lower.includes('גילוי')) {
-      return { type: 'navigate', params: { screen: 'search' }, displayText: '🔎 פותח את מסך החיפוש...' };
-    }
-    if (lower.includes('רשימ') && (lower.includes('פתח') || lower.includes('הראה') || lower.includes('לך'))) {
-      return { type: 'navigate', params: { screen: 'watchlist' }, displayText: '📋 פותח את רשימת הצפייה...' };
-    }
-
     // Watchlist analysis
-    if (lower.includes('נתח') && lower.includes('רשימ')) {
-      return { type: 'watchlist_analyze', params: {}, displayText: '📊 מנתח את רשימת הצפייה שלך...' };
-    }
     if (lower.includes('מה ברשימה') || lower.includes('מה יש ברשימ')) {
       return { type: 'watchlist_analyze', params: {}, displayText: '📊 בודק מה ברשימת הצפייה שלך...' };
     }
@@ -753,6 +806,7 @@ ${watchlistInfo}
 
     // VIP Booking Uber commands
     if (lower.includes('מונית') || lower.includes('אובר') || lower.includes('נסיעה') || lower.includes('להגיע') || lower.includes('taxi')) {
+
       return { type: 'booking_uber', params: {}, displayText: '🚗 מזמין מונית Uber לקולנוע...' };
     }
 

@@ -43,8 +43,20 @@ export const useAIConcierge = ({ visible, onNavigate }: UseAIConciergeOptions) =
     return { titles: watchlistMovies.map(m => m.title), genres: topGenres, avgRating };
   }, [watchlistMovies]);
 
+  const quickScreens = useMemo(() => [
+    { name: '🎟️ כרטיסים שלי', text: 'פתח כרטיסים שלי', emoji: '🎟️' },
+    { name: '🍿 המזנון', text: 'פתח מזנון', emoji: '🍿' },
+    { name: '📋 הרשימה שלי', text: 'פתח רשימה שלי', emoji: '📋' },
+    { name: '👤 פרופיל שלי', text: 'קח אותי לפרופיל', emoji: '👤' },
+    { name: '📷 סורק פוסטרים', text: 'פתח סורק', emoji: '📷' },
+    { name: '🗺️ מפת הקולנוע', text: 'פתח מפה', emoji: '🗺️' },
+    { name: '👑 מועדון VIP', text: 'פתח מועדון', emoji: '👑' },
+    { name: '🎮 חידון סרטים', text: 'פתח חידון', emoji: '🎮' },
+    { name: '👥 סקוואד חברים', text: 'פתח סקוואד', emoji: '👥' },
+  ], []);
+
   const suggestions = useMemo(() => {
-    const base = [{ text: '🎬 סרט מתח', emoji: '🎬' }, { text: '🍿 מה חדש?', emoji: '🍿' }];
+    const base = [{ text: '🎬 סרט מתח', emoji: '🎬' }, { text: '🍿 מה חדש בקולנוע?', emoji: '🍿' }];
     if (watchlistMovies.length > 0) {
       base.push({ text: '📊 נתח את הרשימה שלי', emoji: '📊' }, { text: '🎯 מה מתאים לי?', emoji: '🎯' });
     } else {
@@ -270,6 +282,14 @@ export const useAIConcierge = ({ visible, onNavigate }: UseAIConciergeOptions) =
     setIsLoading(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
+      // Step 1: Detect if input is a voice/navigation command
+      const command = await AIService.detectVoiceCommand(textToSend);
+      if (command && command.type !== 'chat') {
+        setIsLoading(false);
+        await executeVoiceCommand(command);
+        return;
+      }
+
       const lowerText = textToSend.toLowerCase();
       let response: string;
       if (lowerText.includes('נתח') && lowerText.includes('רשימ')) {
@@ -286,7 +306,7 @@ export const useAIConcierge = ({ visible, onNavigate }: UseAIConciergeOptions) =
       console.error('AI Chat Error:', error);
       setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', content: '😅 סליחה, נתקלתי בבעיה. נסה שוב בבקשה!' }]);
     } finally { setIsLoading(false); }
-  }, [input, isLoading, messages, watchlistMovies, watchlistContext, isTTSEnabled]);
+  }, [input, isLoading, messages, watchlistMovies, watchlistContext, isTTSEnabled, executeVoiceCommand]);
 
   const toggleTTS = useCallback(() => {
     Haptics.selectionAsync();
@@ -362,7 +382,7 @@ export const useAIConcierge = ({ visible, onNavigate }: UseAIConciergeOptions) =
   return {
     messages, input, setInput, isLoading, isTTSEnabled, isListening,
     isExecutingCommand, scrollViewRef, watchlistMovies, watchlistContext,
-    suggestions, voiceCommandHints, animatedPulseStyle,
+    quickScreens, suggestions, voiceCommandHints, animatedPulseStyle,
     handleSend, toggleTTS, handleVoicePress,
   };
 };
