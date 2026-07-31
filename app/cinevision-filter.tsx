@@ -65,9 +65,14 @@ export default function CineVisionFilterScreen() {
         {preset === 'matrix' && <View style={[StyleSheet.absoluteFill, { backgroundColor: '#00FF66', opacity: (neonGlow / 100) * 0.25 }]} pointerEvents="none" />}
 
         <View style={styles.hudOverlay} pointerEvents="none">
-          <View style={styles.viewfinderFrame} />
+          <View style={styles.viewfinderFrame}>
+            <View style={styles.arBadgeContainer}>
+              <View style={styles.arBadgeDot} />
+              <Text style={styles.arBadgeText}>AI ACTOR DETECTED: 🏆 Cillian Murphy</Text>
+            </View>
+          </View>
           <Text style={styles.hudTextLeft} className="font-mono">REC 4K • {preset.toUpperCase()}</Text>
-          <Text style={styles.hudTextRight} className="font-mono">GLOW: {neonGlow}%</Text>
+          <Text style={styles.hudTextRight} className="font-mono">STAMP: COLLECTED ✨</Text>
         </View>
       </View>
 
@@ -158,7 +163,10 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#09090B' },
   cameraContainer: { flex: 1, position: 'relative' },
   hudOverlay: { ...StyleSheet.absoluteFill },
-  viewfinderFrame: { position: 'absolute', top: 40, left: 20, right: 20, bottom: 180, borderWidth: 2, borderColor: 'rgba(255, 20, 100, 0.4)', borderRadius: 20 },
+  viewfinderFrame: { position: 'absolute', top: 40, left: 20, right: 20, bottom: 180, borderWidth: 2, borderColor: 'rgba(255, 20, 100, 0.4)', borderRadius: 20, justifyContent: 'flex-start', alignItems: 'center', paddingTop: 16 },
+  arBadgeContainer: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(9, 9, 11, 0.85)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: '#FF1464' },
+  arBadgeDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#00FF66' },
+  arBadgeText: { color: '#FFF', fontSize: 11, fontWeight: '700' },
   hudTextLeft: { position: 'absolute', top: 48, left: 28, color: '#FF1464', fontSize: 10, fontWeight: 'bold' },
   hudTextRight: { position: 'absolute', top: 48, right: 28, color: '#FF1464', fontSize: 10, fontWeight: 'bold' },
   controlPanel: { position: 'absolute', bottom: 12, left: 10, right: 10, borderRadius: 32, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.15)', overflow: 'hidden' },

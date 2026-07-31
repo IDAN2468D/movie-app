@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import * as Haptics from 'expo-haptics';
 import * as Speech from 'expo-speech';
-import { Audio } from '../utils/safeExpoAv';
+import { Audio, isAudioAvailable } from '../utils/safeExpoAv';
 import { playCenterSubBass } from '../utils/SoundEffects';
 
 /**
@@ -56,25 +56,27 @@ export const useSplashScreenAudio = () => {
 
         soundRef.current = sound;
 
-        // Try loading voice MP3 asset
-        try {
-          const { sound: voiceSound } = await Audio.Sound.createAsync(
-            voiceSource,
-            { volume: 0.95, shouldPlay: false }
-          );
-          if (!isCancelled) {
-            voiceRef.current = voiceSound;
-            voiceSound.setOnPlaybackStatusUpdate((status: any) => {
-              if (status.didJustFinish) {
-                voiceSound.unloadAsync().catch(() => {});
-                voiceRef.current = null;
-              }
-            });
-          } else {
-            voiceSound.unloadAsync().catch(() => {});
+        // Try loading voice MP3 asset if native audio module is available
+        if (isAudioAvailable) {
+          try {
+            const { sound: voiceSound } = await Audio.Sound.createAsync(
+              voiceSource,
+              { volume: 0.95, shouldPlay: false }
+            );
+            if (!isCancelled) {
+              voiceRef.current = voiceSound;
+              voiceSound.setOnPlaybackStatusUpdate((status: any) => {
+                if (status.didJustFinish) {
+                  voiceSound.unloadAsync().catch(() => {});
+                  voiceRef.current = null;
+                }
+              });
+            } else {
+              voiceSound.unloadAsync().catch(() => {});
+            }
+          } catch (voiceErr) {
+            console.warn('[useSplashScreenAudio] Voice asset load skipped/failed:', voiceErr);
           }
-        } catch (voiceErr) {
-          console.warn('[useSplashScreenAudio] Voice asset load skipped/failed:', voiceErr);
         }
 
         // Auto-unload primary sound once playback finishes
@@ -108,25 +110,30 @@ export const useSplashScreenAudio = () => {
           }
         }, 250);
 
-        // Play Gemini AI Voice Speech in Hebrew at 450ms
+        // Play Gemini AI Voice Speech in Hebrew at 100ms (MP3 file preferred if real native audio, or direct Speech.speak)
         voiceTimer = setTimeout(async () => {
           if (!isCancelled) {
             try {
-              console.log('[useSplashScreenAudio] Triggering Speech.speak for Gemini voice intro...');
-              Speech.speak('ברוכים הבאים לסינבוק. חוויה קולנועית מחדש.', {
-                language: 'he-IL',
-                rate: 0.85,
-                pitch: 0.9,
-              });
-
-              if (voiceRef.current) {
+              if (voiceRef.current && isAudioAvailable) {
+                console.log('[useSplashScreenAudio] Playing high-quality voice MP3 asset...');
                 await voiceRef.current.playAsync();
+              } else {
+                console.log('[useSplashScreenAudio] Triggering Speech.speak for Gemini AI voice intro...');
+                try { Speech.stop(); } catch {}
+                Speech.speak('ברוכים הבאים לסינבוק. חוויה קולנועית מחדש.', {
+                  language: 'he-IL',
+                  rate: 0.90,
+                  pitch: 1.0,
+                });
               }
             } catch (vPlayErr) {
-              console.warn('[useSplashScreenAudio] Voice playback failed:', vPlayErr);
+              console.warn('[useSplashScreenAudio] Voice playback failed, falling back to Speech.speak:', vPlayErr);
+              try {
+                Speech.speak('ברוכים הבאים לסינבוק. חוויה קולנועית מחדש.', { language: 'he-IL', rate: 0.90 });
+              } catch {}
             }
           }
-        }, 450);
+        }, 100);
 
         // Secondary acoustic pulse when light sweep passes
         hapticTimer2 = setTimeout(() => {

@@ -49,6 +49,15 @@ export default function CineSeatAuctionScreen() {
           </Pressable>
         </View>
 
+        {/* Live Ticker Bar */}
+        <View className="bg-primary/10 border border-primary/30 p-3 rounded-2xl mb-4 flex-row-reverse items-center justify-between">
+          <View className="flex-row-reverse items-center gap-2">
+            <View className="w-2.5 h-2.5 rounded-full bg-primary animate-ping" />
+            <Text style={{ textAlign: 'right', writingDirection: 'rtl' }} className="text-primary text-xs font-bold">שידור חי LIVE 🔴</Text>
+          </View>
+          <Text style={{ textAlign: 'right', writingDirection: 'rtl' }} className="text-white/80 text-xs font-semibold">עדכון אחרון: מושב VIP F12 החליף בעלים לפני 2 דק׳</Text>
+        </View>
+
         {/* Info Banner */}
         <View className="bg-white/5 border border-white/10 p-4 rounded-3xl mb-6 flex-row-reverse justify-start items-center gap-3">
           <View className="w-10 h-10 rounded-2xl bg-secondary/10 border border-secondary/30 items-center justify-center">

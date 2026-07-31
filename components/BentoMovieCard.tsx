@@ -10,6 +10,7 @@ import { Colors } from '@/constants/Theme';
 import type { TMDBMovie } from '@/lib/tmdb';
 import { getImageSource, handleImageError } from '@/utils/ImageUtils';
 import { getGenreName } from '@/lib/tmdb';
+import { playCuteMovieClickSound } from '@/utils/SoundEffects';
 
 export type BentoSize = 'hero' | 'large' | 'medium' | 'small';
 
@@ -44,7 +45,7 @@ const BentoMovieCard = React.memo(function BentoMovieCard({
   };
 
   const handlePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    playCuteMovieClickSound();
     if (onPress) onPress();
     else router.push(`/movie/${movie.id}`);
   };

@@ -18,6 +18,7 @@ import MarkerHighlight from './MarkerHighlight';
 import { Colors } from '@/constants/Theme';
 import type { TMDBMovie } from '@/lib/tmdb';
 import { getImageSource, handleImageError } from '@/utils/ImageUtils';
+import { playCuteMovieClickSound } from '@/utils/SoundEffects';
 
 interface HeroSliderProps {
   movies: TMDBMovie[];
@@ -85,10 +86,15 @@ const HeroItem = React.memo(({ item, scrollY }: { item: TMDBMovie; scrollY?: Sha
     };
   });
 
+  const handlePress = () => {
+    playCuteMovieClickSound();
+    router.push(`/movie/${item.id}`);
+  };
+
   return (
     <Pressable
       className="w-screen h-[380px]"
-      onPress={() => router.push(`/movie/${item.id}`)}
+      onPress={handlePress}
     >
       <Animated.View style={[StyleSheet.absoluteFill, imageAnimatedStyle]}>
         <Image

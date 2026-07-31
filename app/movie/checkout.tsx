@@ -7,6 +7,7 @@ import { View, Text, Image, Pressable, ScrollView, Modal, Linking, Alert, I18nMa
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ArrowLeft, ArrowRight, CreditCard, ShieldCheck, Ticket, CheckCircle2, Sparkles, Popcorn } from 'lucide-react-native';
+import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useSnacksStore } from '@/store/useSnacksStore';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -211,15 +212,22 @@ export default function CheckoutScreen() {
         )}
 
         {/* Pre-Order Snacks Section */}
-        <View className="mt-10 items-start">
+        <View className="mt-10 items-start w-full">
           <View className="flex-row w-full justify-between items-center mb-4">
-            <Text className="text-h3 text-white font-display">נשנושים וכיבוד</Text>
-            <View className="bg-secondary/20 px-3 py-1 rounded-full border border-secondary/30">
-              <Text className="text-[10px] text-secondary font-bold uppercase tracking-widest">עוקף תור 🍿</Text>
-            </View>
+            <Pressable
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                router.push('/movie/snacks' as any);
+              }}
+              className="bg-primary/20 px-3 py-1.5 rounded-2xl border border-primary/40 flex-row items-center gap-1 active:scale-95"
+            >
+              <Sparkles size={12} color={Colors.primary} />
+              <Text className="text-[11px] text-primary font-bold">פתח תפריט VIP מלא 🍿</Text>
+            </Pressable>
+            <Text className="text-h3 text-white font-display">נשנושים וכיבוד VIP 4.0</Text>
           </View>
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row -mx-5 px-5" contentContainerStyle={{ gap: 24 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row -mx-5 px-5" contentContainerStyle={{ gap: 16 }}>
             {items.map((snack) => {
               const count = snacksInCart.find(i => i.id === snack.id)?.quantity || 0;
               return (
@@ -229,32 +237,32 @@ export default function CheckoutScreen() {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     addItem(snack.id);
                   }}
-                  className="w-40 bg-surfaceLight rounded-3xl border border-white/5 p-4 items-center"
+                  className="w-36 bg-surfaceLight/90 rounded-3xl border border-white/10 p-3.5 items-center relative overflow-hidden active:scale-95 shadow-md"
                 >
-                  <View className="w-20 h-20 bg-background/50 rounded-2xl items-center justify-center mb-3 overflow-visible">
+                  <View className="w-16 h-16 bg-black/40 rounded-2xl items-center justify-center mb-2 overflow-visible relative">
                     {snack.image ? (
                       <Image
                         source={snack.image}
-                        className="w-16 h-16"
+                        className="w-14 h-14"
                         resizeMode="contain"
                       />
                     ) : (
-                      <Popcorn color={Colors.primary} size={32} opacity={0.6} />
+                      <Popcorn color={Colors.primary} size={28} opacity={0.6} />
                     )}
                     {count > 0 && (
-                      <View className="absolute -top-2 -right-2 w-7 h-7 bg-primary rounded-full items-center justify-center border-2 border-surface">
+                      <View className="absolute -top-2 -right-2 w-6 h-6 bg-primary rounded-full items-center justify-center border-2 border-surface">
                         <Text className="text-white text-xs font-bold">{count}</Text>
                       </View>
                     )}
                   </View>
-                  <Text className="text-body text-white font-bold text-center mb-1" numberOfLines={1}>{snack.name}</Text>
-                  <Text className="text-[10px] text-secondary font-display">₪{snack.price}</Text>
+                  <Text className="text-xs text-white font-bold text-center mb-0.5" numberOfLines={1}>{snack.name}</Text>
+                  <Text className="text-[11px] text-secondary font-bold">₪{snack.price}</Text>
                 </Pressable>
               );
             })}
           </ScrollView>
-          <Text className="text-caption text-textSecondary mt-4 font-body italic">
-            * ההזמנה תחכה לך בדלפק המהיר עם הצגת הכרטיס
+          <Text className="text-caption text-textSecondary mt-3 font-body italic">
+            * המשלוח מבוצע בלייב ישירות לכיסא באולם
           </Text>
         </View>
 

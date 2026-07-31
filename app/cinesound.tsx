@@ -88,8 +88,8 @@ export default function CineSoundScreen() {
           <Pressable onPress={() => { playSpatialTone(500, -0.5); router.back(); }} style={styles.headerBtn}>
             <X size={22} color="white" />
           </Pressable>
-          <Text style={styles.headerTitle}>CineSound Spatial 4.5</Text>
-          <Pressable onPress={() => { setBass(50); setMid(60); setTreble(70); }} style={styles.headerBtn}>
+          <Text style={styles.headerTitle}>CineSound 4.0 Quantum</Text>
+          <Pressable onPress={() => { playSpatialTone(500, -0.5); Haptics.selectionAsync(); setBass(50); setMid(60); setTreble(70); }} style={styles.headerBtn}>
             <RotateCcw size={20} color="white" />
           </Pressable>
         </View>
@@ -99,10 +99,11 @@ export default function CineSoundScreen() {
 
         <Animated.View entering={FadeInDown.duration(500)}>
           <LiquidGlassCard variant="deep" glow="quantum" specular style={{ marginVertical: 14 }}>
-            <Text style={styles.rightTitle}>מיפוי סאונד מרחבי 120Hz</Text>
+            <Text style={styles.rightTitle}>מיפוי סאונד מרחבי 120Hz & הראפטיקה</Text>
             <Pressable
               onPressIn={(e) => {
                 const pan = (e.nativeEvent.locationX / (width - 60)) * 2 - 1;
+                Haptics.selectionAsync();
                 playSpatialTone(650, pan);
               }}
               style={styles.spatialMatrixBox}

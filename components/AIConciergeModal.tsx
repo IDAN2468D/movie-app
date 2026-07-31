@@ -246,11 +246,8 @@ export default function AIConciergeModal({ visible, onClose, onNavigate: parentN
                     <Animated.View 
                       key={uniqueKey}
                       entering={FadeIn.duration(300)}
-                      className="mb-5 flex-row items-end gap-2 justify-start"
+                      className="mb-5 flex-row items-end gap-2 justify-end"
                     >
-                      <View className="w-8 h-8 rounded-full bg-primary items-center justify-center border border-white/20">
-                        <User size={14} color="white" />
-                      </View>
                       <View 
                         style={{
                           backgroundColor: Colors.primary,
@@ -270,14 +267,17 @@ export default function AIConciergeModal({ visible, onClose, onNavigate: parentN
                         }}
                       >
                         <Text 
-                          className="text-[15px] font-body leading-relaxed text-white text-start"
+                          className="text-[15px] font-body leading-relaxed text-white text-left"
                           style={{
-                            textAlign: 'right',
-                            writingDirection: 'rtl',
+                            textAlign: 'left',
+                            writingDirection: 'ltr',
                           }}
                         >
                           {contentText}
                         </Text>
+                      </View>
+                      <View className="w-8 h-8 rounded-full bg-primary items-center justify-center border border-white/20">
+                        <User size={14} color="white" />
                       </View>
                     </Animated.View>
                   );
@@ -286,8 +286,15 @@ export default function AIConciergeModal({ visible, onClose, onNavigate: parentN
                     <Animated.View 
                       key={uniqueKey}
                       entering={FadeIn.duration(300)}
-                      className="mb-5 flex-row items-end gap-2 justify-end"
+                      className="mb-5 flex-row items-end gap-2 justify-start"
                     >
+                      <View className="w-8 h-8 rounded-full bg-white/5 border border-white/10 items-center justify-center">
+                        {isCommandMsg ? (
+                          <Command size={14} color={Colors.primary} />
+                        ) : (
+                          <Zap size={14} color={Colors.primary} />
+                        )}
+                      </View>
                       <View 
                         style={{
                           backgroundColor: isCommandMsg ? 'rgba(255, 20, 100, 0.1)' : 'rgba(255,255,255,0.06)',
@@ -307,21 +314,14 @@ export default function AIConciergeModal({ visible, onClose, onNavigate: parentN
                         }}
                       >
                         <Text 
-                          className="text-[15px] font-body leading-relaxed text-white/90 text-right"
+                          className="text-[15px] font-body leading-relaxed text-white/90 text-left"
                           style={{
-                            textAlign: 'right',
-                            writingDirection: 'rtl',
+                            textAlign: 'left',
+                            writingDirection: 'ltr',
                           }}
                         >
                           {contentText}
                         </Text>
-                      </View>
-                      <View className="w-8 h-8 rounded-full bg-white/5 border border-white/10 items-center justify-center">
-                        {isCommandMsg ? (
-                          <Command size={14} color={Colors.primary} />
-                        ) : (
-                          <Zap size={14} color={Colors.primary} />
-                        )}
                       </View>
                     </Animated.View>
                   );

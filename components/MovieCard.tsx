@@ -10,6 +10,7 @@ import type { TMDBMovie } from '@/lib/tmdb';
 import { useWatchlistStore } from '@/store/useWatchlistStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { getImageSource, handleImageError } from '@/utils/ImageUtils';
+import { playCuteMovieClickSound } from '@/utils/SoundEffects';
 
 export const CARD_WIDTH = Dimensions.get('window').width * 0.38;
 export const CARD_HEIGHT = CARD_WIDTH * 1.5;
@@ -51,6 +52,7 @@ const MovieCard = React.memo(function MovieCard({ movie, index = 0 }: MovieCardP
   }, [movie.poster_path]);
 
   const handlePress = () => {
+    playCuteMovieClickSound();
     router.push(`/movie/${movie.id}`);
   };
 

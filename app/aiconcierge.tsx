@@ -396,16 +396,31 @@ export default function AICineConciergeScreen() {
           )}
         </ScrollView>
 
-        {/* Input Controls Bar */}
-        <BlurView intensity={50} tint="dark" style={[styles.inputBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+        {/* Quick Suggestion Chips */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ maxHeight: 36, marginBottom: 8, paddingHorizontal: 16 }}>
+          <View style={{ flexDirection: 'row-reverse', gap: 8 }}>
+            <Pressable onPress={() => sendMessage('הצג לי סרטי VIP להערב 🍿')} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: `${AURA_COLORS[sentiment].primary}40` }}>
+              <Text style={{ color: '#FFF', fontSize: 12, fontWeight: '600' }}>🍿 הקרנות VIP להערב</Text>
+            </Pressable>
+            <Pressable onPress={() => sendMessage('מה המושבים הכי טובים באולם 1? 🎟️')} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: `${AURA_COLORS[sentiment].primary}40` }}>
+              <Text style={{ color: '#FFF', fontSize: 12, fontWeight: '600' }}>🎟️ מושבים מומלצים</Text>
+            </Pressable>
+            <Pressable onPress={() => sendMessage('המלץ לי על סרט מתח מרתק ⚡')} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: `${AURA_COLORS[sentiment].primary}40` }}>
+              <Text style={{ color: '#FFF', fontSize: 12, fontWeight: '600' }}>⚡ סרט מתח חם</Text>
+            </Pressable>
+          </View>
+        </ScrollView>
+
+        {/* Omni-Box Capsule Input Controls Bar */}
+        <BlurView intensity={60} tint="dark" style={[styles.inputBar, { paddingBottom: Math.max(insets.bottom, 12), borderColor: `${AURA_COLORS[sentiment].primary}50` }]}>
           <TextInput
             style={styles.textInput}
-            placeholder="שאל אותי על סרט, ז׳אנר או מצב רוח..."
-            placeholderTextColor="rgba(255,255,255,0.3)"
+            placeholder="Omni-Box: שאל על סרטים, מושבים או שעות..."
+            placeholderTextColor="rgba(255,255,255,0.4)"
             value={inputText}
             onChangeText={setInputText}
             onSubmitEditing={() => sendMessage(inputText)}
-            textAlign="right"
+            textAlign="left"
           />
 
           {inputText.trim().length > 0 ? (
@@ -514,10 +529,10 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   userBubbleAlign: {
-    justifyContent: 'flex-start',
+    justifyContent: 'flex-end',
   },
   modelBubbleAlign: {
-    justifyContent: 'flex-end',
+    justifyContent: 'flex-start',
   },
   messageBubble: {
     maxWidth: '80%',
@@ -528,27 +543,27 @@ const styles = StyleSheet.create({
   },
   userBubble: {
     backgroundColor: 'rgba(255,255,255,0.08)',
-    borderTopRightRadius: 4,
+    borderTopLeftRadius: 4,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
   },
   modelBubble: {
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    borderTopLeftRadius: 4,
+    borderTopRightRadius: 4,
   },
   userBubbleText: {
     color: '#FFF',
     fontSize: 15,
     fontFamily: 'Assistant-Regular',
-    textAlign: 'right',
-    writingDirection: 'rtl',
+    textAlign: 'left',
+    writingDirection: 'ltr',
   },
   modelBubbleText: {
     color: 'rgba(255,255,255,0.9)',
     fontSize: 15,
     fontFamily: 'Assistant-Regular',
-    textAlign: 'right',
-    writingDirection: 'rtl',
+    textAlign: 'left',
+    writingDirection: 'ltr',
   },
   loadingContainer: {
     alignItems: 'center',

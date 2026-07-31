@@ -71,6 +71,7 @@ import MovieTrivia from '@/components/MovieTrivia';
 import CinePrism from '@/components/CinePrism';
 import AuraSyncBackground from '@/components/AuraSyncBackground';
 import CineSymphony from '@/components/CineSymphony';
+import { playCuteMovieClickSound } from '@/utils/SoundEffects';
 
 let WebView: any = null;
 if (Platform.OS !== 'web') {
@@ -98,6 +99,11 @@ export default function MovieDetailsScreen() {
   const { id, squadInvite, friendName } = useLocalSearchParams<{ id: string; squadInvite?: string; friendName?: string }>();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+
+  // Play cute sound effect when entering movie screen
+  useEffect(() => {
+    playCuteMovieClickSound();
+  }, [id]);
 
   useEffect(() => {
     if (squadInvite === 'true' && friendName) {

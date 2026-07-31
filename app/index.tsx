@@ -172,11 +172,11 @@ export default function SplashScreen() {
       }, 400);
     };
 
-    // Safety fallback timer: guarantee splash transition after max 1.8s
+    // Safety fallback timer: guarantee splash transition after max 3.0s (allows AI speech to complete)
     const fallbackTimer = setTimeout(() => {
       console.log('Splash fallback safety timer triggered');
       setAnimationFinished(true);
-    }, 1800);
+    }, 3000);
 
     // 4. Spring logo entrance
     logoScale.value = withSpring(1, { damping: 12, stiffness: 90 }, (finished) => {
@@ -206,7 +206,7 @@ export default function SplashScreen() {
     };
   }, []);
 
-  // Ultimate safety timer: force navigation after 2.5 seconds regardless of state
+  // Ultimate safety timer: force navigation after 3.2 seconds regardless of state (allows full AI speech)
   useEffect(() => {
     const forceNavigateTimer = setTimeout(() => {
       console.log('Splash ultimate force-navigate triggered');
@@ -221,7 +221,7 @@ export default function SplashScreen() {
         console.log('Force Routing: Splash -> Login');
         router.replace('/login');
       }
-    }, 1200);
+    }, 3200);
 
     return () => clearTimeout(forceNavigateTimer);
   }, []);
