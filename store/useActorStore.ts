@@ -65,15 +65,24 @@ export const useActorStore = create<ActorState>((set, get) => ({
     
     try {
       const biography = await AIService.generateActorBiography(actorName);
-      set((state) => ({
-        cache: { ...state.cache, [actorName]: biography },
-        isLoading: false,
-      }));
-      return biography;
+      if (biography) {
+        set((state) => ({
+          cache: { ...state.cache, [actorName]: biography },
+          isLoading: false,
+          error: null
+        }));
+        return biography;
+      }
+      throw new Error('No biography returned');
     } catch (error: any) {
       console.error('[useActorStore] Error fetching biography:', error);
-      set({ error: error.message || 'שגיאה בטעינת הביוגרפיה', isLoading: false });
-      return null;
+      const fallback = AIService.simulateActorBiography(actorName);
+      set((state) => ({
+        cache: { ...state.cache, [actorName]: fallback },
+        isLoading: false,
+        error: null,
+      }));
+      return fallback;
     }
   },
 
